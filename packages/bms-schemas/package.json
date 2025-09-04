@@ -1,0 +1,40 @@
+{
+  "name": "bms-schemas",
+  "version": "0.1.0",
+  "description": "Shared schema package for BMS applications",
+  "private": true,
+  "type": "module",
+  "main": "./typescript/index.js",
+  "types": "./typescript/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./typescript/index.d.ts",
+      "import": "./typescript/index.js"
+    }
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "tsx integration-tests/test-e2e-schema.js",
+    "generate": "node scripts/generate-all.js",
+    "generate:json": "tsx scripts/generate-json-schema.ts",
+    "generate:python": "python scripts/generate-python.py",
+    "build:ts": "tsc",
+    "build": "npm run test && npm run build:ts && npm run generate",
+    "clean": "rm -rf typescript/ python/ json-schema/ coverage/"
+  },
+  "dependencies": {
+    "zod": "^3.22.0",
+    "zod-to-json-schema": "^3.24.6"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.0.0",
+    "jest": "^30.1.3",
+    "ts-jest": "^29.4.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.5.0"
+  }
+}

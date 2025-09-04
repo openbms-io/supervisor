@@ -1,0 +1,38 @@
+{
+  "name": "bms-supervisor-controller",
+  "version": "0.1.0",
+  "description": "BMS Supervisor Controller - Visual programming platform for building management systems",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel run dev",
+    "build": "pnpm --recursive run build",
+    "test": "pnpm --recursive run test",
+    "lint": "pnpm --recursive run lint",
+    "clean": "pnpm --recursive run clean",
+    "schema:generate": "pnpm --filter bms-schemas run generate",
+    "format": "pnpm --recursive run format",
+    "format:check": "pnpm --recursive run format:check",
+    "python:format": "cd apps/iot-supervisor-app && black .",
+    "python:format:check": "cd apps/iot-supervisor-app && black --check .",
+    "python:lint": "cd apps/iot-supervisor-app && ruff check .",
+    "python:lint:fix": "cd apps/iot-supervisor-app && ruff check . --fix",
+    "python:test": "cd apps/iot-supervisor-app && pytest tests/",
+    "setup:hooks": "python -m pip install pre-commit && pre-commit install",
+    "hooks:update": "pre-commit autoupdate",
+    "hooks:run": "pre-commit run --all-files"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
