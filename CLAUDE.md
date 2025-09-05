@@ -220,6 +220,15 @@ npx shadcn@latest add form select switch
 # dropdown-menu, separator, tooltip, form, select, switch, etc.
 ```
 
+### Tailwind CSS v4 Compatibility
+
+**Important**: This project uses Tailwind CSS v4 with shadcn/ui. Some compatibility notes:
+
+- Replaced `@apply bg-background text-foreground` with direct CSS properties
+- Use `background-color: hsl(var(--background))` instead of `@apply bg-background`
+- CSS custom properties (--border, --background, etc.) work fine as hsl() values
+- All shadcn/ui components are compatible after CSS adjustments
+
 ### Troubleshooting (Fail Fast)
 
 #### Schema Issues
@@ -279,3 +288,5 @@ npm run test:integration
 - **Quick iterations** - fast test-code-test cycles
 - **Schema-driven** - changes start with schema tests, then implementation
 - **Use existing components** - prefer shadcn/ui components over custom implementations
+- **Define Types** - Dont use any or unknown. Define types where it cannot be inferred. But, dont fallback to using any or unknown.
+- **Coding Conventions** - Follow coding conventions listed in docs/coding-standards.md

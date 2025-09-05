@@ -167,13 +167,18 @@ function getUser(id: string): User | undefined {
   return undefined;
 }
 
-// Avoid any - use unknown or specific types
-function processData(data: unknown): void {
+// Avoid any - use specific types
+function processData({ data }: { data: DataType }): void {
   // Type guard
   if (typeof data === "string") {
     console.log(data.toUpperCase());
   }
 }
+
+// Use object naming as parameters.
+function processData(data: DataType); // - Wrong
+
+function processData({ data }: { data: DataType }); // - Correct
 
 // Use readonly for immutability
 interface Config {

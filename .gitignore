@@ -31,6 +31,10 @@ __pycache__/
 env/
 venv/
 .venv/
+designer.db
+designer.db-journal
+designer.db-shm
+designer.db-wal
 ENV/
 env.bak/
 venv.bak/
