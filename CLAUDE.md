@@ -57,10 +57,10 @@ npm test
 # Edit schema .ts file
 
 # 4. Verify test passes
-npm test
+pnpm test
 
 # 5. Regenerate outputs
-npm run generate
+pnpm run generate
 ```
 
 #### API Development (TDD)
@@ -91,13 +91,13 @@ cd apps/designer
 # Edit *.spec.ts file
 
 # 2. Run test (should fail)
-npm test
+pnpm test
 
 # 3. Implement component
 # Edit component .tsx file
 
 # 4. Verify test passes
-npm test
+pnpm test
 ```
 
 ## Key Commands
@@ -119,9 +119,9 @@ pnpm run test                   # Run all tests
 
 ```bash
 cd packages/bms-schemas
-npm test                        # Run schema tests
-npm run generate               # Generate all outputs
-npm run test:integration       # E2E schema test
+pnpm test                        # Run schema tests
+pnpm run generate               # Generate all outputs
+pnpm run test:integration       # E2E schema test
 ```
 
 ### IoT Supervisor Setup
@@ -137,8 +137,8 @@ iot-supervisor-app health      # Test CLI
 
 ```bash
 cd apps/designer
-npm run dev                    # Start on port 3000
-npm test                       # React component tests
+pnpm run dev                    # Start on port 3000
+pnpm test                       # React component tests
 ```
 
 ## Technology Stack
@@ -200,7 +200,7 @@ cd packages/bms-schemas
 # Add to NodeTypeSchema enum in src/nodes/types.ts
 
 # 3. Regenerate for both apps
-npm run generate
+pnpm run generate
 
 # 4. Test integration in both apps
 cd ../../apps/designer && npm run dev
@@ -219,6 +219,11 @@ npx shadcn@latest add form select switch
 # Available components: button, input, card, badge, dialog,
 # dropdown-menu, separator, tooltip, form, select, switch, etc.
 ```
+
+### Package manager
+
+Nodejs -> pnpm
+Python -> pip
 
 ### Tailwind CSS v4 Compatibility
 
