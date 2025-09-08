@@ -9,6 +9,9 @@ import { AnalogValueNode } from './analog-value-node'
 import { BinaryInputNode } from './binary-input-node'
 import { BinaryOutputNode } from './binary-output-node'
 import { BinaryValueNode } from './binary-value-node'
+import { MultistateInputNode } from './multistate-input-node'
+import { MultistateOutputNode } from './multistate-output-node'
+import { MultistateValueNode } from './multistate-value-node'
 import { CalculationNode, CalculationOperation } from './calculation-node'
 import { ComparisonNode, ComparisonOperation } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
@@ -29,14 +32,20 @@ class DataNodeFactory {
         return new AnalogInputNode(config)
       case 'binary-input':
         return new BinaryInputNode(config)
+      case 'multistate-input':
+        return new MultistateInputNode(config)
       case 'analog-output':
         return new AnalogOutputNode(config)
       case 'binary-output':
         return new BinaryOutputNode(config)
+      case 'multistate-output':
+        return new MultistateOutputNode(config)
       case 'analog-value':
         return new AnalogValueNode(config)
       case 'binary-value':
         return new BinaryValueNode(config)
+      case 'multistate-value':
+        return new MultistateValueNode(config)
       default:
         throw new Error(`Unsupported BACnet object type: ${objectType}`)
     }

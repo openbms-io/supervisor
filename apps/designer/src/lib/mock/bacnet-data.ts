@@ -11,6 +11,46 @@ interface MockPointData {
   value: number | boolean
   units?: string
   desc: string
+  multistateConfig?: string // Reference to multistate configuration
+}
+
+// Define state text mappings for multistate objects
+const MULTISTATE_CONFIGS: Record<
+  string,
+  { numberOfStates: number; stateText: string[] }
+> = {
+  fanSpeed: {
+    numberOfStates: 4,
+    stateText: ['Off', 'Low', 'Medium', 'High'],
+  },
+  operatingMode: {
+    numberOfStates: 5,
+    stateText: ['Off', 'Cool', 'Heat', 'Auto', 'Emergency Heat'],
+  },
+  damperPosition: {
+    numberOfStates: 4,
+    stateText: ['Closed', 'Minimum', 'Normal', 'Maximum'],
+  },
+  scheduleMode: {
+    numberOfStates: 4,
+    stateText: ['Unoccupied', 'Occupied', 'Standby', 'Not Used'],
+  },
+  alarmPriority: {
+    numberOfStates: 5,
+    stateText: ['Normal', 'Low', 'Medium', 'High', 'Critical'],
+  },
+  filterStatus: {
+    numberOfStates: 4,
+    stateText: ['Clean', 'Normal', 'Dirty', 'Replace'],
+  },
+  valvePosition: {
+    numberOfStates: 4,
+    stateText: ['Closed', 'Minimum', 'Modulating', 'Open'],
+  },
+  maintenanceMode: {
+    numberOfStates: 4,
+    stateText: ['Normal', 'Test', 'Service', 'Emergency'],
+  },
 }
 
 export function generateMockBACnetPoints(
@@ -314,6 +354,84 @@ export function generateMockBACnetPoints(
       value: false,
       desc: 'Night flush enable',
     },
+
+    // Multistate Inputs (3 sensors)
+    {
+      objectType: 'multistate-input',
+      objectId: 7001,
+      name: 'Fan Speed Status',
+      value: 2,
+      desc: 'Current fan speed',
+      multistateConfig: 'fanSpeed',
+    },
+    {
+      objectType: 'multistate-input',
+      objectId: 7002,
+      name: 'Operating Mode',
+      value: 3,
+      desc: 'Current HVAC mode',
+      multistateConfig: 'operatingMode',
+    },
+    {
+      objectType: 'multistate-input',
+      objectId: 7003,
+      name: 'Filter Status',
+      value: 1,
+      desc: 'Air filter condition',
+      multistateConfig: 'filterStatus',
+    },
+
+    // Multistate Outputs (3 commands)
+    {
+      objectType: 'multistate-output',
+      objectId: 8001,
+      name: 'Fan Speed Command',
+      value: 2,
+      desc: 'Set fan speed',
+      multistateConfig: 'fanSpeed',
+    },
+    {
+      objectType: 'multistate-output',
+      objectId: 8002,
+      name: 'Damper Position',
+      value: 2,
+      desc: 'OA damper position',
+      multistateConfig: 'damperPosition',
+    },
+    {
+      objectType: 'multistate-output',
+      objectId: 8003,
+      name: 'Valve Position',
+      value: 1,
+      desc: 'Water valve control',
+      multistateConfig: 'valvePosition',
+    },
+
+    // Multistate Values (3 virtual points)
+    {
+      objectType: 'multistate-value',
+      objectId: 9001,
+      name: 'Schedule Mode',
+      value: 1,
+      desc: 'Building schedule state',
+      multistateConfig: 'scheduleMode',
+    },
+    {
+      objectType: 'multistate-value',
+      objectId: 9002,
+      name: 'Alarm Priority',
+      value: 0,
+      desc: 'System alarm level',
+      multistateConfig: 'alarmPriority',
+    },
+    {
+      objectType: 'multistate-value',
+      objectId: 9003,
+      name: 'Maintenance Mode',
+      value: 0,
+      desc: 'System maintenance state',
+      multistateConfig: 'maintenanceMode',
+    },
   ]
 
   return baseData.map((item) => {
@@ -327,20 +445,45 @@ export function generateMockBACnetPoints(
       objectId: item.objectId,
       supervisorId,
       controllerId,
-      presentValue:
-        typeof item.value === 'number'
-          ? Math.round(
-              (item.value + (Math.random() - 0.5) * (item.value * 0.1)) * 10
-            ) / 10
-          : Math.random() > 0.5,
-      units: item.units,
-      description: item.desc,
-      reliability: 'no-fault-detected',
-      statusFlags: {
-        inAlarm: false,
-        fault: false,
-        overridden: false,
-        outOfService: false,
+      discoveredProperties: {
+        presentValue:
+          typeof item.value === 'number'
+            ? item.objectType.includes('multistate')
+              ? item.value // Keep multistate values as-is (state numbers)
+              : Math.round(
+                  (item.value + (Math.random() - 0.5) * (item.value * 0.1)) * 10
+                ) / 10
+            : Math.random() > 0.5,
+        units: item.units,
+        description: item.desc,
+        reliability: 'no-fault-detected',
+        statusFlags: {
+          inAlarm: false,
+          fault: false,
+          overridden: false,
+          outOfService: false,
+        },
+        // Add multistate-specific properties
+        ...(item.objectType.includes('multistate') && item.multistateConfig
+          ? {
+              numberOfStates:
+                MULTISTATE_CONFIGS[item.multistateConfig].numberOfStates,
+              stateText: MULTISTATE_CONFIGS[item.multistateConfig].stateText,
+            }
+          : {}),
+        // Add some optional properties randomly for analog objects
+        ...(Math.random() > 0.5 && item.objectType.includes('analog')
+          ? {
+              minPresValue: 0,
+              maxPresValue: 100,
+              resolution: 0.1,
+            }
+          : {}),
+        ...(Math.random() > 0.7
+          ? {
+              covIncrement: 1,
+            }
+          : {}),
       },
       name: item.name,
       position: undefined,

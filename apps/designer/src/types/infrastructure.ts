@@ -1,4 +1,5 @@
 import { v4 as uuidv4, v5 as uuidv5 } from 'uuid'
+import { BacnetProperties } from './bacnet-properties'
 
 // BACnet namespace for deterministic UUIDs
 export const BACNET_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
@@ -58,31 +59,16 @@ export interface BacnetConfig {
   supervisorId: string
   controllerId: string
 
-  // BACnet properties
-  presentValue: number | boolean | string
-  units?: string
-  description: string
-  reliability: string
-  statusFlags: {
-    inAlarm: boolean
-    fault: boolean
-    overridden: boolean
-    outOfService: boolean
-  }
+  // All BACnet properties are now discovered
+  discoveredProperties: BacnetProperties
 
   // Display
   name: string // Point name/description
   position?: { x: number; y: number }
-
-  // Optional limits
-  minValue?: number
-  maxValue?: number
 }
 
 // Composition pattern - merges BacnetConfig with DataNode behavior
-export interface BacnetInputOutput extends BacnetConfig, DataNode {
-  // label comes from BacnetConfig, rest from DataNode
-}
+export interface BacnetInputOutput extends DataNode, BacnetConfig {}
 
 // Infrastructure types (direct references, not IDs)
 export interface Supervisor {

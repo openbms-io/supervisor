@@ -7,11 +7,12 @@ import {
   generateInstanceId,
 } from '@/types/infrastructure'
 import { BacnetProperties } from '@/types/bacnet-properties'
+import { prepareMultistateProperties } from './bacnet-utils'
 
-export class AnalogValueNode implements BacnetInputOutput {
+export class MultistateValueNode implements BacnetInputOutput {
   // From BacnetConfig
   readonly pointId: string
-  readonly objectType = 'analog-value' as const
+  readonly objectType = 'multistate-value' as const
   readonly objectId: number
   readonly supervisorId: string
   readonly controllerId: string
@@ -21,7 +22,7 @@ export class AnalogValueNode implements BacnetInputOutput {
 
   // From DataNode
   readonly id: string
-  readonly type = 'analog-value' as const
+  readonly type = 'multistate-value' as const
   readonly category = NodeCategory.BACNET
   readonly label: string
   readonly direction = NodeDirection.BIDIRECTIONAL
@@ -32,9 +33,12 @@ export class AnalogValueNode implements BacnetInputOutput {
     this.objectId = config.objectId
     this.supervisorId = config.supervisorId
     this.controllerId = config.controllerId
-    this.discoveredProperties = Object.freeze({
-      ...config.discoveredProperties,
-    })
+
+    // Use utility to prepare properties with 1-based indexing
+    this.discoveredProperties = Object.freeze(
+      prepareMultistateProperties(config.discoveredProperties)
+    )
+
     this.name = config.name
     this.position = config.position
 

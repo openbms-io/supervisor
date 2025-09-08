@@ -11,7 +11,6 @@ import {
   BackgroundVariant,
   ReactFlowInstance,
   Node,
-  Edge,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 

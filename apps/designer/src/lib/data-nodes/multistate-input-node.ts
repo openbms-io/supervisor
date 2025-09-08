@@ -7,11 +7,12 @@ import {
   generateInstanceId,
 } from '@/types/infrastructure'
 import { BacnetProperties } from '@/types/bacnet-properties'
+import { prepareMultistateProperties } from './bacnet-utils'
 
-export class AnalogValueNode implements BacnetInputOutput {
+export class MultistateInputNode implements BacnetInputOutput {
   // From BacnetConfig
   readonly pointId: string
-  readonly objectType = 'analog-value' as const
+  readonly objectType = 'multistate-input' as const
   readonly objectId: number
   readonly supervisorId: string
   readonly controllerId: string
@@ -21,10 +22,10 @@ export class AnalogValueNode implements BacnetInputOutput {
 
   // From DataNode
   readonly id: string
-  readonly type = 'analog-value' as const
+  readonly type = 'multistate-input' as const
   readonly category = NodeCategory.BACNET
   readonly label: string
-  readonly direction = NodeDirection.BIDIRECTIONAL
+  readonly direction = NodeDirection.OUTPUT
 
   constructor(config: BacnetConfig) {
     // Copy all BacnetConfig properties
@@ -32,9 +33,12 @@ export class AnalogValueNode implements BacnetInputOutput {
     this.objectId = config.objectId
     this.supervisorId = config.supervisorId
     this.controllerId = config.controllerId
-    this.discoveredProperties = Object.freeze({
-      ...config.discoveredProperties,
-    })
+
+    // Use utility to prepare properties with 1-based indexing
+    this.discoveredProperties = Object.freeze(
+      prepareMultistateProperties(config.discoveredProperties)
+    )
+
     this.name = config.name
     this.position = config.position
 
@@ -43,9 +47,7 @@ export class AnalogValueNode implements BacnetInputOutput {
     this.label = config.name
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   canConnectWith(target: DataNode): boolean {
-    // Value nodes can connect bidirectionally
-    return true
+    return target.direction !== NodeDirection.OUTPUT
   }
 }

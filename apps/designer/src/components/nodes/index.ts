@@ -1,24 +1,22 @@
-import { BacnetInputNode } from './bacnet-input-node'
-import { BacnetOutputNode } from './bacnet-output-node'
-import { BacnetValueNode } from './bacnet-value-node'
+import { BacnetNodeUI } from './bacnet-node-ui'
 import { CalculationNode } from './calculation-node'
 import { ComparisonNode } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
 
 // Strongly typed node types for React Flow
 export const nodeTypes = {
-  // BACnet nodes
-  'bacnet.analog-input': BacnetInputNode,
-  'bacnet.binary-input': BacnetInputNode,
-  'bacnet.multistate-input': BacnetInputNode,
+  // BACnet nodes - all using unified UI
+  'bacnet.analog-input': BacnetNodeUI,
+  'bacnet.binary-input': BacnetNodeUI,
+  'bacnet.multistate-input': BacnetNodeUI,
 
-  'bacnet.analog-output': BacnetOutputNode,
-  'bacnet.binary-output': BacnetOutputNode,
-  'bacnet.multistate-output': BacnetOutputNode,
+  'bacnet.analog-output': BacnetNodeUI,
+  'bacnet.binary-output': BacnetNodeUI,
+  'bacnet.multistate-output': BacnetNodeUI,
 
-  'bacnet.analog-value': BacnetValueNode,
-  'bacnet.binary-value': BacnetValueNode,
-  'bacnet.multistate-value': BacnetValueNode,
+  'bacnet.analog-value': BacnetNodeUI,
+  'bacnet.binary-value': BacnetNodeUI,
+  'bacnet.multistate-value': BacnetNodeUI,
 
   // Logic nodes
   'logic.calculation': CalculationNode,

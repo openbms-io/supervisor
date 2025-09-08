@@ -141,6 +141,9 @@ export const createTreeUISlice: StateCreator<
               'binary-input',
               'binary-output',
               'binary-value',
+              'multistate-input',
+              'multistate-output',
+              'multistate-value',
             ]
 
             typeOrder.forEach((objectType) => {
@@ -237,8 +240,21 @@ function getPointGroupIcon({
 }
 
 function formatPointValue({ point }: { point: BacnetConfig }): string {
-  const value = point.presentValue
-  const units = point.units ? ` ${point.units}` : ''
+  const value = point.discoveredProperties?.presentValue
+  const units = point.discoveredProperties?.units
+    ? ` ${point.discoveredProperties.units}`
+    : ''
+
+  // Handle multistate objects specially
+  if (point.objectType.includes('multistate') && typeof value === 'number') {
+    const stateText = point.discoveredProperties?.stateText as
+      | string[]
+      | undefined
+    if (stateText && stateText[value]) {
+      return stateText[value]
+    }
+    return `State ${value}`
+  }
 
   if (typeof value === 'boolean') {
     return value ? 'ON' : 'OFF'
@@ -248,5 +264,5 @@ function formatPointValue({ point }: { point: BacnetConfig }): string {
     return `${value.toFixed(1)}${units}`
   }
 
-  return String(value)
+  return value !== undefined ? String(value) : 'N/A'
 }
