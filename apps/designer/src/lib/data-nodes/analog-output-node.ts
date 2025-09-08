@@ -3,6 +3,7 @@ import {
   NodeDirection,
   BacnetConfig,
   BacnetInputOutput,
+  generateInstanceId,
 } from '@/types/infrastructure'
 
 export class AnalogOutputNode implements BacnetInputOutput {
@@ -51,7 +52,7 @@ export class AnalogOutputNode implements BacnetInputOutput {
     this.maxValue = config.maxValue
 
     // DataNode properties
-    this.id = config.pointId
+    this.id = generateInstanceId() // Generate unique UUID for each instance
     this.label = config.name
   }
 

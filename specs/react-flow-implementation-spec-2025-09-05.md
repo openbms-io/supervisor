@@ -3103,9 +3103,224 @@ This UI-first approach ensures we build a solid, usable interface before adding 
 
 ---
 
-## Phase 7: Supervisor Management (Deferred)
+## Phase 7: BACnet Discovery Implementation & Refinement
 
-### Step 20: Supervisors Tab - Configuration Management
+### Step 20: Real BACnet Discovery Service
+
+**Action**: Replace mock discovery with real IoT Supervisor API integration
+**File**: `/Users/amol/Documents/ai-projects/bms-supervisor-controller/apps/designer/src/services/bacnet-discovery.ts`
+
+**Features**:
+
+- Connect to IoT Supervisor REST API endpoints
+- Device discovery via BACnet Who-Is broadcast
+- Point enumeration with property reads
+- Batch point discovery for performance
+- Network error handling and retries
+- Connection pooling and caching
+
+**API Endpoints**:
+
+```typescript
+// Discovery endpoints
+POST / api / controllers / discover; // Initiate discovery
+GET / api / controllers / { id } / points; // Get discovered points
+POST / api / controllers / { id } / refresh; // Refresh point values
+GET / api / discovery / status; // Discovery progress
+```
+
+**Implementation**:
+
+```typescript
+interface DiscoveryService {
+  discoverController(
+    ipAddress: string,
+    options?: DiscoveryOptions,
+  ): Promise<Controller>;
+  getDiscoveryProgress(taskId: string): Observable<DiscoveryProgress>;
+  cancelDiscovery(taskId: string): Promise<void>;
+  refreshPoints(controllerId: string): Promise<BacnetPoint[]>;
+}
+
+interface DiscoveryOptions {
+  timeout?: number; // Discovery timeout in ms
+  objectTypes?: string[]; // Filter specific object types
+  deviceId?: number; // Target specific device
+  maxPoints?: number; // Limit discovered points
+  useCached?: boolean; // Use cached discovery data
+}
+
+interface DiscoveryProgress {
+  status: "pending" | "discovering" | "reading" | "complete" | "error";
+  phase: string; // Current phase description
+  pointsDiscovered: number;
+  totalPoints?: number;
+  percentComplete: number;
+  estimatedTime?: number; // Seconds remaining
+  errors?: string[];
+}
+```
+
+---
+
+### Step 21: Discovery Progress & Feedback
+
+**Action**: Add visual progress indicators during discovery
+**Files**:
+
+- `/Users/amol/Documents/ai-projects/bms-supervisor-controller/apps/designer/src/components/discovery/discovery-progress.tsx`
+- `/Users/amol/Documents/ai-projects/bms-supervisor-controller/apps/designer/src/components/discovery/discovery-dialog.tsx`
+
+**Features**:
+
+- Linear progress bar with percentage
+- Points discovered counter ("12 of 50 points...")
+- Cancel button with confirmation dialog
+- Estimated time remaining display
+- Discovery phase indicators:
+  - "Connecting to controller..."
+  - "Scanning for devices..."
+  - "Reading point properties..."
+  - "Finalizing discovery..."
+- Error state with retry options
+- Success animation on completion
+
+**UI Components**:
+
+```typescript
+interface DiscoveryProgressProps {
+  controllerId: string
+  onCancel: () => void
+  onRetry: () => void
+}
+
+// Progress states
+<DiscoveryProgress>
+  <ProgressBar value={progress.percentComplete} />
+  <ProgressText>
+    Discovered {progress.pointsDiscovered} points
+    {progress.totalPoints && ` of ${progress.totalPoints}`}
+  </ProgressText>
+  <PhaseIndicator>{progress.phase}</PhaseIndicator>
+  <TimeRemaining seconds={progress.estimatedTime} />
+  <CancelButton onClick={handleCancel} />
+</DiscoveryProgress>
+```
+
+---
+
+### Step 22: Enhanced Point Information Display
+
+**Action**: Add detailed tooltips and point property panels
+**File**: `/Users/amol/Documents/ai-projects/bms-supervisor-controller/apps/designer/src/components/tree/point-tooltip.tsx`
+
+**Features**:
+
+- Hover tooltips with full point details
+- Present value with proper formatting
+- Engineering units display
+- Status flags visualization (in-alarm, fault, overridden, out-of-service)
+- Reliability indicator with color coding
+- Last update timestamp (relative and absolute)
+- Point address format: `Device[123].AI[1]`
+- Priority array status for commandable points
+- COV (Change of Value) subscription status
+- Min/max limits for analog points
+- State text for multi-state points
+
+**Tooltip Content**:
+
+```typescript
+interface PointTooltipContent {
+  // Basic info
+  name: string;
+  description: string;
+  presentValue: any;
+  units?: string;
+
+  // Status
+  reliability: string;
+  statusFlags: {
+    inAlarm: boolean;
+    fault: boolean;
+    overridden: boolean;
+    outOfService: boolean;
+  };
+
+  // Metadata
+  objectType: string;
+  instanceNumber: number;
+  deviceId: number;
+  lastUpdate: Date;
+
+  // Optional
+  priorityArray?: any[];
+  covIncrement?: number;
+  minValue?: number;
+  maxValue?: number;
+  stateText?: string[];
+}
+```
+
+---
+
+### Step 23: Error Handling & Recovery
+
+**Action**: Implement comprehensive error handling for discovery
+**Files**:
+
+- Update `/Users/amol/Documents/ai-projects/bms-supervisor-controller/apps/designer/src/store/slices/infrastructure-slice.ts`
+- `/Users/amol/Documents/ai-projects/bms-supervisor-controller/apps/designer/src/components/notifications/toast-provider.tsx`
+
+**Features**:
+
+- Connection failure detection with specific error messages
+- Configurable timeout handling (default 30s, max 5min)
+- Retry logic with exponential backoff
+- Toast notifications for errors and warnings
+- Inline error messages in tree view
+- Network status indicator in UI
+- Offline mode support with cached data
+- Automatic reconnection attempts
+- Error logging and diagnostics
+
+**Error Types**:
+
+```typescript
+enum DiscoveryError {
+  CONNECTION_REFUSED = "Cannot connect to controller",
+  TIMEOUT = "Discovery timed out",
+  INVALID_RESPONSE = "Invalid BACnet response",
+  NETWORK_ERROR = "Network communication error",
+  PERMISSION_DENIED = "Access denied to controller",
+  DEVICE_OFFLINE = "Controller is offline",
+  TOO_MANY_POINTS = "Point limit exceeded",
+  CANCELLED = "Discovery cancelled by user",
+}
+
+interface ErrorRecovery {
+  error: DiscoveryError;
+  retryCount: number;
+  maxRetries: number;
+  nextRetryIn: number; // seconds
+  canRetry: boolean;
+  suggestion: string; // User-friendly suggestion
+}
+```
+
+**Recovery Strategies**:
+
+- Automatic retry for transient errors (network, timeout)
+- Manual retry for configuration errors
+- Fallback to cached data when available
+- Partial discovery results on failure
+- Clear error reporting with actionable suggestions
+
+---
+
+## Phase 8: Supervisor Management (Deferred)
+
+### Step 24: Supervisors Tab - Configuration Management
 
 **Action**: Implement the Supervisors tab for supervisor management
 **File**: `/Users/amol/Documents/ai-projects/bms-supervisor-controller/apps/designer/src/components/sidebar/supervisors-tab.tsx`
