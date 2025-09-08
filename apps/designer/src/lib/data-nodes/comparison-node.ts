@@ -5,23 +5,22 @@ import {
   generateInstanceId,
 } from '@/types/infrastructure'
 
-export type CalculationOperation =
-  | 'add'
-  | 'subtract'
-  | 'multiply'
-  | 'divide'
-  | 'average'
+export type ComparisonOperation =
+  | 'equals'
+  | 'greater'
+  | 'less'
+  | 'greater-equal'
+  | 'less-equal'
 
-// Example logic node for calculations
-export class CalculationNode implements DataNode {
+export class ComparisonNode implements DataNode {
   readonly id: string
-  readonly type = 'calculation' as const
+  readonly type = 'comparison' as const
   readonly category = NodeCategory.LOGIC
   readonly label: string
   readonly direction = NodeDirection.BIDIRECTIONAL
-  readonly metadata: { operation: CalculationOperation }
+  readonly metadata: { operation: ComparisonOperation }
 
-  constructor(label: string, operation: CalculationOperation) {
+  constructor(label: string, operation: ComparisonOperation) {
     this.id = generateInstanceId()
     this.label = label
     this.metadata = { operation }
@@ -29,7 +28,6 @@ export class CalculationNode implements DataNode {
 
   canConnectWith(target: DataNode): boolean {
     // Logic nodes can connect to other logic nodes or outputs
-    // Cannot connect to pure input nodes
     return target.direction !== NodeDirection.OUTPUT
   }
 }

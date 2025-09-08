@@ -1,5 +1,6 @@
 import {
   DataNode,
+  NodeCategory,
   NodeDirection,
   generateInstanceId,
 } from '@/types/infrastructure'
@@ -8,6 +9,7 @@ import {
 export class WriteSetpointNode implements DataNode {
   readonly id: string
   readonly type = 'write-setpoint' as const
+  readonly category = NodeCategory.COMMAND
   readonly label: string
   readonly direction = NodeDirection.INPUT
   readonly metadata: {

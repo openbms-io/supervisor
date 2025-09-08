@@ -1,15 +1,43 @@
 // External libraries
 import { StateCreator } from 'zustand'
-import { Node, Edge, XYPosition } from '@xyflow/react'
+import {
+  Node,
+  Edge,
+  XYPosition,
+  NodeChange,
+  EdgeChange,
+  applyNodeChanges,
+  applyEdgeChanges,
+} from '@xyflow/react'
 
 // Internal absolute imports
-import { DataGraph } from '@/lib/data-graph/data-graph'
+import { DataGraph, NodeDataRecord } from '@/lib/data-graph/data-graph'
 import { BacnetConfig, DataNode } from '@/types/infrastructure'
+import type {
+  CalculationOperation,
+  ComparisonOperation,
+} from '@/lib/data-nodes'
 
 export interface DraggedPoint {
   type: 'bacnet-point'
   config: BacnetConfig
   draggedFrom: 'controllers-tree'
+}
+
+export interface DraggedLogicNode {
+  type: 'logic-node'
+  nodeType: string
+  label: string
+  metadata?: Record<string, unknown>
+  draggedFrom: 'logic-section'
+}
+
+export interface DraggedCommandNode {
+  type: 'command-node'
+  nodeType: string
+  label: string
+  metadata?: Record<string, unknown>
+  draggedFrom: 'command-section'
 }
 
 export interface ValidationResult {
@@ -18,13 +46,33 @@ export interface ValidationResult {
 }
 
 export interface FlowSlice {
-  // Single source of truth - DataGraph manages everything
+  // React Flow state
+  nodes: Node[]
+  edges: Edge[]
+
+  // DataGraph for business logic
   dataGraph: DataGraph
+
+  // React Flow change handlers
+  onNodesChange: (changes: NodeChange[]) => void
+  onEdgesChange: (changes: EdgeChange[]) => void
 
   // Actions
   addNodeFromInfrastructure: (
     draggedPoint: DraggedPoint,
     position: XYPosition
+  ) => void
+  addLogicNode: (
+    nodeType: string,
+    label: string,
+    position: XYPosition,
+    metadata?: Record<string, unknown>
+  ) => void
+  addCommandNode: (
+    nodeType: string,
+    label: string,
+    position: XYPosition,
+    metadata?: Record<string, unknown>
   ) => void
   removeNode: (nodeId: string) => void
   connectNodes: (sourceId: string, targetId: string) => boolean
@@ -53,7 +101,36 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   set,
   get
 ) => ({
+  // Initialize state
+  nodes: [],
+  edges: [],
   dataGraph: new DataGraph(),
+
+  // React Flow change handlers
+  onNodesChange: (changes: NodeChange[]) => {
+    const currentNodes = get().nodes
+    const updatedNodes = applyNodeChanges(
+      changes,
+      currentNodes
+    ) as Node<NodeDataRecord>[]
+
+    // Update DataGraph with new nodes
+    get().dataGraph.setNodesArray(updatedNodes)
+
+    // Update React Flow state
+    set({ nodes: updatedNodes })
+  },
+
+  onEdgesChange: (changes: EdgeChange[]) => {
+    const currentEdges = get().edges
+    const updatedEdges = applyEdgeChanges(changes, currentEdges)
+
+    // Update DataGraph with new edges
+    get().dataGraph.setEdgesArray(updatedEdges)
+
+    // Update React Flow state
+    set({ edges: updatedEdges })
+  },
 
   addNodeFromInfrastructure: async (draggedPoint, position) => {
     const { config } = draggedPoint
@@ -64,34 +141,93 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
     // Add to graph (single source of truth)
     get().dataGraph.addNode(dataNode, position)
 
-    // Trigger re-render
-    set((state) => ({ ...state }))
+    // Update React Flow state
+    set({
+      nodes: get().dataGraph.getNodesArray(),
+      edges: get().dataGraph.getEdgesArray(),
+    })
+  },
+
+  addLogicNode: async (nodeType, label, position, metadata) => {
+    const { default: factory } = await import('@/lib/data-nodes/factory')
+    let dataNode: DataNode
+
+    if (nodeType === 'calculation') {
+      dataNode = factory.createCalculationNode({
+        label,
+        operation: (metadata?.operation as CalculationOperation) || 'add',
+      })
+    } else if (nodeType === 'comparison') {
+      dataNode = factory.createComparisonNode({
+        label,
+        operation: (metadata?.operation as ComparisonOperation) || 'equals',
+      })
+    } else {
+      console.warn('Unknown logic node type:', nodeType)
+      return
+    }
+
+    get().dataGraph.addNode(dataNode, position)
+
+    // Update React Flow state
+    set({
+      nodes: get().dataGraph.getNodesArray(),
+      edges: get().dataGraph.getEdgesArray(),
+    })
+  },
+
+  addCommandNode: async (nodeType, label, position, metadata) => {
+    const { default: factory } = await import('@/lib/data-nodes/factory')
+
+    if (nodeType === 'write-setpoint') {
+      const dataNode = factory.createWriteSetpointNode({
+        label,
+        targetPointId: metadata?.targetPointId as string,
+        propertyName: metadata?.propertyName as string,
+      })
+      get().dataGraph.addNode(dataNode, position)
+
+      // Update React Flow state
+      set({
+        nodes: get().dataGraph.getNodesArray(),
+        edges: get().dataGraph.getEdgesArray(),
+      })
+    }
   },
 
   removeNode: (nodeId) => {
     get().dataGraph.removeNode(nodeId)
-    // Trigger re-render
-    set((state) => ({ ...state }))
+    // Update React Flow state
+    set({
+      nodes: get().dataGraph.getNodesArray(),
+      edges: get().dataGraph.getEdgesArray(),
+    })
   },
 
   connectNodes: (sourceId, targetId) => {
     const success = get().dataGraph.addConnection(sourceId, targetId)
     if (success) {
-      // Trigger re-render
-      set((state) => ({ ...state }))
+      // Update React Flow state
+      set({
+        nodes: get().dataGraph.getNodesArray(),
+        edges: get().dataGraph.getEdgesArray(),
+      })
     }
     return success
   },
 
   updateNodePosition: (nodeId, position) => {
     get().dataGraph.updateNodePosition(nodeId, position)
-    // Trigger re-render
-    set((state) => ({ ...state }))
+    // Update React Flow state
+    set({
+      nodes: get().dataGraph.getNodesArray(),
+      edges: get().dataGraph.getEdgesArray(),
+    })
   },
 
   // Delegated queries
-  getNodes: () => get().dataGraph.getReactFlowNodes(),
-  getEdges: () => get().dataGraph.getReactFlowEdges(),
+  getNodes: () => get().dataGraph.getNodesArray(),
+  getEdges: () => get().dataGraph.getEdgesArray(),
   validateConnection: (sourceId, targetId) =>
     get().dataGraph.validateConnection(sourceId, targetId),
   getExecutionOrder: () => get().dataGraph.getExecutionOrderDFS(), // DFS execution

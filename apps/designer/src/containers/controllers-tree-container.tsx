@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { LogicNodesSection } from '@/components/sidebar/logic-nodes-section'
+import { CommandNodesSection } from '@/components/sidebar/command-nodes-section'
 
 export function ControllersTreeContainer() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -129,6 +131,9 @@ export function ControllersTreeContainer() {
         onDragStart={handleDragStart}
         className="flex-1"
       />
+
+      <LogicNodesSection />
+      <CommandNodesSection />
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>

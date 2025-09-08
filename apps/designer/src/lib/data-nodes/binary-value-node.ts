@@ -1,15 +1,15 @@
 import {
+  DataNode,
   NodeCategory,
   NodeDirection,
-  DataNode,
   BacnetConfig,
   BacnetInputOutput,
 } from '@/types/infrastructure'
 
-export class AnalogInputNode implements BacnetInputOutput {
+export class BinaryValueNode implements BacnetInputOutput {
   // From BacnetConfig
   readonly pointId: string
-  readonly objectType = 'analog-input' as const
+  readonly objectType = 'binary-value' as const
   readonly objectId: number
   readonly supervisorId: string
   readonly controllerId: string
@@ -30,10 +30,10 @@ export class AnalogInputNode implements BacnetInputOutput {
 
   // From DataNode
   readonly id: string
-  readonly type = 'analog-input' as const
+  readonly type = 'binary-value' as const
   readonly category = NodeCategory.BACNET
   readonly label: string
-  readonly direction = NodeDirection.OUTPUT
+  readonly direction = NodeDirection.BIDIRECTIONAL
 
   constructor(config: BacnetConfig) {
     // Copy all BacnetConfig properties
@@ -56,7 +56,9 @@ export class AnalogInputNode implements BacnetInputOutput {
     this.label = config.name
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   canConnectWith(target: DataNode): boolean {
-    return target.direction !== NodeDirection.OUTPUT
+    // Value nodes can connect bidirectionally
+    return true
   }
 }

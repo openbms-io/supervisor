@@ -1,7 +1,16 @@
-import { DataNode, BacnetConfig } from '@/types/infrastructure'
+import {
+  DataNode,
+  BacnetConfig,
+  BacnetInputOutput,
+} from '@/types/infrastructure'
 import { AnalogInputNode } from './analog-input-node'
 import { AnalogOutputNode } from './analog-output-node'
+import { AnalogValueNode } from './analog-value-node'
+import { BinaryInputNode } from './binary-input-node'
+import { BinaryOutputNode } from './binary-output-node'
+import { BinaryValueNode } from './binary-value-node'
 import { CalculationNode, CalculationOperation } from './calculation-node'
+import { ComparisonNode, ComparisonOperation } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
 
 // Simple factory pattern for creating nodes
@@ -11,23 +20,25 @@ class DataNodeFactory {
     config,
   }: {
     config: BacnetConfig
-  }): DataNode {
+  }): BacnetInputOutput {
     const { objectType } = config
 
     // Create appropriate node based on object type
     switch (objectType) {
       case 'analog-input':
+        return new AnalogInputNode(config)
       case 'binary-input':
-        return new AnalogInputNode(config)
-
+        return new BinaryInputNode(config)
       case 'analog-output':
-      case 'binary-output':
         return new AnalogOutputNode(config)
-
+      case 'binary-output':
+        return new BinaryOutputNode(config)
+      case 'analog-value':
+        return new AnalogValueNode(config)
+      case 'binary-value':
+        return new BinaryValueNode(config)
       default:
-        // Values can be inputs (sensors) or outputs (setpoints)
-        // This would be determined by context in real app
-        return new AnalogInputNode(config)
+        throw new Error(`Unsupported BACnet object type: ${objectType}`)
     }
   }
 
@@ -42,15 +53,28 @@ class DataNodeFactory {
     return new CalculationNode(label, operation)
   }
 
+  // Create comparison node
+  createComparisonNode({
+    label,
+    operation,
+  }: {
+    label: string
+    operation: ComparisonOperation
+  }): DataNode {
+    return new ComparisonNode(label, operation)
+  }
+
   // Create command node
   createWriteSetpointNode({
     label,
     targetPointId,
+    propertyName,
   }: {
     label: string
     targetPointId?: string
+    propertyName?: string
   }): DataNode {
-    return new WriteSetpointNode(label, targetPointId, 'presentValue')
+    return new WriteSetpointNode(label, targetPointId, propertyName)
   }
 }
 

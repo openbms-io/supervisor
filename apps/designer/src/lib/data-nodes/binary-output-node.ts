@@ -1,15 +1,14 @@
 import {
   NodeCategory,
   NodeDirection,
-  DataNode,
   BacnetConfig,
   BacnetInputOutput,
 } from '@/types/infrastructure'
 
-export class AnalogInputNode implements BacnetInputOutput {
+export class BinaryOutputNode implements BacnetInputOutput {
   // From BacnetConfig
   readonly pointId: string
-  readonly objectType = 'analog-input' as const
+  readonly objectType = 'binary-output' as const
   readonly objectId: number
   readonly supervisorId: string
   readonly controllerId: string
@@ -30,10 +29,10 @@ export class AnalogInputNode implements BacnetInputOutput {
 
   // From DataNode
   readonly id: string
-  readonly type = 'analog-input' as const
+  readonly type = 'binary-output' as const
   readonly category = NodeCategory.BACNET
   readonly label: string
-  readonly direction = NodeDirection.OUTPUT
+  readonly direction = NodeDirection.INPUT
 
   constructor(config: BacnetConfig) {
     // Copy all BacnetConfig properties
@@ -56,7 +55,8 @@ export class AnalogInputNode implements BacnetInputOutput {
     this.label = config.name
   }
 
-  canConnectWith(target: DataNode): boolean {
-    return target.direction !== NodeDirection.OUTPUT
+  canConnectWith(): boolean {
+    // Output nodes are terminal - no outgoing connections
+    return false
   }
 }

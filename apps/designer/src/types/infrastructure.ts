@@ -3,6 +3,13 @@ import { v4 as uuidv4, v5 as uuidv5 } from 'uuid'
 // BACnet namespace for deterministic UUIDs
 export const BACNET_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
 
+// Node categories
+export enum NodeCategory {
+  BACNET = 'bacnet',
+  LOGIC = 'logic',
+  COMMAND = 'command',
+}
+
 // BACnet object types (bacpypes3/BAC0 naming)
 export type BacnetObjectType =
   | 'analog-input'
@@ -35,6 +42,7 @@ export enum NodeDirection {
 export interface DataNode {
   readonly id: string // UUID v4 - instance ID
   readonly type: NodeTypeString
+  readonly category: NodeCategory
   readonly label: string // Display label
   readonly direction: NodeDirection
   readonly metadata?: unknown
@@ -72,9 +80,7 @@ export interface BacnetConfig {
 }
 
 // Composition pattern - merges BacnetConfig with DataNode behavior
-export interface BacnetInputOutput
-  extends BacnetConfig,
-    Omit<DataNode, 'label'> {
+export interface BacnetInputOutput extends BacnetConfig, DataNode {
   // label comes from BacnetConfig, rest from DataNode
 }
 

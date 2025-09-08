@@ -6,93 +6,123 @@ export type NodeDataRecord = DataNode & Record<string, unknown>
 
 /**
  * DataGraph manages the execution logic using DFS traversal.
- * It is the single source of truth for canvas nodes and edges.
+ * It maintains only two maps as the source of truth, deriving everything else on-demand.
  */
 export class DataGraph {
-  private adjacencyList: Map<string, Set<string>>
-  private reverseAdjacencyList: Map<string, Set<string>>
-  private nodeIndex: Map<string, DataNode>
-
-  // React Flow state (single source of truth)
-  private reactFlowNodes: Map<string, Node<NodeDataRecord>>
-  private reactFlowEdges: Map<string, Edge>
-
-  // Stable array references - never recreated, only mutated
-  private nodesArray: Node<NodeDataRecord>[] = []
-  private edgesArray: Edge[] = []
+  // Single source of truth - only two maps!
+  private nodesMap: Map<string, Node<NodeDataRecord>>
+  private edgesMap: Map<string, Edge>
 
   constructor() {
-    this.adjacencyList = new Map()
-    this.reverseAdjacencyList = new Map()
-    this.nodeIndex = new Map()
-    this.reactFlowNodes = new Map()
-    this.reactFlowEdges = new Map()
+    this.nodesMap = new Map()
+    this.edgesMap = new Map()
   }
 
-  // Sync arrays with Maps - mutate in place for stable references
-  private syncArrays(): void {
-    // Clear and repopulate nodes array
-    this.nodesArray.length = 0
-    this.nodesArray.push(...this.reactFlowNodes.values())
+  getNodesArray(): Node<NodeDataRecord>[] {
+    return Array.from(this.nodesMap.values())
+  }
 
-    // Clear and repopulate edges array
-    this.edgesArray.length = 0
-    this.edgesArray.push(...this.reactFlowEdges.values())
+  getEdgesArray(): Edge[] {
+    return Array.from(this.edgesMap.values())
+  }
+
+  // Setter for React Flow's applyNodeChanges
+  setNodesArray(nodes: Node<NodeDataRecord>[]): void {
+    this.nodesMap.clear()
+    nodes.forEach((node) => {
+      this.nodesMap.set(node.id, node)
+    })
+  }
+
+  // Setter for React Flow's applyEdgeChanges
+  setEdgesArray(edges: Edge[]): void {
+    this.edgesMap.clear()
+    edges.forEach((edge) => {
+      this.edgesMap.set(edge.id, edge)
+    })
+  }
+
+  // Build adjacency list on-demand from edges
+  private buildAdjacencyList(): Map<string, Set<string>> {
+    const adjacencyList = new Map<string, Set<string>>()
+
+    // Initialize all nodes
+    for (const nodeId of this.nodesMap.keys()) {
+      adjacencyList.set(nodeId, new Set())
+    }
+
+    // Build from edges
+    for (const edge of this.edgesMap.values()) {
+      const sourceSet = adjacencyList.get(edge.source)
+      if (sourceSet) {
+        sourceSet.add(edge.target)
+      }
+    }
+
+    return adjacencyList
+  }
+
+  // Build reverse adjacency list on-demand from edges
+  private buildReverseAdjacencyList(): Map<string, Set<string>> {
+    const reverseAdjacencyList = new Map<string, Set<string>>()
+
+    // Initialize all nodes
+    for (const nodeId of this.nodesMap.keys()) {
+      reverseAdjacencyList.set(nodeId, new Set())
+    }
+
+    // Build from edges
+    for (const edge of this.edgesMap.values()) {
+      const targetSet = reverseAdjacencyList.get(edge.target)
+      if (targetSet) {
+        targetSet.add(edge.source)
+      }
+    }
+
+    return reverseAdjacencyList
   }
 
   addNode(node: DataNode, position: { x: number; y: number }): void {
-    // Add to graph
-    this.nodeIndex.set(node.id, node)
-    if (!this.adjacencyList.has(node.id)) {
-      this.adjacencyList.set(node.id, new Set())
-    }
-    if (!this.reverseAdjacencyList.has(node.id)) {
-      this.reverseAdjacencyList.set(node.id, new Set())
-    }
+    // For nodes without category, use type as-is. For custom nodes, prepend category
+    const nodeType = !node.category
+      ? node.type
+      : `${node.category}.${node.type}`
 
-    // Add React Flow node - spread DataNode to satisfy Record<string, unknown>
     const reactFlowNode: Node<NodeDataRecord> = {
       id: node.id,
-      type: `bacnet.${node.type}`,
+      type: nodeType,
       position,
-      data: { ...node },
+      data: node as NodeDataRecord, // Store the entire DataNode
     }
-    this.reactFlowNodes.set(node.id, reactFlowNode)
-    this.syncArrays() // Update stable arrays
+    this.nodesMap.set(node.id, reactFlowNode)
   }
 
   removeNode(nodeId: string): void {
-    // Remove all connections
-    this.adjacencyList.get(nodeId)?.forEach((targetId) => {
-      this.reverseAdjacencyList.get(targetId)?.delete(nodeId)
-      this.reactFlowEdges.delete(`${nodeId}-to-${targetId}`)
-    })
-
-    this.reverseAdjacencyList.get(nodeId)?.forEach((sourceId) => {
-      this.adjacencyList.get(sourceId)?.delete(nodeId)
-      this.reactFlowEdges.delete(`${sourceId}-to-${nodeId}`)
-    })
+    // Remove all edges connected to this node
+    const edgesToRemove: string[] = []
+    for (const [edgeId, edge] of this.edgesMap) {
+      if (edge.source === nodeId || edge.target === nodeId) {
+        edgesToRemove.push(edgeId)
+      }
+    }
+    edgesToRemove.forEach((id) => this.edgesMap.delete(id))
 
     // Remove node
-    this.nodeIndex.delete(nodeId)
-    this.adjacencyList.delete(nodeId)
-    this.reverseAdjacencyList.delete(nodeId)
-    this.reactFlowNodes.delete(nodeId)
-    this.syncArrays() // Update stable arrays
+    this.nodesMap.delete(nodeId)
   }
 
   addConnection(sourceId: string, targetId: string): boolean {
-    const source = this.nodeIndex.get(sourceId)
-    const target = this.nodeIndex.get(targetId)
+    const sourceNode = this.nodesMap.get(sourceId)
+    const targetNode = this.nodesMap.get(targetId)
 
-    if (!source || !target) return false
+    if (!sourceNode || !targetNode) return false
+
+    // Extract DataNodes from React Flow nodes
+    const source = sourceNode.data as DataNode
+    const target = targetNode.data as DataNode
 
     // Business validation
     if (!source.canConnectWith(target)) return false
-
-    // Add to graph
-    this.adjacencyList.get(sourceId)?.add(targetId)
-    this.reverseAdjacencyList.get(targetId)?.add(sourceId)
 
     // Add React Flow edge
     const edge: Edge = {
@@ -101,39 +131,43 @@ export class DataGraph {
       target: targetId,
       type: 'smoothstep',
     }
-    this.reactFlowEdges.set(edge.id, edge)
-    this.syncArrays() // Update stable arrays
+    this.edgesMap.set(edge.id, edge)
 
     return true
   }
 
   removeConnection(sourceId: string, targetId: string): void {
-    this.adjacencyList.get(sourceId)?.delete(targetId)
-    this.reverseAdjacencyList.get(targetId)?.delete(sourceId)
-    this.reactFlowEdges.delete(`${sourceId}-to-${targetId}`)
-    this.syncArrays() // Update stable arrays
+    this.edgesMap.delete(`${sourceId}-to-${targetId}`)
   }
 
-  // Get React Flow nodes and edges (for rendering) - return stable references
+  // Deprecated - use getNodesArray() and getEdgesArray() instead
   getReactFlowNodes(): Node<NodeDataRecord>[] {
-    return this.nodesArray
+    return this.getNodesArray()
   }
 
   getReactFlowEdges(): Edge[] {
-    return this.edgesArray
+    return this.getEdgesArray()
   }
 
   // DFS execution order
   getExecutionOrderDFS(): string[] {
+    const adjacencyList = this.buildAdjacencyList()
+    const reverseAdjacencyList = this.buildReverseAdjacencyList()
     const visited = new Set<string>()
     const executionOrder: string[] = []
 
-    // Start DFS from source nodes (no incoming edges)
-    const sourceNodes = this.getSourceNodes()
+    // Find source nodes (no incoming edges)
+    const sourceNodes: string[] = []
+    for (const [nodeId, incoming] of reverseAdjacencyList) {
+      if (incoming.size === 0) {
+        sourceNodes.push(nodeId)
+      }
+    }
 
+    // DFS from each source node
     for (const nodeId of sourceNodes) {
       if (!visited.has(nodeId)) {
-        this.dfsTraversal(nodeId, visited, executionOrder)
+        this.dfsTraversal(nodeId, visited, executionOrder, adjacencyList)
       }
     }
 
@@ -143,7 +177,8 @@ export class DataGraph {
   private dfsTraversal(
     nodeId: string,
     visited: Set<string>,
-    executionOrder: string[]
+    executionOrder: string[],
+    adjacencyList: Map<string, Set<string>>
   ): void {
     visited.add(nodeId)
 
@@ -151,56 +186,52 @@ export class DataGraph {
     executionOrder.push(nodeId)
 
     // Visit all neighbors (DFS)
-    const neighbors = this.adjacencyList.get(nodeId) || new Set()
+    const neighbors = adjacencyList.get(nodeId) || new Set()
     for (const neighborId of neighbors) {
       if (!visited.has(neighborId)) {
-        this.dfsTraversal(neighborId, visited, executionOrder)
+        this.dfsTraversal(neighborId, visited, executionOrder, adjacencyList)
       }
     }
-  }
-
-  private getSourceNodes(): string[] {
-    const sources: string[] = []
-    for (const [nodeId, incoming] of this.reverseAdjacencyList) {
-      if (incoming.size === 0) {
-        sources.push(nodeId)
-      }
-    }
-    return sources
   }
 
   validateConnection(sourceId: string, targetId: string): boolean {
-    const source = this.nodeIndex.get(sourceId)
-    const target = this.nodeIndex.get(targetId)
-    if (!source || !target) return false
+    const sourceNode = this.nodesMap.get(sourceId)
+    const targetNode = this.nodesMap.get(targetId)
+    if (!sourceNode || !targetNode) return false
+
+    const source = sourceNode.data as DataNode
+    const target = targetNode.data as DataNode
     return source.canConnectWith(target)
   }
 
   getAllNodes(): DataNode[] {
-    return Array.from(this.nodeIndex.values())
+    return Array.from(this.nodesMap.values()).map(
+      (node) => node.data as DataNode
+    )
   }
 
   getNode(nodeId: string): DataNode | undefined {
-    return this.nodeIndex.get(nodeId)
+    const node = this.nodesMap.get(nodeId)
+    return node ? (node.data as DataNode) : undefined
   }
 
   updateNodePosition(nodeId: string, position: { x: number; y: number }): void {
-    const node = this.reactFlowNodes.get(nodeId)
+    const node = this.nodesMap.get(nodeId)
     if (node) {
       node.position = position
-      this.reactFlowNodes.set(nodeId, node)
-      this.syncArrays() // Update stable arrays
+      this.nodesMap.set(nodeId, node)
     }
   }
 
   // Check if graph has cycles
   hasCycles(): boolean {
+    const adjacencyList = this.buildAdjacencyList()
     const visited = new Set<string>()
     const recursionStack = new Set<string>()
 
-    for (const nodeId of this.nodeIndex.keys()) {
+    for (const nodeId of this.nodesMap.keys()) {
       if (!visited.has(nodeId)) {
-        if (this.hasCyclesDFS(nodeId, visited, recursionStack)) {
+        if (this.hasCyclesDFS(nodeId, visited, recursionStack, adjacencyList)) {
           return true
         }
       }
@@ -212,15 +243,18 @@ export class DataGraph {
   private hasCyclesDFS(
     nodeId: string,
     visited: Set<string>,
-    recursionStack: Set<string>
+    recursionStack: Set<string>,
+    adjacencyList: Map<string, Set<string>>
   ): boolean {
     visited.add(nodeId)
     recursionStack.add(nodeId)
 
-    const neighbors = this.adjacencyList.get(nodeId) || new Set()
+    const neighbors = adjacencyList.get(nodeId) || new Set()
     for (const neighborId of neighbors) {
       if (!visited.has(neighborId)) {
-        if (this.hasCyclesDFS(neighborId, visited, recursionStack)) {
+        if (
+          this.hasCyclesDFS(neighborId, visited, recursionStack, adjacencyList)
+        ) {
           return true
         }
       } else if (recursionStack.has(neighborId)) {
@@ -234,17 +268,19 @@ export class DataGraph {
 
   // Get upstream nodes (nodes that feed into this node)
   getUpstreamNodes(nodeId: string): DataNode[] {
-    const sourceIds = this.reverseAdjacencyList.get(nodeId) || new Set()
+    const reverseAdjacencyList = this.buildReverseAdjacencyList()
+    const sourceIds = reverseAdjacencyList.get(nodeId) || new Set()
     return Array.from(sourceIds)
-      .map((id) => this.nodeIndex.get(id))
+      .map((id) => this.getNode(id))
       .filter((node): node is DataNode => node !== undefined)
   }
 
   // Get downstream nodes (nodes that this node feeds into)
   getDownstreamNodes(nodeId: string): DataNode[] {
-    const targetIds = this.adjacencyList.get(nodeId) || new Set()
+    const adjacencyList = this.buildAdjacencyList()
+    const targetIds = adjacencyList.get(nodeId) || new Set()
     return Array.from(targetIds)
-      .map((id) => this.nodeIndex.get(id))
+      .map((id) => this.getNode(id))
       .filter((node): node is DataNode => node !== undefined)
   }
 }

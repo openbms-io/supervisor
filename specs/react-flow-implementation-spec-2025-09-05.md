@@ -2336,7 +2336,7 @@ function createDataNodeFromConfig(nodeConfig: any): DataNode {
 
 ---
 
-## Phase 1: Application Shell & BMS Infrastructure UI
+## Phase 1: Application Shell & BMS Infrastructure UI [Done]
 
 ### Step 1: Install Dependencies
 
