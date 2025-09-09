@@ -3,39 +3,21 @@
 import { memo } from 'react'
 import { Handle, Position, NodeProps } from '@xyflow/react'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Calculator } from 'lucide-react'
-const operationIcons = {
-  add: '+',
-  subtract: '-',
-  multiply: '×',
-  divide: '÷',
-  average: 'AVG',
-}
-
 interface CalculationData {
   label: string
   metadata?: {
-    operation?: keyof typeof operationIcons
+    operation?: string
   }
 }
 
 export const CalculationNode = memo(({ data }: NodeProps) => {
-  const { label, metadata } = data as unknown as CalculationData
-  const operation = metadata?.operation || 'add'
+  const { label } = data as unknown as CalculationData
 
   return (
     <Card className="min-w-[160px] border-2 border-blue-500">
       <div className="p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <Calculator className="w-4 h-4 text-blue-500" />
+        <div className="text-center">
           <span className="text-sm font-medium">{label}</span>
-        </div>
-
-        <div className="flex items-center justify-center">
-          <Badge variant="secondary" className="text-lg font-mono">
-            {operationIcons[operation]}
-          </Badge>
         </div>
       </div>
 
