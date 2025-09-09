@@ -1,5 +1,7 @@
 import {
   DataNode,
+  LogicNode,
+  ComputeValue,
   NodeCategory,
   NodeDirection,
   generateInstanceId,
@@ -13,13 +15,18 @@ export interface ConstantNodeMetadata {
   valueType: ValueType
 }
 
-export class ConstantNode implements DataNode {
+export class ConstantNode implements LogicNode {
   readonly id: string
   readonly type = 'constant' as const
   readonly category = NodeCategory.LOGIC
   readonly label: string
   readonly direction = NodeDirection.OUTPUT // Constants only output values
   readonly metadata: ConstantNodeMetadata
+
+  // LogicNode interface fields
+  inputValues: ComputeValue[] = [] // Constants have no inputs
+  computedValue?: ComputeValue
+  lastComputed?: Date
 
   constructor(
     label: string,
@@ -29,6 +36,12 @@ export class ConstantNode implements DataNode {
     this.id = generateInstanceId()
     this.label = label
     this.metadata = { value, valueType }
+
+    // Initialize computedValue if the value is a valid ComputeValue
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      this.computedValue = value
+      this.lastComputed = new Date()
+    }
   }
 
   canConnectWith(target: DataNode): boolean {
@@ -42,22 +55,41 @@ export class ConstantNode implements DataNode {
   }
 
   setValue(value: number | boolean | string): void {
-    this.metadata.value = value
+    // Create new metadata object to avoid mutation
+    ;(this as any).metadata = { ...this.metadata, value }
+
+    // Update computedValue if it's a valid ComputeValue
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      this.computedValue = value
+      this.lastComputed = new Date()
+    } else {
+      this.computedValue = undefined
+    }
   }
 
   setValueType(valueType: ValueType): void {
-    this.metadata.valueType = valueType
     // Reset value to appropriate default
+    let newValue: number | boolean | string
     switch (valueType) {
       case 'number':
-        this.metadata.value = 0
+        newValue = 0
         break
       case 'boolean':
-        this.metadata.value = false
+        newValue = false
         break
       case 'string':
-        this.metadata.value = ''
+        newValue = ''
         break
+    }
+    // Create new metadata object to avoid mutation
+    ;(this as any).metadata = { valueType, value: newValue }
+
+    // Update computedValue if it's a valid ComputeValue
+    if (typeof newValue === 'number' || typeof newValue === 'boolean') {
+      this.computedValue = newValue
+      this.lastComputed = new Date()
+    } else {
+      this.computedValue = undefined
     }
   }
 }

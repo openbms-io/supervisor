@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useState, useEffect } from 'react'
 import { Handle, Position, NodeProps } from '@xyflow/react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +29,7 @@ export const ConstantNodeUI = memo(({ id }: NodeProps<ConstantData>) => {
   const updateNode = useFlowStore((state) => state.updateNode)
 
   // Subscribe to specific values separately to avoid infinite loops
-  const value = useFlowStore((state) => {
+  const storeValue = useFlowStore((state) => {
     const node = state.nodes.find((n) => n.id === id)
     const metadata = (node?.data as { metadata?: ConstantNodeMetadata })
       ?.metadata
@@ -48,6 +48,14 @@ export const ConstantNodeUI = memo(({ id }: NodeProps<ConstantData>) => {
     return (node?.data as { label?: string })?.label ?? 'Constant'
   })
 
+  // Local state for immediate UI feedback
+  const [localValue, setLocalValue] = useState<string>(String(storeValue))
+
+  // Update local value when store value changes (e.g., from undo/redo or external updates)
+  useEffect(() => {
+    setLocalValue(String(storeValue))
+  }, [storeValue])
+
   const handleTypeChange = useCallback(
     (newType: ValueType) => {
       updateNode({
@@ -59,6 +67,7 @@ export const ConstantNodeUI = memo(({ id }: NodeProps<ConstantData>) => {
     [id, updateNode]
   )
 
+  // Update value immediately without executing graph
   const handleValueChange = useCallback(
     (newValue: number | boolean | string) => {
       updateNode({
@@ -76,8 +85,15 @@ export const ConstantNodeUI = memo(({ id }: NodeProps<ConstantData>) => {
         return (
           <Input
             type="number"
-            value={value as number}
-            onChange={(e) => handleValueChange(parseFloat(e.target.value) || 0)}
+            value={localValue}
+            onChange={(e) => {
+              const value = e.target.value
+              setLocalValue(value)
+              const numValue = parseFloat(value)
+              if (!isNaN(numValue)) {
+                handleValueChange(numValue)
+              }
+            }}
             className="h-8 text-center"
           />
         )
@@ -86,8 +102,10 @@ export const ConstantNodeUI = memo(({ id }: NodeProps<ConstantData>) => {
           <div className="flex items-center justify-center gap-2 py-1">
             <span className="text-xs text-muted-foreground">False</span>
             <Switch
-              checked={value as boolean}
-              onCheckedChange={handleValueChange}
+              checked={storeValue as boolean}
+              onCheckedChange={(checked) => {
+                handleValueChange(checked)
+              }}
             />
             <span className="text-xs text-muted-foreground">True</span>
           </div>
@@ -96,8 +114,12 @@ export const ConstantNodeUI = memo(({ id }: NodeProps<ConstantData>) => {
         return (
           <Input
             type="text"
-            value={value as string}
-            onChange={(e) => handleValueChange(e.target.value)}
+            value={localValue}
+            onChange={(e) => {
+              const value = e.target.value
+              setLocalValue(value)
+              handleValueChange(value)
+            }}
             className="h-8"
             placeholder="Enter text..."
           />

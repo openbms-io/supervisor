@@ -51,6 +51,42 @@ export interface DataNode {
   canConnectWith(other: DataNode): boolean
 }
 
+// Computation value types - what logic nodes can work with
+export type ComputeValue = number | boolean
+
+// Logic node configuration (only for nodes that compute)
+export interface LogicConfig {
+  inputValues: ComputeValue[] // Current input values
+  computedValue?: ComputeValue // Result of computation
+  lastComputed?: Date
+
+  // Only nodes with inputs have execute
+  execute?(inputs: ComputeValue[]): ComputeValue
+}
+
+// LogicNode extends DataNode with computation capabilities
+export interface LogicNode extends DataNode, LogicConfig {}
+
+// Command node configuration
+export interface CommandConfig {
+  receivedValue?: ComputeValue
+  targetPropertyName?: string
+  targetNodeId?: string
+}
+
+export interface CommandNode extends DataNode, CommandConfig {}
+
+// Helper to extract property name from handle ID
+// Handle format: "{propertyName}$input" or "{propertyName}$output"
+// We use $ delimiter because property names may contain dashes (e.g., "min-pres-value")
+export function extractPropertyFromHandle(handleId: string): string | null {
+  const parts = handleId.split('$')
+  if (parts.length === 2 && (parts[1] === 'input' || parts[1] === 'output')) {
+    return parts[0] // Return the property name part
+  }
+  return null // Not a BACnet handle format
+}
+
 // BACnet configuration (pointId here for deterministic business ID)
 export interface BacnetConfig {
   // Identification

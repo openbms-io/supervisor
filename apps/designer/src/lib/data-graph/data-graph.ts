@@ -1,5 +1,14 @@
-import { DataNode } from '@/types/infrastructure'
+import {
+  DataNode,
+  LogicNode,
+  ComputeValue,
+  NodeCategory,
+  BacnetInputOutput,
+  extractPropertyFromHandle,
+} from '@/types/infrastructure'
 import { Node, Edge } from '@xyflow/react'
+import { ConstantNode } from '@/lib/data-nodes/constant-node'
+import { BacnetProperties } from '@/types/bacnet-properties'
 
 // Type for React Flow node data
 export type NodeDataRecord = DataNode & Record<string, unknown>
@@ -306,5 +315,123 @@ export class DataGraph {
     return Array.from(targetIds)
       .map((id) => this.getNode(id))
       .filter((node): node is DataNode => node !== undefined)
+  }
+
+  // Get value from a node output
+  private getNodeOutputValue(
+    node: DataNode,
+    handleId?: string
+  ): ComputeValue | undefined {
+    // Logic nodes return their computed value directly
+    if (node.category === NodeCategory.LOGIC) {
+      const logicNode = node as LogicNode
+      return logicNode.computedValue
+    }
+
+    // BACnet nodes return specific property value
+    if (node.category === NodeCategory.BACNET && handleId) {
+      const bacnetNode = node as BacnetInputOutput
+
+      // Extract property name from handle ID (e.g., "presentValue$output" -> "presentValue")
+      // We need this because a node can have multiple properties, each with input/output handles
+      const propertyName = extractPropertyFromHandle(handleId)
+
+      if (propertyName) {
+        const value =
+          bacnetNode.discoveredProperties[
+            propertyName as keyof BacnetProperties
+          ]
+
+        // Only return numbers and booleans for computation
+        if (typeof value === 'number' || typeof value === 'boolean') {
+          return value
+        }
+      }
+      return undefined
+    }
+
+    // Constant nodes return their value
+    if (node.type === 'constant') {
+      const constantNode = node as ConstantNode
+      const value = constantNode.getValue()
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        return value
+      }
+      return undefined
+    }
+
+    return undefined
+  }
+
+  // Get incoming edges for a node
+  private getIncomingEdges(nodeId: string): Edge[] {
+    const edges: Edge[] = []
+    for (const edge of this.edgesMap.values()) {
+      if (edge.target === nodeId) {
+        edges.push(edge)
+      }
+    }
+    return edges
+  }
+
+  // Get ordered inputs for a node based on its handle configuration
+  private getNodeInputValues(nodeId: string): ComputeValue[] {
+    const node = this.getNode(nodeId)
+    if (!node) return []
+
+    // Define expected input handles by node type
+    const expectedHandles: string[] =
+      node.type === 'calculation'
+        ? ['input1', 'input2']
+        : node.type === 'comparison'
+          ? ['value1', 'value2']
+          : []
+
+    if (expectedHandles.length === 0) return []
+
+    // Get all edges coming into this node
+    const incomingEdges = this.getIncomingEdges(nodeId)
+
+    // Map targetHandle -> value
+    const handleValues = new Map<string, ComputeValue>()
+
+    for (const edge of incomingEdges) {
+      if (!edge.targetHandle) continue
+
+      const sourceNode = this.getNode(edge.source)
+      if (sourceNode) {
+        const value = this.getNodeOutputValue(sourceNode, edge.sourceHandle)
+        if (value !== undefined) {
+          handleValues.set(edge.targetHandle, value)
+        }
+      }
+    }
+
+    // Build ordered array based on expected handles
+    return expectedHandles.map((handle) => handleValues.get(handle) ?? 0)
+  }
+
+  // Execute all nodes in topological order
+  executeGraph(): void {
+    const executionOrder = this.getExecutionOrderDFS()
+
+    for (const nodeId of executionOrder) {
+      const node = this.getNode(nodeId)
+      if (!node) continue
+
+      // Only execute logic nodes that have execute method
+      if (node.category === NodeCategory.LOGIC) {
+        const logicNode = node as LogicNode
+
+        // Skip constants - they don't have execute
+        if (logicNode.execute) {
+          const inputs = this.getNodeInputValues(nodeId)
+          logicNode.execute(inputs)
+
+          // Trigger UI update
+          this.updateNodeData(nodeId)
+        }
+      }
+    }
   }
 }

@@ -11,12 +11,15 @@ import {
   BackgroundVariant,
   ReactFlowInstance,
   Node,
+  Panel,
 } from '@xyflow/react'
+import { PlayIcon } from 'lucide-react'
 import '@xyflow/react/dist/style.css'
 
 // Internal absolute imports
 import { useFlowStore } from '@/store/use-flow-store'
 import { nodeTypes } from '@/components/nodes'
+import { Button } from '@/components/ui/button'
 
 export function FlowCanvas() {
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null)
@@ -36,6 +39,7 @@ export function FlowCanvas() {
   const addLogicNode = useFlowStore((state) => state.addLogicNode)
   const addCommandNode = useFlowStore((state) => state.addCommandNode)
   const removeNode = useFlowStore((state) => state.removeNode)
+  const executeGraph = useFlowStore((state) => state.executeGraph)
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -145,6 +149,17 @@ export function FlowCanvas() {
         deleteKeyCode={['Delete', 'Backspace']}
         className="bg-background"
       >
+        <Panel position="top-center" className="m-2">
+          <Button
+            onClick={executeGraph}
+            size="sm"
+            className="flex items-center gap-2"
+            variant="default"
+          >
+            <PlayIcon className="h-4 w-4" />
+            Run
+          </Button>
+        </Panel>
         <Controls
           className="bg-card border border-border"
           showZoom={true}

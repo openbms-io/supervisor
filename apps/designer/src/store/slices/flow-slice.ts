@@ -100,6 +100,9 @@ export interface FlowSlice {
   getEdges: () => Edge[]
   validateConnection: (sourceId: string, targetId: string) => boolean
   getExecutionOrder: () => string[]
+
+  // Execute graph
+  executeGraph: () => void
 }
 
 // This will be imported from factory once we create it
@@ -240,6 +243,8 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
         nodes: get().dataGraph.getNodesArray(),
         edges: get().dataGraph.getEdgesArray(),
       })
+      // Execute graph after new connection
+      get().executeGraph()
     }
     return success
   },
@@ -271,6 +276,8 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
           set({
             nodes: dataGraph.getNodesArray(),
           })
+
+          // Don't execute graph on every value change - let UI handle it
         }
         break
       }
@@ -288,6 +295,9 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
           set({
             nodes: dataGraph.getNodesArray(),
           })
+
+          // Execute graph after type change
+          get().executeGraph()
         }
         break
       }
@@ -305,4 +315,14 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   validateConnection: (sourceId, targetId) =>
     get().dataGraph.validateConnection(sourceId, targetId),
   getExecutionOrder: () => get().dataGraph.getExecutionOrderDFS(), // DFS execution
+
+  // Execute graph
+  executeGraph: () => {
+    get().dataGraph.executeGraph()
+
+    // Force UI update
+    set({
+      nodes: get().dataGraph.getNodesArray(),
+    })
+  },
 })
