@@ -1,7 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Calculator, GitCompare } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Calculator,
+  GitCompare,
+  Hash,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface DraggableNodeItem {
@@ -105,6 +111,15 @@ export function LogicNodesSection() {
     },
   ]
 
+  const otherNodes: DraggableNodeItem[] = [
+    {
+      type: 'constant',
+      label: 'Constant',
+      icon: <Hash className="w-4 h-4" />,
+      metadata: { value: 0, valueType: 'number' },
+    },
+  ]
+
   return (
     <div className="border-t">
       <Button
@@ -134,6 +149,13 @@ export function LogicNodesSection() {
             Comparisons
           </div>
           {comparisonNodes.map((node) => (
+            <DraggableItem key={`${node.type}-${node.label}`} item={node} />
+          ))}
+
+          <div className="text-xs text-muted-foreground px-3 py-1 mt-2">
+            Others
+          </div>
+          {otherNodes.map((node) => (
             <DraggableItem key={`${node.type}-${node.label}`} item={node} />
           ))}
         </div>

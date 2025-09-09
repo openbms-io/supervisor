@@ -2,6 +2,7 @@ import { BacnetNodeUI } from './bacnet-node-ui'
 import { CalculationNode } from './calculation-node'
 import { ComparisonNode } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
+import { ConstantNodeUI } from './constant-node-ui'
 
 // Strongly typed node types for React Flow
 export const nodeTypes = {
@@ -21,6 +22,7 @@ export const nodeTypes = {
   // Logic nodes
   'logic.calculation': CalculationNode,
   'logic.comparison': ComparisonNode,
+  'logic.constant': ConstantNodeUI,
 
   // Command nodes
   'command.write-setpoint': WriteSetpointNode,

@@ -4,6 +4,11 @@ export { AnalogOutputNode } from './analog-output-node'
 export { CalculationNode, type CalculationOperation } from './calculation-node'
 export { ComparisonNode, type ComparisonOperation } from './comparison-node'
 export { WriteSetpointNode } from './write-setpoint-node'
+export {
+  ConstantNode,
+  type ValueType,
+  type ConstantNodeMetadata,
+} from './constant-node'
 
 // Factory for creating nodes
 export { default as nodeFactory } from './factory'

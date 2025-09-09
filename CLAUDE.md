@@ -285,6 +285,22 @@ cd packages/bms-schemas
 npm run test:integration
 ```
 
+## Zustand gotcha
+
+- Subscribe to specific values in zustand store for nested objects. e.g below:
+
+  const valueType = useFlowStore(state => {
+  onst node = state.nodes.find(n => n.id === id)
+  const nodeData = node?.data
+  return nodeData?.metadata?.valueType ?? nodeData?.valueType ?? 'number' as ValueType
+  })
+
+  const label = useFlowStore(state => {
+  const node = state.nodes.find(n => n.id === id)
+  const nodeData = node?.data
+  return nodeData?.label ?? 'Constant'
+  })
+
 ## Development Mindset
 
 - **Write tests first** - they define the expected behavior

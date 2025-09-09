@@ -15,6 +15,7 @@ import { MultistateValueNode } from './multistate-value-node'
 import { CalculationNode, CalculationOperation } from './calculation-node'
 import { ComparisonNode, ComparisonOperation } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
+import { ConstantNode, ValueType } from './constant-node'
 
 // Simple factory pattern for creating nodes
 class DataNodeFactory {
@@ -84,6 +85,19 @@ class DataNodeFactory {
     propertyName?: string
   }): DataNode {
     return new WriteSetpointNode(label, targetPointId, propertyName)
+  }
+
+  // Create constant node
+  createConstantNode({
+    label,
+    value,
+    valueType,
+  }: {
+    label: string
+    value?: number | boolean | string
+    valueType?: ValueType
+  }): DataNode {
+    return new ConstantNode(label, value ?? 0, valueType ?? 'number')
   }
 }
 

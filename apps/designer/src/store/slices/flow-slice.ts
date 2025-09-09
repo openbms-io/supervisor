@@ -17,6 +17,8 @@ import type {
   CalculationOperation,
   ComparisonOperation,
 } from '@/lib/data-nodes'
+import type { ValueType } from '@/lib/data-nodes/constant-node'
+import { ConstantNode } from '@/lib/data-nodes/constant-node'
 
 export interface DraggedPoint {
   type: 'bacnet-point'
@@ -44,6 +46,15 @@ export interface ValidationResult {
   isValid: boolean
   errors: string[]
 }
+
+// Node update actions
+export type NodeUpdate =
+  | {
+      type: 'UPDATE_CONSTANT_VALUE'
+      nodeId: string
+      value: number | boolean | string
+    }
+  | { type: 'UPDATE_CONSTANT_TYPE'; nodeId: string; valueType: ValueType }
 
 export interface FlowSlice {
   // React Flow state
@@ -77,6 +88,7 @@ export interface FlowSlice {
   removeNode: (nodeId: string) => void
   connectNodes: (sourceId: string, targetId: string) => boolean
   updateNodePosition: (nodeId: string, position: XYPosition) => void
+  updateNode: (update: NodeUpdate) => void
 
   // Queries (delegated to DataGraph)
   getNodes: () => Node[]
@@ -152,7 +164,13 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
     const { default: factory } = await import('@/lib/data-nodes/factory')
     let dataNode: DataNode
 
-    if (nodeType === 'calculation') {
+    if (nodeType === 'constant') {
+      dataNode = factory.createConstantNode({
+        label,
+        value: metadata?.value ?? 0,
+        valueType: (metadata?.valueType as ValueType) ?? 'number',
+      })
+    } else if (nodeType === 'calculation') {
       dataNode = factory.createCalculationNode({
         label,
         operation: (metadata?.operation as CalculationOperation) || 'add',
@@ -223,6 +241,52 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       nodes: get().dataGraph.getNodesArray(),
       edges: get().dataGraph.getEdgesArray(),
     })
+  },
+
+  updateNode: (update) => {
+    const dataGraph = get().dataGraph
+
+    switch (update.type) {
+      case 'UPDATE_CONSTANT_VALUE': {
+        // Get the DataNode from DataGraph
+        const dataNode = dataGraph.getNode(update.nodeId)
+        if (dataNode && dataNode instanceof ConstantNode) {
+          // Update the ConstantNode
+          dataNode.setValue(update.value)
+
+          // Force React Flow to detect the change
+          dataGraph.updateNodeData(update.nodeId)
+
+          // Get fresh nodes array
+          set({
+            nodes: dataGraph.getNodesArray(),
+          })
+        }
+        break
+      }
+
+      case 'UPDATE_CONSTANT_TYPE': {
+        const dataNode = dataGraph.getNode(update.nodeId)
+        if (dataNode && dataNode instanceof ConstantNode) {
+          // Update the ConstantNode (this also resets the value)
+          dataNode.setValueType(update.valueType)
+
+          // Force React Flow to detect the change
+          dataGraph.updateNodeData(update.nodeId)
+
+          // Get fresh nodes array
+          set({
+            nodes: dataGraph.getNodesArray(),
+          })
+        }
+        break
+      }
+
+      default:
+        // Exhaustive check
+        const _exhaustive: never = update
+        console.warn('Unknown update type', _exhaustive)
+    }
   },
 
   // Delegated queries

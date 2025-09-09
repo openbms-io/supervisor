@@ -32,6 +32,7 @@ export type NodeTypeString =
   | 'timer'
   | 'schedule'
   | 'write-setpoint'
+  | 'constant'
 
 export enum NodeDirection {
   INPUT = 'input',

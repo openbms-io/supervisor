@@ -223,6 +223,15 @@ export class DataGraph {
     }
   }
 
+  // Force React Flow to detect node changes by creating new node object
+  updateNodeData(nodeId: string): void {
+    const node = this.nodesMap.get(nodeId)
+    if (node) {
+      // Create new node object to trigger React Flow update
+      this.nodesMap.set(nodeId, { ...node })
+    }
+  }
+
   // Check if graph has cycles
   hasCycles(): boolean {
     const adjacencyList = this.buildAdjacencyList()
