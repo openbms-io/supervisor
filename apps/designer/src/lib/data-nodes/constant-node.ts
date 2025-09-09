@@ -20,11 +20,15 @@ export class ConstantNode implements LogicNode {
   readonly type = 'constant' as const
   readonly category = NodeCategory.LOGIC
   readonly label: string
-  readonly direction = NodeDirection.OUTPUT // Constants only output values
-  readonly metadata: ConstantNodeMetadata
+  readonly direction = NodeDirection.OUTPUT
 
-  // LogicNode interface fields
-  inputValues: ComputeValue[] = [] // Constants have no inputs
+  private _metadata: ConstantNodeMetadata
+
+  get metadata(): ConstantNodeMetadata {
+    return this._metadata
+  }
+
+  inputValues: ComputeValue[] = []
   computedValue?: ComputeValue
   lastComputed?: Date
 
@@ -35,9 +39,8 @@ export class ConstantNode implements LogicNode {
   ) {
     this.id = generateInstanceId()
     this.label = label
-    this.metadata = { value, valueType }
+    this._metadata = { value, valueType }
 
-    // Initialize computedValue if the value is a valid ComputeValue
     if (typeof value === 'number' || typeof value === 'boolean') {
       this.computedValue = value
       this.lastComputed = new Date()
@@ -55,10 +58,8 @@ export class ConstantNode implements LogicNode {
   }
 
   setValue(value: number | boolean | string): void {
-    // Create new metadata object to avoid mutation
-    ;(this as any).metadata = { ...this.metadata, value }
+    this._metadata = { ...this._metadata, value }
 
-    // Update computedValue if it's a valid ComputeValue
     if (typeof value === 'number' || typeof value === 'boolean') {
       this.computedValue = value
       this.lastComputed = new Date()
@@ -68,7 +69,6 @@ export class ConstantNode implements LogicNode {
   }
 
   setValueType(valueType: ValueType): void {
-    // Reset value to appropriate default
     let newValue: number | boolean | string
     switch (valueType) {
       case 'number':
@@ -81,10 +81,9 @@ export class ConstantNode implements LogicNode {
         newValue = ''
         break
     }
-    // Create new metadata object to avoid mutation
-    ;(this as any).metadata = { valueType, value: newValue }
 
-    // Update computedValue if it's a valid ComputeValue
+    this._metadata = { valueType, value: newValue }
+
     if (typeof newValue === 'number' || typeof newValue === 'boolean') {
       this.computedValue = newValue
       this.lastComputed = new Date()

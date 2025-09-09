@@ -6,13 +6,10 @@ import {
   BacnetInputOutput,
   EdgeData,
   isBacnetProperty,
-  BacnetPropertyKey,
   CalculationInputHandle,
   ComparisonInputHandle,
 } from '@/types/infrastructure'
 import { Node, Edge } from '@xyflow/react'
-import { ConstantNode } from '@/lib/data-nodes/constant-node'
-import { BacnetProperties } from '@/types/bacnet-properties'
 
 // Type for React Flow node data
 export type NodeDataRecord = DataNode & Record<string, unknown>
