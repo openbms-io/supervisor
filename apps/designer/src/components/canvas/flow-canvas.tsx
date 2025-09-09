@@ -40,7 +40,12 @@ export function FlowCanvas() {
   const onConnect = useCallback(
     (params: Connection) => {
       if (params.source && params.target) {
-        connectNodes(params.source, params.target)
+        connectNodes(
+          params.source,
+          params.target,
+          params.sourceHandle,
+          params.targetHandle
+        )
       }
     },
     [connectNodes]

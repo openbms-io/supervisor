@@ -111,7 +111,12 @@ export class DataGraph {
     this.nodesMap.delete(nodeId)
   }
 
-  addConnection(sourceId: string, targetId: string): boolean {
+  addConnection(
+    sourceId: string,
+    targetId: string,
+    sourceHandle?: string | null,
+    targetHandle?: string | null
+  ): boolean {
     const sourceNode = this.nodesMap.get(sourceId)
     const targetNode = this.nodesMap.get(targetId)
 
@@ -124,11 +129,21 @@ export class DataGraph {
     // Business validation
     if (!source.canConnectWith(target)) return false
 
-    // Add React Flow edge
+    // Create unique edge ID that includes handle IDs if present
+    const edgeId =
+      sourceHandle || targetHandle
+        ? `${sourceId}[${sourceHandle || 'default'}]-to-${targetId}[${
+            targetHandle || 'default'
+          }]`
+        : `${sourceId}-to-${targetId}`
+
+    // Add React Flow edge with handle information
     const edge: Edge = {
-      id: `${sourceId}-to-${targetId}`,
+      id: edgeId,
       source: sourceId,
       target: targetId,
+      sourceHandle: sourceHandle || undefined,
+      targetHandle: targetHandle || undefined,
       type: 'smoothstep',
     }
     this.edgesMap.set(edge.id, edge)

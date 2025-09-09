@@ -86,7 +86,12 @@ export interface FlowSlice {
     metadata?: Record<string, unknown>
   ) => void
   removeNode: (nodeId: string) => void
-  connectNodes: (sourceId: string, targetId: string) => boolean
+  connectNodes: (
+    sourceId: string,
+    targetId: string,
+    sourceHandle?: string | null,
+    targetHandle?: string | null
+  ) => boolean
   updateNodePosition: (nodeId: string, position: XYPosition) => void
   updateNode: (update: NodeUpdate) => void
 
@@ -222,8 +227,13 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
     })
   },
 
-  connectNodes: (sourceId, targetId) => {
-    const success = get().dataGraph.addConnection(sourceId, targetId)
+  connectNodes: (sourceId, targetId, sourceHandle, targetHandle) => {
+    const success = get().dataGraph.addConnection(
+      sourceId,
+      targetId,
+      sourceHandle,
+      targetHandle
+    )
     if (success) {
       // Update React Flow state
       set({
