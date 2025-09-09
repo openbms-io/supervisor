@@ -72,11 +72,11 @@ export interface CommandConfig {
   receivedValue?: ComputeValue
   targetPropertyName?: string
   targetNodeId?: string
+  priority?: number // 1-16, BACnet priority (default 8)
+  writeMode?: 'normal' | 'override' | 'release'
 }
 
 export interface CommandNode extends DataNode, CommandConfig {}
-
-export type EdgeCategory = NodeCategory
 
 // Type-safe handle types for logic nodes
 export type CalculationInputHandle = 'input1' | 'input2'
@@ -86,27 +86,21 @@ export type LogicOutputHandle = 'output'
 // Type-safe BACnet properties (from BacnetProperties keys)
 export type BacnetPropertyKey = keyof BacnetProperties
 
-// Category-specific edge metadata with type safety
-export interface BacnetEdgeMetadata {
-  sourceProperty: BacnetPropertyKey
-  targetProperty: BacnetPropertyKey
-}
+export interface EdgeData {
+  sourceData: {
+    nodeId: string
+    nodeCategory: NodeCategory
+    nodeType: NodeTypeString
+    handle?: string // e.g. 'presentValue', 'statusFlags', 'eventState', etc. connected to specific property
+  }
 
-export interface LogicEdgeMetadata {
-  sourceHandle: LogicOutputHandle
-  targetHandle: CalculationInputHandle | ComparisonInputHandle | string
+  targetData: {
+    nodeId: string
+    nodeCategory: NodeCategory
+    nodeType: NodeTypeString
+    handle?: string // e.g. 'presentValue', 'statusFlags', 'eventState', etc. connected to specific property
+  }
 }
-
-export interface CommandEdgeMetadata {
-  commandType: 'write' | 'override' | 'release'
-  targetProperty: BacnetPropertyKey
-}
-
-// Main EdgeData type with discriminated union
-export type EdgeData =
-  | { category: NodeCategory.BACNET; metadata: BacnetEdgeMetadata }
-  | { category: NodeCategory.LOGIC; metadata: LogicEdgeMetadata }
-  | { category: NodeCategory.COMMAND; metadata: CommandEdgeMetadata }
 
 // Single source of truth: derive valid properties from BacnetProperties interface
 // This array must match the keys defined in BacnetProperties interface
