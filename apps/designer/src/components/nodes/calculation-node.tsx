@@ -6,7 +6,13 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { CustomHandle } from './custom-handle'
 import { useFlowStore } from '@/store/use-flow-store'
-import { LogicNode, ComputeValue, NodeCategory } from '@/types/infrastructure'
+import {
+  LogicNode,
+  ComputeValue,
+  NodeCategory,
+  CalculationInputHandle,
+  LogicOutputHandle,
+} from '@/types/infrastructure'
 
 // Stable empty array to prevent infinite loops
 const EMPTY_INPUTS: ComputeValue[] = []
@@ -20,6 +26,9 @@ interface CalculationData {
 
 export const CalculationNode = memo(({ data, id }: NodeProps) => {
   const { label } = data as unknown as CalculationData
+
+  const INPUT_HANDLES: CalculationInputHandle[] = ['input1', 'input2']
+  const OUTPUT_HANDLE: LogicOutputHandle = 'output'
 
   // Use separate selectors to avoid infinite loop
   const inputs = useFlowStore((state) => {
@@ -87,7 +96,7 @@ export const CalculationNode = memo(({ data, id }: NodeProps) => {
       <CustomHandle
         type="target"
         position={Position.Left}
-        id="input1"
+        id={INPUT_HANDLES[0]}
         style={{ top: '30%' }}
         className="w-3 h-3 bg-blue-500 border-2 border-background"
         connectionCount={1}
@@ -95,7 +104,7 @@ export const CalculationNode = memo(({ data, id }: NodeProps) => {
       <CustomHandle
         type="target"
         position={Position.Left}
-        id="input2"
+        id={INPUT_HANDLES[1]}
         style={{ top: '70%' }}
         className="w-3 h-3 bg-blue-500 border-2 border-background"
         connectionCount={1}
@@ -103,6 +112,7 @@ export const CalculationNode = memo(({ data, id }: NodeProps) => {
       <Handle
         type="source"
         position={Position.Right}
+        id={OUTPUT_HANDLE}
         className="w-3 h-3 bg-blue-500 border-2 border-background"
       />
     </Card>

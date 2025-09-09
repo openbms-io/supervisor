@@ -110,7 +110,7 @@ export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
                       <Handle
                         type="target"
                         position={Position.Left}
-                        id={`${propertyName}$input`}
+                        id={propertyName}
                         className="!relative !top-auto !left-auto !transform-none w-2 h-2 bg-primary"
                         style={{ position: 'relative' }}
                       />
@@ -131,7 +131,7 @@ export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
                       <Handle
                         type="source"
                         position={Position.Right}
-                        id={`${propertyName}$output`}
+                        id={propertyName}
                         className="!relative !top-auto !right-auto !transform-none w-2 h-2 bg-primary"
                         style={{ position: 'relative' }}
                       />

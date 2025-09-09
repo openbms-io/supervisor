@@ -4,7 +4,16 @@ import {
   ComputeValue,
   NodeCategory,
   BacnetInputOutput,
-  extractPropertyFromHandle,
+  EdgeData,
+  EdgeCategory,
+  BacnetEdgeMetadata,
+  LogicEdgeMetadata,
+  CommandEdgeMetadata,
+  isBacnetProperty,
+  BacnetPropertyKey,
+  LogicOutputHandle,
+  CalculationInputHandle,
+  ComparisonInputHandle,
 } from '@/types/infrastructure'
 import { Node, Edge } from '@xyflow/react'
 import { ConstantNode } from '@/lib/data-nodes/constant-node'
@@ -20,7 +29,7 @@ export type NodeDataRecord = DataNode & Record<string, unknown>
 export class DataGraph {
   // Single source of truth - only two maps!
   private nodesMap: Map<string, Node<NodeDataRecord>>
-  private edgesMap: Map<string, Edge>
+  private edgesMap: Map<string, Edge<EdgeData>>
 
   constructor() {
     this.nodesMap = new Map()
@@ -31,7 +40,7 @@ export class DataGraph {
     return Array.from(this.nodesMap.values())
   }
 
-  getEdgesArray(): Edge[] {
+  getEdgesArray(): Edge<EdgeData>[] {
     return Array.from(this.edgesMap.values())
   }
 
@@ -44,10 +53,10 @@ export class DataGraph {
   }
 
   // Setter for React Flow's applyEdgeChanges
-  setEdgesArray(edges: Edge[]): void {
+  setEdgesArray(edges: Edge<EdgeData>[]): void {
     this.edgesMap.clear()
     edges.forEach((edge) => {
-      this.edgesMap.set(edge.id, edge)
+      this.edgesMap.set(edge.id, edge as Edge<EdgeData>)
     })
   }
 
@@ -138,26 +147,105 @@ export class DataGraph {
     // Business validation
     if (!source.canConnectWith(target)) return false
 
-    // Create unique edge ID that includes handle IDs if present
-    const edgeId =
-      sourceHandle || targetHandle
-        ? `${sourceId}[${sourceHandle || 'default'}]-to-${targetId}[${
-            targetHandle || 'default'
-          }]`
-        : `${sourceId}-to-${targetId}`
+    // Determine edge category based on source/target
+    const category = this.determineEdgeCategory(source, target)
 
-    // Add React Flow edge with handle information
-    const edge: Edge = {
+    // Create type-safe edge data using switch
+    let edgeData: EdgeData
+
+    switch (category) {
+      case NodeCategory.BACNET:
+        if (!sourceHandle || !targetHandle) {
+          console.error('BACnet connections require handle IDs')
+          return false
+        }
+
+        if (
+          !isBacnetProperty(sourceHandle) ||
+          !isBacnetProperty(targetHandle)
+        ) {
+          console.error('Invalid BACnet property in connection')
+          return false
+        }
+
+        edgeData = {
+          category: NodeCategory.BACNET,
+          metadata: {
+            sourceProperty: sourceHandle,
+            targetProperty: targetHandle,
+          } as BacnetEdgeMetadata,
+        }
+        break
+
+      case NodeCategory.LOGIC:
+        edgeData = {
+          category: NodeCategory.LOGIC,
+          metadata: {
+            sourceHandle: 'output' as LogicOutputHandle,
+            targetHandle: targetHandle || 'input',
+          } as LogicEdgeMetadata,
+        }
+        break
+
+      case NodeCategory.COMMAND:
+        if (!targetHandle || !isBacnetProperty(targetHandle)) {
+          console.error('Command connections require valid target property')
+          return false
+        }
+        edgeData = {
+          category: NodeCategory.COMMAND,
+          metadata: {
+            commandType: 'write',
+            targetProperty: targetHandle,
+          } as CommandEdgeMetadata,
+        }
+        break
+
+      default:
+        console.error('Unknown edge category:', category)
+        return false
+    }
+
+    // Create unique edge ID
+    const edgeId = `${sourceId}-to-${targetId}`
+
+    // Add React Flow edge with EdgeData
+    const edge: Edge<EdgeData> = {
       id: edgeId,
       source: sourceId,
       target: targetId,
       sourceHandle: sourceHandle || undefined,
       targetHandle: targetHandle || undefined,
+      data: edgeData,
       type: 'smoothstep',
     }
     this.edgesMap.set(edge.id, edge)
 
     return true
+  }
+
+  private determineEdgeCategory(
+    source: DataNode,
+    target: DataNode
+  ): NodeCategory {
+    // BACnet takes precedence
+    if (
+      source.category === NodeCategory.BACNET ||
+      target.category === NodeCategory.BACNET
+    ) {
+      return NodeCategory.BACNET
+    }
+
+    // Command edges
+    if (
+      source.category === NodeCategory.COMMAND ||
+      target.category === NodeCategory.COMMAND
+    ) {
+      return NodeCategory.COMMAND
+    }
+
+    // Default to logic
+    return NodeCategory.LOGIC
   }
 
   removeConnection(sourceId: string, targetId: string): void {
@@ -169,7 +257,7 @@ export class DataGraph {
     return this.getNodesArray()
   }
 
-  getReactFlowEdges(): Edge[] {
+  getReactFlowEdges(): Edge<EdgeData>[] {
     return this.getEdgesArray()
   }
 
@@ -320,52 +408,40 @@ export class DataGraph {
   // Get value from a node output
   private getNodeOutputValue(
     node: DataNode,
-    handleId?: string
+    edge: Edge<EdgeData>
   ): ComputeValue | undefined {
-    // Logic nodes return their computed value directly
-    if (node.category === NodeCategory.LOGIC) {
-      const logicNode = node as LogicNode
-      return logicNode.computedValue
-    }
+    if (!edge.data) return undefined
 
-    // BACnet nodes return specific property value
-    if (node.category === NodeCategory.BACNET && handleId) {
-      const bacnetNode = node as BacnetInputOutput
+    switch (node.category) {
+      case NodeCategory.BACNET:
+        if (edge.data.category !== NodeCategory.BACNET) return undefined
 
-      // Extract property name from handle ID (e.g., "presentValue$output" -> "presentValue")
-      // We need this because a node can have multiple properties, each with input/output handles
-      const propertyName = extractPropertyFromHandle(handleId)
-
-      if (propertyName) {
+        const bacnetNode = node as BacnetInputOutput
+        const bacnetMetadata = edge.data.metadata as BacnetEdgeMetadata
         const value =
-          bacnetNode.discoveredProperties[
-            propertyName as keyof BacnetProperties
-          ]
+          bacnetNode.discoveredProperties[bacnetMetadata.sourceProperty]
 
-        // Only return numbers and booleans for computation
         if (typeof value === 'number' || typeof value === 'boolean') {
           return value
         }
-      }
-      return undefined
-    }
+        return undefined
 
-    // Constant nodes return their value
-    if (node.type === 'constant') {
-      const constantNode = node as ConstantNode
-      const value = constantNode.getValue()
-      if (typeof value === 'number' || typeof value === 'boolean') {
-        return value
-      }
-      return undefined
-    }
+      case NodeCategory.LOGIC:
+        const logicNode = node as LogicNode
+        return logicNode.computedValue
 
-    return undefined
+      case NodeCategory.COMMAND:
+        // Command nodes don't output values
+        return undefined
+
+      default:
+        return undefined
+    }
   }
 
   // Get incoming edges for a node
-  private getIncomingEdges(nodeId: string): Edge[] {
-    const edges: Edge[] = []
+  private getIncomingEdges(nodeId: string): Edge<EdgeData>[] {
+    const edges: Edge<EdgeData>[] = []
     for (const edge of this.edgesMap.values()) {
       if (edge.target === nodeId) {
         edges.push(edge)
@@ -379,15 +455,23 @@ export class DataGraph {
     const node = this.getNode(nodeId)
     if (!node) return []
 
-    // Define expected input handles by node type
-    const expectedHandles: string[] =
-      node.type === 'calculation'
-        ? ['input1', 'input2']
-        : node.type === 'comparison'
-          ? ['value1', 'value2']
-          : []
+    // Define expected input handles by node type with type safety
+    let expectedHandles: string[] = []
 
-    if (expectedHandles.length === 0) return []
+    switch (node.type) {
+      case 'calculation':
+        const calcHandles: CalculationInputHandle[] = ['input1', 'input2']
+        expectedHandles = calcHandles
+        break
+
+      case 'comparison':
+        const compHandles: ComparisonInputHandle[] = ['value1', 'value2']
+        expectedHandles = compHandles
+        break
+
+      default:
+        return []
+    }
 
     // Get all edges coming into this node
     const incomingEdges = this.getIncomingEdges(nodeId)
@@ -399,8 +483,8 @@ export class DataGraph {
       if (!edge.targetHandle) continue
 
       const sourceNode = this.getNode(edge.source)
-      if (sourceNode) {
-        const value = this.getNodeOutputValue(sourceNode, edge.sourceHandle)
+      if (sourceNode && edge.data) {
+        const value = this.getNodeOutputValue(sourceNode, edge)
         if (value !== undefined) {
           handleValues.set(edge.targetHandle, value)
         }
