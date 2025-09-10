@@ -26,4 +26,4 @@ export const nodeTypes = {
 
   // Command nodes
   'command.write-setpoint': WriteSetpointNode,
-}
+} as const

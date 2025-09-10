@@ -7,25 +7,19 @@ import { Badge } from '@/components/ui/badge'
 import { CustomHandle } from './custom-handle'
 import { useFlowStore } from '@/store/use-flow-store'
 import {
-  LogicNode,
   ComputeValue,
   NodeCategory,
   ComparisonInputHandle,
   LogicOutputHandle,
 } from '@/types/infrastructure'
+import { ComparisonNodeData } from '@/types/node-data-types'
 
 // Stable empty array to prevent infinite loops
 const EMPTY_INPUTS: ComputeValue[] = []
 
-interface ComparisonData {
-  label: string
-  metadata?: {
-    operation?: string
-  }
-}
-
 export const ComparisonNode = memo(({ data, id }: NodeProps) => {
-  const { label } = data as unknown as ComparisonData
+  const typedData = data as ComparisonNodeData
+  const { label, metadata } = typedData
 
   const INPUT_HANDLES: ComparisonInputHandle[] = ['value1', 'value2']
   const OUTPUT_HANDLE: LogicOutputHandle = 'output'
@@ -34,7 +28,8 @@ export const ComparisonNode = memo(({ data, id }: NodeProps) => {
   const inputs = useFlowStore((state) => {
     const node = state.nodes.find((n) => n.id === id)
     if (node?.data?.category === NodeCategory.LOGIC) {
-      return (node.data as LogicNode).inputValues || EMPTY_INPUTS
+      const logicData = node.data as ComparisonNodeData
+      return logicData.inputValues || EMPTY_INPUTS
     }
     return EMPTY_INPUTS
   })
@@ -42,15 +37,13 @@ export const ComparisonNode = memo(({ data, id }: NodeProps) => {
   const result = useFlowStore((state) => {
     const node = state.nodes.find((n) => n.id === id)
     if (node?.data?.category === NodeCategory.LOGIC) {
-      return (node.data as LogicNode).computedValue
+      const logicData = node.data as ComparisonNodeData
+      return logicData.computedValue
     }
     return undefined
   })
 
-  const operation = useFlowStore((state) => {
-    const node = state.nodes.find((n) => n.id === id)
-    return (node?.data?.metadata as { operation?: string })?.operation
-  })
+  const operation = metadata?.operation
 
   const formatValue = (value: ComputeValue | undefined): string => {
     if (value === undefined) return '-'

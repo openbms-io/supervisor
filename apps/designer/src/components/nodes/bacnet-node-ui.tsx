@@ -18,13 +18,10 @@ import {
   BacnetProperties,
   StatusFlags,
 } from '@/types/bacnet-properties'
-import { BacnetInputOutput } from '@/types/infrastructure'
+import { BacnetNodeData } from '@/types/node-data-types'
 
-interface BacnetNodeUIProps extends NodeProps {
-  data: BacnetInputOutput
-}
-
-export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
+export const BacnetNodeUI = memo(({ data }: NodeProps) => {
+  const typedData = data as BacnetNodeData
   const [showProperties, setShowProperties] = useState(false)
 
   // Local state for which properties to show in UI
@@ -33,10 +30,10 @@ export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
   >(() => {
     // Start with presentValue and statusFlags if available
     const initial = new Set<keyof BacnetProperties>()
-    if (data.discoveredProperties.presentValue !== undefined) {
+    if (typedData.discoveredProperties.presentValue !== undefined) {
       initial.add('presentValue')
     }
-    if (data.discoveredProperties.statusFlags !== undefined) {
+    if (typedData.discoveredProperties.statusFlags !== undefined) {
       initial.add('statusFlags')
     }
     return initial
@@ -45,10 +42,10 @@ export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
   // Get list of discovered properties that aren't visible
   const availableToAdd = useMemo(() => {
     const discovered = Object.keys(
-      data.discoveredProperties
+      typedData.discoveredProperties
     ) as (keyof BacnetProperties)[]
     return discovered.filter((prop) => !visibleProperties.has(prop))
-  }, [data.discoveredProperties, visibleProperties])
+  }, [typedData.discoveredProperties, visibleProperties])
 
   // Add property to visible list
   const addProperty = (propertyName: keyof BacnetProperties) => {
@@ -70,10 +67,10 @@ export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
         <div className="p-3">
           {/* Header with info button */}
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">{data.name}</span>
+            <span className="text-sm font-medium">{typedData.name}</span>
             <div className="flex items-center gap-1">
               <Badge variant="outline" className="text-xs">
-                {data.objectType}
+                {typedData.objectType}
               </Badge>
               <Button
                 size="icon"
@@ -93,9 +90,9 @@ export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
           {/* Visible Properties */}
           <div className="space-y-2">
             {Array.from(visibleProperties).map((propertyName) => {
-              const value = data.discoveredProperties[propertyName]
+              const value = typedData.discoveredProperties[propertyName]
               const metadata = getPropertyMetadata(
-                data.objectType,
+                typedData.objectType,
                 propertyName
               )
 
@@ -122,7 +119,7 @@ export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
                         {metadata.name}:
                       </div>
                       <div className="font-medium">
-                        {formatPropertyValue(propertyName, value, data)}
+                        {formatPropertyValue(propertyName, value, typedData)}
                       </div>
                     </div>
 
@@ -168,7 +165,7 @@ export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
               <DropdownMenuContent>
                 {availableToAdd.map((propertyName) => {
                   const metadata = getPropertyMetadata(
-                    data.objectType,
+                    typedData.objectType,
                     propertyName
                   )
                   return (
@@ -189,7 +186,7 @@ export const BacnetNodeUI = memo(({ data }: BacnetNodeUIProps) => {
       <PropertiesPanel
         isOpen={showProperties}
         onClose={() => setShowProperties(false)}
-        node={data}
+        node={typedData}
       />
     </>
   )
@@ -201,7 +198,7 @@ BacnetNodeUI.displayName = 'BacnetNodeUI'
 function formatPropertyValue(
   propertyName: keyof BacnetProperties,
   value: BacnetProperties[keyof BacnetProperties],
-  data: BacnetInputOutput
+  data: BacnetNodeData
 ): string {
   if (value === null || value === undefined) return 'N/A'
 

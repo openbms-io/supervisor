@@ -12,7 +12,8 @@ import {
 
 // Internal absolute imports
 import { DataGraph, NodeDataRecord } from '@/lib/data-graph/data-graph'
-import { BacnetConfig, DataNode } from '@/types/infrastructure'
+import { BacnetConfig, DataNode, EdgeData } from '@/types/infrastructure'
+import { NodeData } from '@/types/node-data-types'
 import type {
   CalculationOperation,
   ComparisonOperation,
@@ -57,9 +58,9 @@ export type NodeUpdate =
   | { type: 'UPDATE_CONSTANT_TYPE'; nodeId: string; valueType: ValueType }
 
 export interface FlowSlice {
-  // React Flow state
-  nodes: Node[]
-  edges: Edge[]
+  // React Flow state with properly typed nodes
+  nodes: Node<NodeData>[]
+  edges: Edge<EdgeData>[]
 
   // DataGraph for business logic
   dataGraph: DataGraph
@@ -143,7 +144,10 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 
   onEdgesChange: (changes: EdgeChange[]) => {
     const currentEdges = get().edges
-    const updatedEdges = applyEdgeChanges(changes, currentEdges)
+    const updatedEdges = applyEdgeChanges(
+      changes,
+      currentEdges
+    ) as Edge<EdgeData>[]
 
     // Update DataGraph with new edges
     get().dataGraph.setEdgesArray(updatedEdges)
@@ -175,7 +179,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
     if (nodeType === 'constant') {
       dataNode = factory.createConstantNode({
         label,
-        value: metadata?.value ?? 0,
+        value: (metadata?.value as number | boolean | string) ?? 0,
         valueType: (metadata?.valueType as ValueType) ?? 'number',
       })
     } else if (nodeType === 'calculation') {
@@ -208,8 +212,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
     if (nodeType === 'write-setpoint') {
       const dataNode = factory.createWriteSetpointNode({
         label,
-        targetPointId: metadata?.targetPointId as string,
-        propertyName: metadata?.propertyName as string,
+        priority: (metadata?.priority as number) ?? 8,
       })
       get().dataGraph.addNode(dataNode, position)
 
@@ -231,6 +234,14 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   },
 
   connectNodes: (sourceId, targetId, sourceHandle, targetHandle) => {
+    // Check if edge already exists with these handles
+    if (
+      get().dataGraph.hasEdge(sourceId, targetId, sourceHandle, targetHandle)
+    ) {
+      console.warn('Edge already exists between these nodes with these handles')
+      return false
+    }
+
     const success = get().dataGraph.addConnection(
       sourceId,
       targetId,

@@ -32,7 +32,7 @@ export interface BacnetProperties {
 
   // Multistate-specific properties
   numberOfStates?: number // Required for multistate objects
-  stateText?: string[] // Optional array of state descriptions
+  stateText?: (string | null)[] // Optional array of state descriptions (null at index 0 for BACnet 1-based indexing)
   // Add more as discovered from actual devices
 }
 

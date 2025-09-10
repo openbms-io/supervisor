@@ -85,49 +85,56 @@ export function PointPropertiesContainer() {
                 <span className="text-muted-foreground">Present Value:</span>
                 <span className="font-semibold">
                   {formatValue({
-                    value: selectedPoint.presentValue,
-                    units: selectedPoint.units,
+                    value:
+                      selectedPoint.discoveredProperties.presentValue ?? 'N/A',
+                    units: selectedPoint.discoveredProperties.units,
                   })}
                 </span>
               </div>
-              {selectedPoint.units && (
+              {selectedPoint.discoveredProperties.units && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Units:</span>
-                  <span>{selectedPoint.units}</span>
+                  <span>{selectedPoint.discoveredProperties.units}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {selectedPoint.description && (
+          {selectedPoint.discoveredProperties.description && (
             <>
               <Separator />
               <div>
                 <h4 className="text-sm font-medium mb-2">Description</h4>
                 <p className="text-sm text-muted-foreground">
-                  {selectedPoint.description}
+                  {selectedPoint.discoveredProperties.description}
                 </p>
               </div>
             </>
           )}
 
-          {(selectedPoint.minValue !== undefined ||
-            selectedPoint.maxValue !== undefined) && (
+          {(selectedPoint.discoveredProperties.minPresValue !== undefined ||
+            selectedPoint.discoveredProperties.maxPresValue !== undefined) && (
             <>
               <Separator />
               <div>
                 <h4 className="text-sm font-medium mb-2">Limits</h4>
                 <div className="space-y-2 text-sm">
-                  {selectedPoint.minValue !== undefined && (
+                  {selectedPoint.discoveredProperties.minPresValue !==
+                    undefined && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Min Value:</span>
-                      <span>{selectedPoint.minValue}</span>
+                      <span>
+                        {selectedPoint.discoveredProperties.minPresValue}
+                      </span>
                     </div>
                   )}
-                  {selectedPoint.maxValue !== undefined && (
+                  {selectedPoint.discoveredProperties.maxPresValue !==
+                    undefined && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Max Value:</span>
-                      <span>{selectedPoint.maxValue}</span>
+                      <span>
+                        {selectedPoint.discoveredProperties.maxPresValue}
+                      </span>
                     </div>
                   )}
                 </div>

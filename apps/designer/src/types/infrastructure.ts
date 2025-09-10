@@ -69,11 +69,9 @@ export interface LogicNode extends DataNode, LogicConfig {}
 
 // Command node configuration
 export interface CommandConfig {
-  receivedValue?: ComputeValue
-  targetPropertyName?: string
-  targetNodeId?: string
-  priority?: number // 1-16, BACnet priority (default 8)
-  writeMode?: 'normal' | 'override' | 'release'
+  receivedValue?: ComputeValue // Value received from input
+  priority: number // Node's configured priority (1-16)
+  writeMode: 'normal' | 'override' | 'release'
 }
 
 export interface CommandNode extends DataNode, CommandConfig {}
@@ -83,10 +81,14 @@ export type CalculationInputHandle = 'input1' | 'input2'
 export type ComparisonInputHandle = 'value1' | 'value2'
 export type LogicOutputHandle = 'output'
 
+// Type-safe handle types for command nodes
+export type CommandInputHandle = 'setpoint'
+export type CommandOutputHandle = 'output'
+
 // Type-safe BACnet properties (from BacnetProperties keys)
 export type BacnetPropertyKey = keyof BacnetProperties
 
-export interface EdgeData {
+export interface EdgeData extends Record<string, unknown> {
   sourceData: {
     nodeId: string
     nodeCategory: NodeCategory

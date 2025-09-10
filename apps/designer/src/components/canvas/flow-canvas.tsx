@@ -11,6 +11,7 @@ import {
   BackgroundVariant,
   ReactFlowInstance,
   Node,
+  Edge,
   Panel,
 } from '@xyflow/react'
 import { PlayIcon } from 'lucide-react'
@@ -135,8 +136,8 @@ export function FlowCanvas() {
   return (
     <div className="w-full h-full bg-background">
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={nodes as Node[]}
+        edges={edges as Edge[]}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}

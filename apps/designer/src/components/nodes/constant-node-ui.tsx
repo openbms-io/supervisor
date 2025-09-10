@@ -14,39 +14,20 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useFlowStore } from '@/store/use-flow-store'
-import type {
-  ValueType,
-  ConstantNodeMetadata,
-} from '@/lib/data-nodes/constant-node'
+import type { ValueType } from '@/lib/data-nodes/constant-node'
+import { ConstantNodeData } from '@/types/node-data-types'
 
-interface ConstantData {
-  label: string
-  value: number | boolean | string
-  valueType: ValueType
-}
-
-export const ConstantNodeUI = memo(({ id }: NodeProps<ConstantData>) => {
+export const ConstantNodeUI = memo(({ data, id }: NodeProps) => {
+  const typedData = data as ConstantNodeData
+  const { label, metadata } = typedData
   const updateNode = useFlowStore((state) => state.updateNode)
 
-  // Subscribe to specific values separately to avoid infinite loops
-  const storeValue = useFlowStore((state) => {
-    const node = state.nodes.find((n) => n.id === id)
-    const metadata = (node?.data as { metadata?: ConstantNodeMetadata })
-      ?.metadata
-    return metadata?.value ?? 0
-  })
+  // Get value from metadata
+  const storeValue = metadata.value
 
-  const valueType = useFlowStore((state) => {
-    const node = state.nodes.find((n) => n.id === id)
-    const metadata = (node?.data as { metadata?: ConstantNodeMetadata })
-      ?.metadata
-    return metadata?.valueType ?? ('number' as ValueType)
-  })
+  const valueType = metadata.valueType
 
-  const label = useFlowStore((state) => {
-    const node = state.nodes.find((n) => n.id === id)
-    return (node?.data as { label?: string })?.label ?? 'Constant'
-  })
+  // label is already available from data destructuring
 
   // Local state for immediate UI feedback
   const [localValue, setLocalValue] = useState<string>(String(storeValue))

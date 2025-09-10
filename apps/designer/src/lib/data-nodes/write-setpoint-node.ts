@@ -1,30 +1,34 @@
 import {
-  DataNode,
+  CommandNode,
   NodeCategory,
   NodeDirection,
   generateInstanceId,
+  ComputeValue,
+  DataNode,
 } from '@/types/infrastructure'
 
-// Example command node for writing setpoints
-export class WriteSetpointNode implements DataNode {
+export class WriteSetpointNode implements CommandNode {
   readonly id: string
   readonly type = 'write-setpoint' as const
   readonly category = NodeCategory.COMMAND
   readonly label: string
-  readonly direction = NodeDirection.INPUT
-  readonly metadata: {
-    targetPointId?: string
-    propertyName?: string // e.g., 'presentValue', 'setpoint'
-  }
+  readonly direction = NodeDirection.BIDIRECTIONAL
 
-  constructor(label: string, targetPointId?: string, propertyName?: string) {
+  receivedValue?: ComputeValue
+  priority: number = 8 // Default BACnet priority
+  writeMode: 'normal' | 'override' | 'release' = 'normal'
+
+  constructor(label: string, priority: number = 8) {
     this.id = generateInstanceId()
     this.label = label
-    this.metadata = { targetPointId, propertyName }
+    this.priority = Math.max(1, Math.min(16, priority)) // Clamp 1-16
   }
 
-  canConnectWith(): boolean {
-    // Command nodes are terminal - no outgoing connections
-    return false
+  canConnectWith(other: DataNode): boolean {
+    // Output can connect to BACnet nodes or chain to other commands
+    return (
+      other.category === NodeCategory.BACNET ||
+      other.category === NodeCategory.COMMAND
+    )
   }
 }

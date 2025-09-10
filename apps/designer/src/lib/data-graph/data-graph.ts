@@ -8,11 +8,14 @@ import {
   isBacnetProperty,
   CalculationInputHandle,
   ComparisonInputHandle,
+  CommandNode,
+  CommandInputHandle,
 } from '@/types/infrastructure'
+import { NodeData } from '@/types/node-data-types'
 import { Node, Edge } from '@xyflow/react'
 
-// Type for React Flow node data
-export type NodeDataRecord = DataNode & Record<string, unknown>
+// Type for React Flow node data - using NodeData from node-data-types
+export type NodeDataRecord = NodeData
 
 /**
  * DataGraph manages the execution logic using DFS traversal.
@@ -21,6 +24,14 @@ export type NodeDataRecord = DataNode & Record<string, unknown>
 export class DataGraph {
   // Single source of truth - only two maps!
   private nodesMap: Map<string, Node<NodeDataRecord>>
+
+  /** Edge Identity
+   * 1. Multiple Edges: Can have multiple edges between the same nodes with different handles
+   * 2. Clear Identity: Edge IDs clearly show what's connected (source, handle → target, handle)
+   * 3. Proper Deletion: Can delete specific handle connections without affecting others
+   * 4. Better Debugging: Edge IDs are human-readable and self-documenting
+   * 5. Prevents Duplicates: Won't create duplicate edges for the same handle connections
+   */
   private edgesMap: Map<string, Edge<EdgeData>>
 
   constructor() {
@@ -143,6 +154,17 @@ export class DataGraph {
     }
   }
 
+  private generateEdgeId(
+    sourceId: string,
+    targetId: string,
+    sourceHandle?: string | null,
+    targetHandle?: string | null
+  ): string {
+    const source = `${sourceId}:${sourceHandle || '_'}`
+    const target = `${targetId}:${targetHandle || '_'}`
+    return `${source}->${target}`
+  }
+
   addConnection(
     sourceId: string,
     targetId: string,
@@ -166,7 +188,12 @@ export class DataGraph {
       targetHandle
     )
 
-    const edgeId = `${sourceId}-to-${targetId}`
+    const edgeId = this.generateEdgeId(
+      sourceId,
+      targetId,
+      sourceHandle,
+      targetHandle
+    )
     const edge: Edge<EdgeData> = {
       id: edgeId,
       source: sourceId,
@@ -181,8 +208,19 @@ export class DataGraph {
     return true
   }
 
-  removeConnection(sourceId: string, targetId: string): void {
-    this.edgesMap.delete(`${sourceId}-to-${targetId}`)
+  removeConnection(
+    sourceId: string,
+    targetId: string,
+    sourceHandle?: string | null,
+    targetHandle?: string | null
+  ): void {
+    const edgeId = this.generateEdgeId(
+      sourceId,
+      targetId,
+      sourceHandle,
+      targetHandle
+    )
+    this.edgesMap.delete(edgeId)
   }
 
   // Deprecated - use getNodesArray() and getEdgesArray() instead
@@ -358,7 +396,9 @@ export class DataGraph {
         return logicNode.computedValue
 
       case NodeCategory.COMMAND:
-        return undefined
+        // Command nodes pass through their setpoint value
+        const commandNode = node as CommandNode
+        return commandNode.receivedValue
 
       default:
         return undefined
@@ -391,6 +431,11 @@ export class DataGraph {
       case 'comparison':
         const compHandles: ComparisonInputHandle[] = ['value1', 'value2']
         expectedHandles = compHandles
+        break
+
+      case 'write-setpoint':
+        const cmdHandles: CommandInputHandle[] = ['setpoint']
+        expectedHandles = cmdHandles
         break
 
       default:
@@ -434,7 +479,94 @@ export class DataGraph {
           logicNode.execute(inputs)
           this.updateNodeData(nodeId)
         }
+      } else if (node.category === NodeCategory.COMMAND) {
+        const commandNode = node as CommandNode
+        const inputs = this.getNodeInputValues(nodeId)
+        commandNode.receivedValue = inputs[0]
+
+        // Find connected BACnet nodes
+        const downstreamNodes = this.getDownstreamNodes(nodeId)
+        for (const target of downstreamNodes) {
+          if (target.category === NodeCategory.BACNET) {
+            const bacnetNode = target as BacnetInputOutput
+            this.executeBacnetWrite(
+              bacnetNode,
+              commandNode.receivedValue,
+              commandNode.priority,
+              commandNode.writeMode
+            )
+          }
+        }
+
+        this.updateNodeData(nodeId)
       }
     }
+  }
+
+  private executeBacnetWrite(
+    bacnetNode: BacnetInputOutput,
+    value: ComputeValue | undefined,
+    priority: number,
+    writeMode: 'normal' | 'override' | 'release'
+  ): void {
+    if (value === undefined) return
+
+    // TODO: In real implementation, this would:
+    // 1. Send write command to IoT supervisor
+    // 2. IoT supervisor writes to actual BACnet device
+    // 3. Device responds with new value
+    // 4. discoveredProperties would be updated from device response
+
+    console.log('BACnet Write Command:', {
+      pointId: bacnetNode.pointId,
+      objectType: bacnetNode.objectType,
+      objectId: bacnetNode.objectId,
+      value,
+      priority,
+      writeMode,
+    })
+  }
+
+  // Check if an edge exists between nodes with specific handles
+  hasEdge(
+    sourceId: string,
+    targetId: string,
+    sourceHandle?: string | null,
+    targetHandle?: string | null
+  ): boolean {
+    const edgeId = this.generateEdgeId(
+      sourceId,
+      targetId,
+      sourceHandle,
+      targetHandle
+    )
+    return this.edgesMap.has(edgeId)
+  }
+
+  // Get edge by nodes and handles
+  getEdge(
+    sourceId: string,
+    targetId: string,
+    sourceHandle?: string | null,
+    targetHandle?: string | null
+  ): Edge<EdgeData> | undefined {
+    const edgeId = this.generateEdgeId(
+      sourceId,
+      targetId,
+      sourceHandle,
+      targetHandle
+    )
+    return this.edgesMap.get(edgeId)
+  }
+
+  // Get all edges between two nodes regardless of handles
+  getEdgesBetween(sourceId: string, targetId: string): Edge<EdgeData>[] {
+    const edges: Edge<EdgeData>[] = []
+    for (const edge of this.edgesMap.values()) {
+      if (edge.source === sourceId && edge.target === targetId) {
+        edges.push(edge)
+      }
+    }
+    return edges
   }
 }

@@ -77,14 +77,12 @@ class DataNodeFactory {
   // Create command node
   createWriteSetpointNode({
     label,
-    targetPointId,
-    propertyName,
+    priority = 8,
   }: {
     label: string
-    targetPointId?: string
-    propertyName?: string
+    priority?: number
   }): DataNode {
-    return new WriteSetpointNode(label, targetPointId, propertyName)
+    return new WriteSetpointNode(label, priority)
   }
 
   // Create constant node
