@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { EdgeProps, getSmoothStepPath, BaseEdge } from '@xyflow/react'
-import { EdgeData } from '@/types/infrastructure'
 
 /**
  * Custom edge component for control flow visualization

@@ -17,7 +17,7 @@ export class ProjectsRepository {
   }
 
   // Create a new project
-  create(data: CreateProject): Project {
+  async create(data: CreateProject): Promise<Project> {
     const id = randomUUID()
     const now = new Date().toISOString()
     const flowConfig = JSON.stringify(data.flow_config || {})
@@ -31,7 +31,16 @@ export class ProjectsRepository {
       updated_at: now,
     }
 
-    const result = this.db.insert(projects).values(newProject).returning().get()
+    // Insert then fetch by id to keep compatibility across drivers
+    await this.db.insert(projects).values(newProject).run()
+
+    const fetched = await this.db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, id))
+      .get()
+
+    const result = fetched!
     return {
       ...result,
       description: result.description ?? undefined,
@@ -39,8 +48,8 @@ export class ProjectsRepository {
   }
 
   // Find project by ID
-  findById(id: string): Project | null {
-    const result = this.db
+  async findById(id: string): Promise<Project | null> {
+    const result = await this.db
       .select()
       .from(projects)
       .where(eq(projects.id, id))
@@ -55,8 +64,8 @@ export class ProjectsRepository {
   }
 
   // Update project
-  update(id: string, data: UpdateProject): Project | null {
-    const existing = this.findById(id)
+  async update(id: string, data: UpdateProject): Promise<Project | null> {
+    const existing = await this.findById(id)
     if (!existing) return null
 
     const updateData: Record<string, unknown> = {
@@ -75,11 +84,16 @@ export class ProjectsRepository {
       updateData.flow_config = JSON.stringify(data.flow_config)
     }
 
-    const result = this.db
+    await this.db
       .update(projects)
       .set(updateData)
       .where(eq(projects.id, id))
-      .returning()
+      .run()
+
+    const result = await this.db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, id))
       .get()
 
     if (!result) return null
@@ -91,14 +105,17 @@ export class ProjectsRepository {
   }
 
   // Delete project
-  delete(id: string): boolean {
-    const result = this.db.delete(projects).where(eq(projects.id, id)).run()
+  async delete(id: string): Promise<boolean> {
+    // Check existence first for consistent behavior
+    const existed = await this.exists(id)
+    if (!existed) return false
 
-    return result.changes > 0
+    await this.db.delete(projects).where(eq(projects.id, id)).run()
+    return true
   }
 
   // List projects with pagination and search
-  list(query: Partial<ProjectQuery> = {}): ProjectListResponse {
+  async list(query: Partial<ProjectQuery> = {}): Promise<ProjectListResponse> {
     const {
       page = 1,
       limit = 20,
@@ -127,7 +144,7 @@ export class ProjectsRepository {
     const orderClause = orderFn(projects[sortColumn])
 
     // Get total count
-    const totalResult = this.db
+    const totalResult = await this.db
       .select({ count: count() })
       .from(projects)
       .where(whereClause)
@@ -142,7 +159,7 @@ export class ProjectsRepository {
       ? query_builder.where(whereClause)
       : query_builder
 
-    const projectsList = query_with_conditions
+    const projectsList = await query_with_conditions
       .orderBy(orderClause)
       .limit(limit)
       .offset(offset)
@@ -166,8 +183,8 @@ export class ProjectsRepository {
   }
 
   // Check if project exists
-  exists(id: string): boolean {
-    const result = this.db
+  async exists(id: string): Promise<boolean> {
+    const result = await this.db
       .select({ count: count() })
       .from(projects)
       .where(eq(projects.id, id))
@@ -177,15 +194,15 @@ export class ProjectsRepository {
   }
 
   // Get project count
-  count(): number {
-    const result = this.db.select({ count: count() }).from(projects).get()
+  async count(): Promise<number> {
+    const result = await this.db.select({ count: count() }).from(projects).get()
 
     return result?.count || 0
   }
 
   // Search projects by name
-  searchByName(name: string): Project[] {
-    const results = this.db
+  async searchByName(name: string): Promise<Project[]> {
+    const results = await this.db
       .select()
       .from(projects)
       .where(like(projects.name, `%${name}%`))

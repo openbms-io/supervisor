@@ -1,7 +1,7 @@
 'use client'
 
 // External libraries
-import { useCallback, useRef, DragEvent, ComponentType } from 'react'
+import { useCallback, useRef, DragEvent } from 'react'
 import {
   ReactFlow,
   // MiniMap,  // Temporarily disabled
@@ -26,7 +26,6 @@ import { Button } from '@/components/ui/button'
 import { NotificationHandler } from './notification-handler'
 import { EDGE_TYPES } from '@/types/edge-types'
 import BidirectionalFlowEdge from '../edges/bidirectional-flow-edge'
-import { EdgeProps } from '@xyflow/react'
 
 // Edge types for visualization
 // Only register custom edge types, React Flow handles built-in types automatically

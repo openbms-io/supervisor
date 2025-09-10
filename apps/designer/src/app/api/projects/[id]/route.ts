@@ -14,7 +14,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const project = projectsRepository.findById(id)
+    const project = await projectsRepository.findById(id)
 
     if (!project) {
       return NextResponse.json(
@@ -55,7 +55,7 @@ export async function PUT(
 
     const data = UpdateProjectSchema.parse(body)
 
-    const project = projectsRepository.update(id, data)
+    const project = await projectsRepository.update(id, data)
 
     if (!project) {
       return NextResponse.json(
@@ -105,7 +105,7 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const deleted = projectsRepository.delete(id)
+    const deleted = await projectsRepository.delete(id)
 
     if (!deleted) {
       return NextResponse.json(

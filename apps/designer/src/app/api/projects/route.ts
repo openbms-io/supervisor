@@ -15,7 +15,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       order: searchParams.get('order'),
     })
 
-    const data = projectsRepository.list(query)
+    const data = await projectsRepository.list(query)
 
     const response = {
       success: true,
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const data = CreateProjectSchema.parse(body)
 
-    const project = projectsRepository.create(data)
+    const project = await projectsRepository.create(data)
 
     const response = {
       success: true,
