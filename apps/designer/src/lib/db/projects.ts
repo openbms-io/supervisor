@@ -143,14 +143,11 @@ export class ProjectsRepository {
     const orderFn = order === 'asc' ? asc : desc
     const orderClause = orderFn(projects[sortColumn])
 
-    // Get total count
-    const totalResult = await this.db
-      .select({ count: count() })
-      .from(projects)
-      .where(whereClause)
-      .get()
-
-    const total = totalResult?.count || 0
+    // Get total count (avoid select fields to satisfy both drivers)
+    const totalBase = this.db.select().from(projects)
+    const totalQuery = whereClause ? totalBase.where(whereClause) : totalBase
+    const totalRows = await totalQuery.all()
+    const total = totalRows.length
 
     // Get projects
     const query_builder = this.db.select().from(projects)
@@ -185,19 +182,18 @@ export class ProjectsRepository {
   // Check if project exists
   async exists(id: string): Promise<boolean> {
     const result = await this.db
-      .select({ count: count() })
+      .select()
       .from(projects)
       .where(eq(projects.id, id))
       .get()
 
-    return (result?.count || 0) > 0
+    return !!result
   }
 
   // Get project count
   async count(): Promise<number> {
-    const result = await this.db.select({ count: count() }).from(projects).get()
-
-    return result?.count || 0
+    const rows = await this.db.select().from(projects).all()
+    return rows.length
   }
 
   // Search projects by name
