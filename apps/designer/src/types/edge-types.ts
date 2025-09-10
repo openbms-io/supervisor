@@ -25,14 +25,3 @@ export const EDGE_TYPES = {
 } as const
 
 export type EdgeType = (typeof EDGE_TYPES)[keyof typeof EDGE_TYPES]
-
-// Type guard to check if edge type is built-in
-export const isBuiltInEdgeType = (type: string): boolean => {
-  return [
-    EDGE_TYPES.DEFAULT,
-    EDGE_TYPES.STRAIGHT,
-    EDGE_TYPES.STEP,
-    EDGE_TYPES.SMOOTHSTEP,
-    EDGE_TYPES.SIMPLEBEZIER,
-  ].includes(type as EdgeType)
-}

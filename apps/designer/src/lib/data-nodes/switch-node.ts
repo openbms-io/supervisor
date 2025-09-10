@@ -99,6 +99,7 @@ export class SwitchNode
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   canConnectWith(_other: DataNode): boolean {
     return true // Switch can connect to anything
   }

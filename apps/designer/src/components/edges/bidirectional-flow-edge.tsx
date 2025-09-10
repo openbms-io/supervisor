@@ -26,17 +26,18 @@ export const getSpecialPath = (
   } ${targetX} ${targetY}`
 }
 
-export default function BidirectionalFlowEdge({
-  source,
-  target,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  markerEnd,
-}: EdgeProps) {
+export default function BidirectionalFlowEdge(props: EdgeProps) {
+  const {
+    source,
+    target,
+    sourceX = 0,
+    sourceY = 0,
+    targetX = 0,
+    targetY = 0,
+    sourcePosition,
+    targetPosition,
+    markerEnd,
+  } = props
   const isBiDirectionEdge = useStore((s: ReactFlowState) => {
     const edgeExists = s.edges.some(
       (e) =>
