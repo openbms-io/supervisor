@@ -177,8 +177,9 @@ function processData({ data }: { data: DataType }): void {
 
 // Use object naming as parameters.
 function processData(data: DataType); // - Wrong
+function processData(data: DataType, objectId: string); // - Wrong
 
-function processData({ data }: { data: DataType }); // - Correct
+function processData({ data, objectId }: { data: DataType; objectId: string }); // - Correct
 
 // Use readonly for immutability
 interface Config {
