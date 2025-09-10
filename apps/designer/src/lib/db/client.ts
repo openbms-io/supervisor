@@ -9,6 +9,11 @@ import * as schema from './schema'
 let db: BetterSQLite3Database<typeof schema> | null = null
 let sqlite: Database.Database | null = null
 
+const isRunningOnVercel =
+  process.env.VERCEL_ENV === 'production' ||
+  process.env.VERCEL_ENV === 'preview' ||
+  process.env.VERCEL_ENV === 'development'
+
 export function getDatabase(): BetterSQLite3Database<typeof schema> {
   // Ensure we're running on the server
   if (typeof window !== 'undefined') {
@@ -16,7 +21,11 @@ export function getDatabase(): BetterSQLite3Database<typeof schema> {
   }
 
   if (!db) {
-    const dbPath = join(process.cwd(), 'designer.db')
+    // Hacky: Using a preset database for production for testing purposes.
+    const dbPath = join(
+      process.cwd(),
+      isRunningOnVercel ? 'designer-production.db' : 'designer.db'
+    )
 
     // Create SQLite connection
     sqlite = new Database(dbPath)
