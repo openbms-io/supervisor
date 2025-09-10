@@ -67,11 +67,15 @@ export const CalculationNode = memo(({ data, id }: NodeProps) => {
         <div className="text-xs space-y-1">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Input 1:</span>
-            <span className="font-mono">{formatValue(inputs[0])}</span>
+            <span className="font-mono">
+              {formatValue((inputs as ComputeValue[])?.[0])}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Input 2:</span>
-            <span className="font-mono">{formatValue(inputs[1])}</span>
+            <span className="font-mono">
+              {formatValue((inputs as ComputeValue[])?.[1])}
+            </span>
           </div>
         </div>
 
@@ -80,7 +84,7 @@ export const CalculationNode = memo(({ data, id }: NodeProps) => {
           <div className="flex justify-between items-center">
             <span className="text-xs text-muted-foreground">Result:</span>
             <span className="text-lg font-bold text-blue-600">
-              {formatValue(result)}
+              {formatValue(result as ComputeValue | undefined)}
             </span>
           </div>
         </div>

@@ -138,6 +138,7 @@ export const ConstantNodeUI = memo(({ data, id }: NodeProps) => {
       <Handle
         type="source"
         position={Position.Right}
+        id="output"
         className="w-3 h-3 bg-gray-500 border-2 border-background"
       />
     </Card>

@@ -1,5 +1,7 @@
 import {
   LogicNode,
+  CalculationInputHandle,
+  LogicOutputHandle,
   ComputeValue,
   NodeCategory,
   NodeDirection,
@@ -14,7 +16,9 @@ export type CalculationOperation =
   | 'divide'
   | 'average'
 
-export class CalculationNode implements LogicNode {
+export class CalculationNode
+  implements LogicNode<CalculationInputHandle, LogicOutputHandle>
+{
   readonly id: string
   readonly type = 'calculation' as const
   readonly category = NodeCategory.LOGIC
@@ -22,14 +26,36 @@ export class CalculationNode implements LogicNode {
   readonly direction = NodeDirection.BIDIRECTIONAL
   readonly metadata: { operation: CalculationOperation }
 
-  inputValues: ComputeValue[] = []
-  computedValue?: number
-  lastComputed?: Date
+  // Private internal state
+  private _computedValue?: number
+  private _inputValues: ComputeValue[] = []
+
+  // Public getters for UI access
+  get computedValue(): number | undefined {
+    return this._computedValue
+  }
+
+  get inputValues(): ComputeValue[] {
+    return this._inputValues
+  }
 
   constructor(label: string, operation: CalculationOperation) {
     this.id = generateInstanceId()
     this.label = label
     this.metadata = { operation }
+  }
+
+  getValue(): ComputeValue | undefined {
+    return this._computedValue
+  }
+
+  getInputValues(): ComputeValue[] {
+    return this._inputValues
+  }
+
+  reset(): void {
+    this._computedValue = undefined
+    this._inputValues = []
   }
 
   execute(inputs: ComputeValue[]): number {
@@ -58,9 +84,8 @@ export class CalculationNode implements LogicNode {
         result = NaN
     }
 
-    this.inputValues = inputs
-    this.computedValue = result
-    this.lastComputed = new Date()
+    this._inputValues = inputs
+    this._computedValue = result
     return result
   }
 
@@ -68,5 +93,13 @@ export class CalculationNode implements LogicNode {
     // Logic nodes can connect to other logic nodes or outputs
     // Cannot connect to pure input nodes
     return target.direction !== NodeDirection.OUTPUT
+  }
+
+  getInputHandles(): readonly CalculationInputHandle[] {
+    return ['input1', 'input2'] as const
+  }
+
+  getOutputHandles(): readonly LogicOutputHandle[] {
+    return ['output'] as const
   }
 }

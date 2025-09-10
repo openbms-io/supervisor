@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LogicNodesSection } from '@/components/sidebar/logic-nodes-section'
+import { ControlFlowSection } from '@/components/sidebar/control-flow-section'
 import { CommandNodesSection } from '@/components/sidebar/command-nodes-section'
 
 export function ControllersTreeContainer() {
@@ -133,6 +134,7 @@ export function ControllersTreeContainer() {
       />
 
       <LogicNodesSection />
+      <ControlFlowSection />
       <CommandNodesSection />
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

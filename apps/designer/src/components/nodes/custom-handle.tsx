@@ -11,7 +11,10 @@ export const CustomHandle = ({
   ...props
 }: CustomHandleProps) => {
   // Get all connections for this node
-  const connections = useNodeConnections()
+  const connections = useNodeConnections({
+    handleType: props.type,
+    handleId: props.id ?? undefined,
+  })
 
   // Filter connections for this specific handle
   const handleConnections = connections.filter((connection) => {

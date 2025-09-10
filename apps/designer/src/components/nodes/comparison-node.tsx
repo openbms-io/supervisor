@@ -84,11 +84,15 @@ export const ComparisonNode = memo(({ data, id }: NodeProps) => {
         <div className="text-xs space-y-1">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Value 1:</span>
-            <span className="font-mono">{formatValue(inputs[0])}</span>
+            <span className="font-mono">
+              {formatValue((inputs as ComputeValue[])?.[0])}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Value 2:</span>
-            <span className="font-mono">{formatValue(inputs[1])}</span>
+            <span className="font-mono">
+              {formatValue((inputs as ComputeValue[])?.[1])}
+            </span>
           </div>
         </div>
 
@@ -101,7 +105,7 @@ export const ComparisonNode = memo(({ data, id }: NodeProps) => {
                 result ? 'text-green-600' : 'text-red-600'
               }`}
             >
-              {formatValue(result)}
+              {formatValue(result as ComputeValue | undefined)}
             </span>
           </div>
         </div>

@@ -1,5 +1,7 @@
 import {
   LogicNode,
+  ComparisonInputHandle,
+  LogicOutputHandle,
   ComputeValue,
   NodeCategory,
   NodeDirection,
@@ -14,7 +16,9 @@ export type ComparisonOperation =
   | 'greater-equal'
   | 'less-equal'
 
-export class ComparisonNode implements LogicNode {
+export class ComparisonNode
+  implements LogicNode<ComparisonInputHandle, LogicOutputHandle>
+{
   readonly id: string
   readonly type = 'comparison' as const
   readonly category = NodeCategory.LOGIC
@@ -22,9 +26,18 @@ export class ComparisonNode implements LogicNode {
   readonly direction = NodeDirection.BIDIRECTIONAL
   readonly metadata: { operation: ComparisonOperation }
 
-  inputValues: ComputeValue[] = []
-  computedValue?: boolean
-  lastComputed?: Date
+  // Private internal state
+  private _computedValue?: boolean
+  private _inputValues: ComputeValue[] = []
+
+  // Public getters for UI access
+  get computedValue(): boolean | undefined {
+    return this._computedValue
+  }
+
+  get inputValues(): ComputeValue[] {
+    return this._inputValues
+  }
 
   constructor(label: string, operation: ComparisonOperation) {
     this.id = generateInstanceId()
@@ -32,14 +45,26 @@ export class ComparisonNode implements LogicNode {
     this.metadata = { operation }
   }
 
+  getValue(): ComputeValue | undefined {
+    return this._computedValue
+  }
+
+  getInputValues(): ComputeValue[] {
+    return this._inputValues
+  }
+
+  reset(): void {
+    this._computedValue = undefined
+    this._inputValues = []
+  }
+
   execute(inputs: ComputeValue[]): boolean {
     const v1 = inputs[0]
     const v2 = inputs[1]
 
     if (v1 === undefined || v2 === undefined) {
-      this.computedValue = false
-      this.inputValues = inputs
-      this.lastComputed = new Date()
+      this._inputValues = inputs
+      this._computedValue = false
       return false
     }
 
@@ -64,14 +89,21 @@ export class ComparisonNode implements LogicNode {
         result = false
     }
 
-    this.inputValues = inputs
-    this.computedValue = result
-    this.lastComputed = new Date()
+    this._inputValues = inputs
+    this._computedValue = result
     return result
   }
 
   canConnectWith(target: DataNode): boolean {
     // Logic nodes can connect to other logic nodes or outputs
     return target.direction !== NodeDirection.OUTPUT
+  }
+
+  getInputHandles(): readonly ComparisonInputHandle[] {
+    return ['value1', 'value2'] as const
+  }
+
+  getOutputHandles(): readonly LogicOutputHandle[] {
+    return ['output'] as const
   }
 }

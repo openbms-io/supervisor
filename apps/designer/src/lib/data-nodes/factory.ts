@@ -16,6 +16,7 @@ import { CalculationNode, CalculationOperation } from './calculation-node'
 import { ComparisonNode, ComparisonOperation } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
 import { ConstantNode, ValueType } from './constant-node'
+import { SwitchNode } from './switch-node'
 
 // Simple factory pattern for creating nodes
 class DataNodeFactory {
@@ -96,6 +97,29 @@ class DataNodeFactory {
     valueType?: ValueType
   }): DataNode {
     return new ConstantNode(label, value ?? 0, valueType ?? 'number')
+  }
+
+  // Create switch node
+  createSwitchNode({
+    label,
+    condition,
+    threshold,
+    activeLabel,
+    inactiveLabel,
+  }: {
+    label?: string
+    condition?: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
+    threshold?: number
+    activeLabel?: string
+    inactiveLabel?: string
+  }): SwitchNode {
+    return new SwitchNode(
+      label || 'Switch',
+      condition || 'gt',
+      threshold || 0,
+      activeLabel,
+      inactiveLabel
+    )
   }
 }
 

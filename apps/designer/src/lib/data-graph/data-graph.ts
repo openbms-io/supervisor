@@ -6,13 +6,13 @@ import {
   BacnetInputOutput,
   EdgeData,
   isBacnetProperty,
-  CalculationInputHandle,
-  ComparisonInputHandle,
   CommandNode,
-  CommandInputHandle,
+  ControlFlowNode,
 } from '@/types/infrastructure'
+import { EDGE_TYPES } from '@/types/edge-types'
 import { NodeData } from '@/types/node-data-types'
 import { Node, Edge } from '@xyflow/react'
+import { EdgeActivationManager } from './edge-activation-manager'
 
 // Type for React Flow node data - using NodeData from node-data-types
 export type NodeDataRecord = NodeData
@@ -33,10 +33,12 @@ export class DataGraph {
    * 5. Prevents Duplicates: Won't create duplicate edges for the same handle connections
    */
   private edgesMap: Map<string, Edge<EdgeData>>
+  private edgeManager: EdgeActivationManager
 
   constructor() {
     this.nodesMap = new Map()
     this.edgesMap = new Map()
+    this.edgeManager = new EdgeActivationManager(this.edgesMap, this.nodesMap)
   }
 
   getNodesArray(): Node<NodeDataRecord>[] {
@@ -174,7 +176,9 @@ export class DataGraph {
     const sourceNode = this.nodesMap.get(sourceId)
     const targetNode = this.nodesMap.get(targetId)
 
-    if (!sourceNode || !targetNode) return false
+    if (!sourceNode || !targetNode) {
+      return false
+    }
 
     const source = sourceNode.data as DataNode
     const target = targetNode.data as DataNode
@@ -194,6 +198,7 @@ export class DataGraph {
       sourceHandle,
       targetHandle
     )
+
     const edge: Edge<EdgeData> = {
       id: edgeId,
       source: sourceId,
@@ -201,8 +206,9 @@ export class DataGraph {
       sourceHandle: sourceHandle || undefined,
       targetHandle: targetHandle || undefined,
       data: edgeData,
-      type: 'smoothstep',
+      type: EDGE_TYPES.CONTROL_FLOW, // Use our custom bidirectional-flow edge type
     }
+
     this.edgesMap.set(edge.id, edge)
 
     return true
@@ -393,12 +399,17 @@ export class DataGraph {
 
       case NodeCategory.LOGIC:
         const logicNode = node as LogicNode
-        return logicNode.computedValue
+        return logicNode.getValue()
 
       case NodeCategory.COMMAND:
         // Command nodes pass through their setpoint value
         const commandNode = node as CommandNode
         return commandNode.receivedValue
+
+      case NodeCategory.CONTROL_FLOW:
+        // Control flow nodes pass through their input value
+        const cfNode = node as ControlFlowNode
+        return cfNode.getValue()
 
       default:
         return undefined
@@ -420,32 +431,24 @@ export class DataGraph {
     const node = this.getNode(nodeId)
     if (!node) return []
 
+    // Use the node's getInputHandles method if available
     let expectedHandles: string[] = []
-
-    switch (node.type) {
-      case 'calculation':
-        const calcHandles: CalculationInputHandle[] = ['input1', 'input2']
-        expectedHandles = calcHandles
-        break
-
-      case 'comparison':
-        const compHandles: ComparisonInputHandle[] = ['value1', 'value2']
-        expectedHandles = compHandles
-        break
-
-      case 'write-setpoint':
-        const cmdHandles: CommandInputHandle[] = ['setpoint']
-        expectedHandles = cmdHandles
-        break
-
-      default:
-        return []
+    if (
+      'getInputHandles' in node &&
+      typeof node.getInputHandles === 'function'
+    ) {
+      expectedHandles = node.getInputHandles() as string[]
+    } else {
+      return [] // Node has no inputs
     }
 
     const incomingEdges = this.getIncomingEdges(nodeId)
     const handleValues = new Map<string, ComputeValue>()
 
     for (const edge of incomingEdges) {
+      // Skip inactive edges
+      if (edge.data?.isActive === false) continue
+
       if (!edge.data || !edge.targetHandle) continue
 
       const sourceNode = this.getNode(edge.data.sourceData.nodeId)
@@ -464,42 +467,95 @@ export class DataGraph {
   }
 
   // Execute all nodes in topological order
+  // Reset all computed values to ensure fresh execution
+  private resetComputedValues(): void {
+    for (const node of this.nodesMap.values()) {
+      const dataNode = node.data as DataNode
+
+      // Use proper API instead of direct access
+      if ('reset' in dataNode && typeof dataNode.reset === 'function') {
+        dataNode.reset()
+      }
+    }
+  }
+
   executeGraph(): void {
+    // Check for cycles before execution
+    if (this.hasCycles()) {
+      console.error('Graph contains cycles - execution aborted')
+      // Let the store handle notifications
+      throw new Error('Graph contains cycles')
+    }
+
     const executionOrder = this.getExecutionOrderDFS()
+
+    // Reset all computed values for fresh execution
+    this.resetComputedValues()
+
+    // Initialize edge states
+    this.edgeManager.initializeEdgeStates()
 
     for (const nodeId of executionOrder) {
       const node = this.getNode(nodeId)
       if (!node) continue
 
-      if (node.category === NodeCategory.LOGIC) {
-        const logicNode = node as LogicNode
+      // Skip unreachable nodes
+      if (!this.edgeManager.isNodeReachable(nodeId)) continue
 
-        if (logicNode.execute) {
-          const inputs = this.getNodeInputValues(nodeId)
-          logicNode.execute(inputs)
-          this.updateNodeData(nodeId)
+      const inputs = this.getNodeInputValues(nodeId)
+
+      // Execute based on category using switch statement
+      switch (node.category) {
+        case NodeCategory.CONTROL_FLOW: {
+          const cfNode = node as ControlFlowNode
+          cfNode.execute(inputs)
+
+          // Let edge manager handle activation
+          const activeHandles = cfNode.getActiveOutputHandles()
+          this.edgeManager.activateOutputs(nodeId, [...activeHandles])
+          break
         }
-      } else if (node.category === NodeCategory.COMMAND) {
-        const commandNode = node as CommandNode
-        const inputs = this.getNodeInputValues(nodeId)
-        commandNode.receivedValue = inputs[0]
 
-        // Find connected BACnet nodes
-        const downstreamNodes = this.getDownstreamNodes(nodeId)
-        for (const target of downstreamNodes) {
-          if (target.category === NodeCategory.BACNET) {
-            const bacnetNode = target as BacnetInputOutput
-            this.executeBacnetWrite(
-              bacnetNode,
-              commandNode.receivedValue,
-              commandNode.priority,
-              commandNode.writeMode
-            )
+        case NodeCategory.LOGIC: {
+          const logicNode = node as LogicNode
+          if (logicNode.execute) {
+            logicNode.execute(inputs)
           }
+          break
         }
 
-        this.updateNodeData(nodeId)
+        case NodeCategory.COMMAND: {
+          const commandNode = node as CommandNode
+          commandNode.receivedValue = inputs[0]
+
+          // Find connected BACnet nodes
+          const downstreamNodes = this.getDownstreamNodes(nodeId)
+          for (const target of downstreamNodes) {
+            if (target.category === NodeCategory.BACNET) {
+              const bacnetNode = target as BacnetInputOutput
+              this.executeBacnetWrite(
+                bacnetNode,
+                commandNode.receivedValue,
+                commandNode.priority,
+                commandNode.writeMode
+              )
+            }
+          }
+          break
+        }
+
+        case NodeCategory.BACNET:
+          // Data sources, no execution needed
+          break
+
+        default: {
+          // Exhaustive check
+          const _exhaustive: never = node.category
+          console.warn('Unknown node category:', _exhaustive)
+        }
       }
+
+      this.updateNodeData(nodeId)
     }
   }
 

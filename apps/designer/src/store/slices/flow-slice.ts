@@ -20,6 +20,7 @@ import type {
 } from '@/lib/data-nodes'
 import type { ValueType } from '@/lib/data-nodes/constant-node'
 import { ConstantNode } from '@/lib/data-nodes/constant-node'
+import { SwitchNode } from '@/lib/data-nodes/switch-node'
 
 export interface DraggedPoint {
   type: 'bacnet-point'
@@ -43,9 +44,23 @@ export interface DraggedCommandNode {
   draggedFrom: 'command-section'
 }
 
+export interface DraggedControlFlowNode {
+  type: 'control-flow-node'
+  nodeType: string
+  label: string
+  metadata?: Record<string, unknown>
+  draggedFrom: 'control-flow-section'
+}
+
 export interface ValidationResult {
   isValid: boolean
   errors: string[]
+}
+
+export interface FlowNotification {
+  type: 'success' | 'error' | 'warning'
+  title: string
+  message: string
 }
 
 // Node update actions
@@ -56,6 +71,12 @@ export type NodeUpdate =
       value: number | boolean | string
     }
   | { type: 'UPDATE_CONSTANT_TYPE'; nodeId: string; valueType: ValueType }
+  | {
+      type: 'UPDATE_SWITCH_CONFIG'
+      nodeId: string
+      condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
+      threshold: number
+    }
 
 export interface FlowSlice {
   // React Flow state with properly typed nodes
@@ -64,6 +85,9 @@ export interface FlowSlice {
 
   // DataGraph for business logic
   dataGraph: DataGraph
+
+  // Notification state
+  notification: FlowNotification | null
 
   // React Flow change handlers
   onNodesChange: (changes: NodeChange[]) => void
@@ -86,6 +110,12 @@ export interface FlowSlice {
     position: XYPosition,
     metadata?: Record<string, unknown>
   ) => void
+  addControlFlowNode: (
+    nodeType: string,
+    label: string,
+    position: XYPosition,
+    metadata?: Record<string, unknown>
+  ) => void
   removeNode: (nodeId: string) => void
   connectNodes: (
     sourceId: string,
@@ -95,6 +125,13 @@ export interface FlowSlice {
   ) => boolean
   updateNodePosition: (nodeId: string, position: XYPosition) => void
   updateNode: (update: NodeUpdate) => void
+
+  // Notification actions
+  setNotification: (notification: FlowNotification | null) => void
+  clearNotification: () => void
+  showError: (title: string, message: string) => void
+  showSuccess: (title: string, message: string) => void
+  showWarning: (title: string, message: string) => void
 
   // Queries (delegated to DataGraph)
   getNodes: () => Node[]
@@ -126,6 +163,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   nodes: [],
   edges: [],
   dataGraph: new DataGraph(),
+  notification: null,
 
   // React Flow change handlers
   onNodesChange: (changes: NodeChange[]) => {
@@ -224,6 +262,28 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
     }
   },
 
+  addControlFlowNode: async (nodeType, label, position, metadata) => {
+    const { default: factory } = await import('@/lib/data-nodes/factory')
+
+    if (nodeType === 'switch') {
+      const dataNode = factory.createSwitchNode({
+        label,
+        condition:
+          (metadata?.condition as 'gt' | 'lt' | 'eq' | 'gte' | 'lte') || 'gt',
+        threshold: (metadata?.threshold as number) ?? 0,
+      })
+      get().dataGraph.addNode(dataNode, position)
+
+      // Update React Flow state
+      set({
+        nodes: get().dataGraph.getNodesArray(),
+        edges: get().dataGraph.getEdgesArray(),
+      })
+    } else {
+      console.warn('Unknown control flow node type:', nodeType)
+    }
+  },
+
   removeNode: (nodeId) => {
     get().dataGraph.removeNode(nodeId)
     // Update React Flow state
@@ -234,29 +294,42 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   },
 
   connectNodes: (sourceId, targetId, sourceHandle, targetHandle) => {
+    const { dataGraph, showWarning } = get()
+
     // Check if edge already exists with these handles
-    if (
-      get().dataGraph.hasEdge(sourceId, targetId, sourceHandle, targetHandle)
-    ) {
-      console.warn('Edge already exists between these nodes with these handles')
+    if (dataGraph.hasEdge(sourceId, targetId, sourceHandle, targetHandle)) {
+      showWarning(
+        'Connection Already Exists',
+        'An edge already exists between these nodes with the same handles.'
+      )
       return false
     }
 
-    const success = get().dataGraph.addConnection(
+    const success = dataGraph.addConnection(
       sourceId,
       targetId,
       sourceHandle,
       targetHandle
     )
+
     if (success) {
+      const newEdges = dataGraph.getEdgesArray()
+
       // Update React Flow state
       set({
-        nodes: get().dataGraph.getNodesArray(),
-        edges: get().dataGraph.getEdgesArray(),
+        nodes: dataGraph.getNodesArray(),
+        edges: newEdges,
       })
+
       // Execute graph after new connection
       get().executeGraph()
+    } else {
+      showWarning(
+        'Invalid Connection',
+        'These nodes cannot be connected. Check node compatibility.'
+      )
     }
+
     return success
   },
 
@@ -313,6 +386,27 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
         break
       }
 
+      case 'UPDATE_SWITCH_CONFIG': {
+        const dataNode = dataGraph.getNode(update.nodeId)
+        if (dataNode && dataNode instanceof SwitchNode) {
+          // Use encapsulated setters instead of direct mutation
+          dataNode.setCondition(update.condition)
+          dataNode.setThreshold(update.threshold)
+
+          // Force React Flow to detect the change
+          dataGraph.updateNodeData(update.nodeId)
+
+          // Get fresh nodes array
+          set({
+            nodes: dataGraph.getNodesArray(),
+          })
+
+          // Execute graph after configuration change
+          get().executeGraph()
+        }
+        break
+      }
+
       default:
         // Exhaustive check
         const _exhaustive: never = update
@@ -327,13 +421,71 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
     get().dataGraph.validateConnection(sourceId, targetId),
   getExecutionOrder: () => get().dataGraph.getExecutionOrderDFS(), // DFS execution
 
+  // Notification actions
+  setNotification: (notification) => set({ notification }),
+
+  clearNotification: () => set({ notification: null }),
+
+  showError: (title, message) =>
+    set({
+      notification: { type: 'error', title, message },
+    }),
+
+  showSuccess: (title, message) =>
+    set({
+      notification: { type: 'success', title, message },
+    }),
+
+  showWarning: (title, message) =>
+    set({
+      notification: { type: 'warning', title, message },
+    }),
+
   // Execute graph
   executeGraph: () => {
-    get().dataGraph.executeGraph()
+    const { dataGraph, showError, showSuccess } = get()
 
-    // Force UI update
-    set({
-      nodes: get().dataGraph.getNodesArray(),
-    })
+    // Check for cycles
+    if (dataGraph.hasCycles()) {
+      showError(
+        '🔄 Cycle Detected',
+        'Graph contains cycles. Please remove circular dependencies before executing.'
+      )
+      return
+    }
+
+    try {
+      // Execute the graph
+      dataGraph.executeGraph()
+
+      // Get execution stats
+      const executionOrder = dataGraph.getExecutionOrderDFS()
+      const nodeCount = executionOrder.length
+
+      // Show success notification
+      showSuccess(
+        '✅ Execution Complete',
+        `Successfully executed ${nodeCount} node${nodeCount !== 1 ? 's' : ''}`
+      )
+
+      // Force UI update to show updated values
+      // Create new edge objects to ensure React Flow detects edge data changes
+      const updatedEdges = dataGraph.getEdgesArray().map((edge) => ({
+        ...edge,
+        data: edge.data ? { ...edge.data } : undefined,
+      }))
+
+      set({
+        nodes: dataGraph.getNodesArray(),
+        edges: updatedEdges,
+      })
+    } catch (error) {
+      showError(
+        '⚠️ Execution Failed',
+        error instanceof Error
+          ? error.message
+          : 'An unknown error occurred during execution'
+      )
+    }
   },
 })

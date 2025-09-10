@@ -20,7 +20,18 @@ import '@xyflow/react/dist/style.css'
 // Internal absolute imports
 import { useFlowStore } from '@/store/use-flow-store'
 import { nodeTypes } from '@/components/nodes'
+import ControlFlowEdge from '@/components/edges/control-flow-edge'
 import { Button } from '@/components/ui/button'
+import { NotificationHandler } from './notification-handler'
+import { EDGE_TYPES } from '@/types/edge-types'
+import BidirectionalFlowEdge from '../edges/bidirectional-flow-edge'
+
+// Edge types for visualization
+// Only register custom edge types, React Flow handles built-in types automatically
+const edgeTypes = {
+  [EDGE_TYPES.CONTROL_FLOW]: ControlFlowEdge, // Register our custom edge type
+  [EDGE_TYPES.BIDIRECTIONAL_FLOW]: BidirectionalFlowEdge, // Register our custom edge type
+}
 
 export function FlowCanvas() {
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null)
@@ -39,6 +50,7 @@ export function FlowCanvas() {
   )
   const addLogicNode = useFlowStore((state) => state.addLogicNode)
   const addCommandNode = useFlowStore((state) => state.addCommandNode)
+  const addControlFlowNode = useFlowStore((state) => state.addControlFlowNode)
   const removeNode = useFlowStore((state) => state.removeNode)
   const executeGraph = useFlowStore((state) => state.executeGraph)
 
@@ -119,6 +131,17 @@ export function FlowCanvas() {
             position,
             draggedData.metadata
           )
+        } else if (
+          draggedData.type === 'control-flow-node' &&
+          draggedData.draggedFrom === 'control-flow-section'
+        ) {
+          // Add control flow node
+          await addControlFlowNode(
+            draggedData.nodeType,
+            draggedData.label,
+            position,
+            draggedData.metadata
+          )
         } else {
           console.warn('Unknown drag type:', draggedData.type)
         }
@@ -126,7 +149,12 @@ export function FlowCanvas() {
         console.error('Failed to handle drop:', error)
       }
     },
-    [addNodeFromInfrastructure, addLogicNode, addCommandNode]
+    [
+      addNodeFromInfrastructure,
+      addLogicNode,
+      addCommandNode,
+      addControlFlowNode,
+    ]
   )
 
   const onInit = useCallback((instance: ReactFlowInstance) => {
@@ -135,10 +163,14 @@ export function FlowCanvas() {
 
   return (
     <div className="w-full h-full bg-background">
+      {/* Notification handler component */}
+      <NotificationHandler />
+
       <ReactFlow
         nodes={nodes as Node[]}
         edges={edges as Edge[]}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodesDelete={onNodeDelete}

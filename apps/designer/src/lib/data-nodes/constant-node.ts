@@ -1,6 +1,7 @@
 import {
   DataNode,
   LogicNode,
+  LogicOutputHandle,
   ComputeValue,
   NodeCategory,
   NodeDirection,
@@ -15,7 +16,7 @@ export interface ConstantNodeMetadata {
   valueType: ValueType
 }
 
-export class ConstantNode implements LogicNode {
+export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
   readonly id: string
   readonly type = 'constant' as const
   readonly category = NodeCategory.LOGIC
@@ -28,9 +29,13 @@ export class ConstantNode implements LogicNode {
     return this._metadata
   }
 
-  inputValues: ComputeValue[] = []
-  computedValue?: ComputeValue
-  lastComputed?: Date
+  // Public getter for UI access - returns the constant value
+  get computedValue(): ComputeValue | undefined {
+    const value = this._metadata.value
+    return typeof value === 'number' || typeof value === 'boolean'
+      ? value
+      : undefined
+  }
 
   constructor(
     label: string,
@@ -40,12 +45,17 @@ export class ConstantNode implements LogicNode {
     this.id = generateInstanceId()
     this.label = label
     this._metadata = { value, valueType }
-
-    if (typeof value === 'number' || typeof value === 'boolean') {
-      this.computedValue = value
-      this.lastComputed = new Date()
-    }
   }
+
+  getValue(): ComputeValue | undefined {
+    const value = this._metadata.value
+    return typeof value === 'number' || typeof value === 'boolean'
+      ? value
+      : undefined
+  }
+
+  // Constants don't reset - they maintain their value
+  // No reset() method needed
 
   canConnectWith(target: DataNode): boolean {
     // Constants can connect to anything that accepts input
@@ -53,19 +63,17 @@ export class ConstantNode implements LogicNode {
     return target.direction !== NodeDirection.OUTPUT
   }
 
-  getValue(): number | boolean | string {
-    return this.metadata.value
+  // Constants have no inputs
+  getInputHandles(): readonly never[] {
+    return [] as const
+  }
+
+  getOutputHandles(): readonly LogicOutputHandle[] {
+    return ['output'] as const
   }
 
   setValue(value: number | boolean | string): void {
     this._metadata = { ...this._metadata, value }
-
-    if (typeof value === 'number' || typeof value === 'boolean') {
-      this.computedValue = value
-      this.lastComputed = new Date()
-    } else {
-      this.computedValue = undefined
-    }
   }
 
   setValueType(valueType: ValueType): void {
@@ -83,12 +91,5 @@ export class ConstantNode implements LogicNode {
     }
 
     this._metadata = { valueType, value: newValue }
-
-    if (typeof newValue === 'number' || typeof newValue === 'boolean') {
-      this.computedValue = newValue
-      this.lastComputed = new Date()
-    } else {
-      this.computedValue = undefined
-    }
   }
 }

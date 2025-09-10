@@ -2,6 +2,7 @@ import {
   BacnetInputOutput,
   LogicNode,
   CommandNode,
+  ControlFlowNode,
   NodeCategory,
 } from './infrastructure'
 import { ConstantNodeMetadata } from '@/lib/data-nodes/constant-node'
@@ -44,6 +45,16 @@ export interface WriteSetpointNodeData extends CommandNode, BaseNodeData {
   type: 'write-setpoint'
 }
 
+// Control flow node data types
+export interface SwitchNodeData extends ControlFlowNode, BaseNodeData {
+  category: NodeCategory.CONTROL_FLOW
+  type: 'switch'
+  condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
+  threshold: number
+  activeLabel: string
+  inactiveLabel: string
+}
+
 // Discriminated union of all node data types
 export type NodeData =
   | BacnetNodeData
@@ -51,6 +62,7 @@ export type NodeData =
   | ComparisonNodeData
   | ConstantNodeData
   | WriteSetpointNodeData
+  | SwitchNodeData
 
 // Map node type strings to their data types
 export interface NodeTypesMap {
@@ -72,6 +84,9 @@ export interface NodeTypesMap {
 
   // Command nodes
   'command.write-setpoint': WriteSetpointNodeData
+
+  // Control flow nodes
+  'control-flow.switch': SwitchNodeData
 }
 
 // Type helper to get node data type from node type string

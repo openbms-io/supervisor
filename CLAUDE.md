@@ -311,3 +311,4 @@ npm run test:integration
 - **Use existing components** - prefer shadcn/ui components over custom implementations
 - **Define Types** - Dont use any or unknown. Define types where it cannot be inferred. But, dont fallback to using any or unknown.
 - **Coding Conventions** - Follow coding conventions listed in docs/coding-standards.md
+- **Bug Fix** - Always focus on finding and assessing root cause first. Present your plan, before provising a fix with options.

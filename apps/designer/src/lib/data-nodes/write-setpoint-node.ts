@@ -5,6 +5,8 @@ import {
   generateInstanceId,
   ComputeValue,
   DataNode,
+  CommandInputHandle,
+  CommandOutputHandle,
 } from '@/types/infrastructure'
 
 export class WriteSetpointNode implements CommandNode {
@@ -30,5 +32,13 @@ export class WriteSetpointNode implements CommandNode {
       other.category === NodeCategory.BACNET ||
       other.category === NodeCategory.COMMAND
     )
+  }
+
+  getInputHandles(): readonly CommandInputHandle[] {
+    return ['setpoint'] as const
+  }
+
+  getOutputHandles(): readonly CommandOutputHandle[] {
+    return ['output'] as const
   }
 }

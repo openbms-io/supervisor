@@ -9,6 +9,7 @@ export enum NodeCategory {
   BACNET = 'bacnet',
   LOGIC = 'logic',
   COMMAND = 'command',
+  CONTROL_FLOW = 'control-flow',
 }
 
 // BACnet object types (bacpypes3/BAC0 naming)
@@ -23,7 +24,7 @@ export type BacnetObjectType =
   | 'multistate-output'
   | 'multistate-value'
 
-// All node types (BACnet + logic)
+// All node types (BACnet + logic + control flow)
 export type NodeTypeString =
   | BacnetObjectType
   | 'comparison'
@@ -33,6 +34,8 @@ export type NodeTypeString =
   | 'schedule'
   | 'write-setpoint'
   | 'constant'
+  | 'switch'
+  | 'gate'
 
 export enum NodeDirection {
   INPUT = 'input',
@@ -40,8 +43,11 @@ export enum NodeDirection {
   BIDIRECTIONAL = 'bidirectional',
 }
 
-// Base DataNode interface (no pointId here)
-export interface DataNode {
+// Base DataNode interface with generic handle types
+export interface DataNode<
+  TInputHandle extends string = string,
+  TOutputHandle extends string = string,
+> {
   readonly id: string // UUID v4 - instance ID
   readonly type: NodeTypeString
   readonly category: NodeCategory
@@ -49,23 +55,24 @@ export interface DataNode {
   readonly direction: NodeDirection
   readonly metadata?: unknown
   canConnectWith(other: DataNode): boolean
+  getInputHandles?(): readonly TInputHandle[]
+  getOutputHandles?(): readonly TOutputHandle[]
 }
 
 // Computation value types - what logic nodes can work with
 export type ComputeValue = number | boolean
 
-// Logic node configuration (only for nodes that compute)
-export interface LogicConfig {
-  inputValues: ComputeValue[] // Current input values
-  computedValue?: ComputeValue // Result of computation
-  lastComputed?: Date
-
-  // Only nodes with inputs have execute
+// Logic node interface with clean API and typed handles
+export interface LogicNode<
+  TInputHandle extends string = string,
+  TOutputHandle extends string = string,
+> extends DataNode<TInputHandle, TOutputHandle> {
+  // Clean public API
+  getValue(): ComputeValue | undefined
+  getInputValues?(): ComputeValue[] // Optional - for nodes that have inputs
+  reset?(): void // Optional - only for nodes that compute
   execute?(inputs: ComputeValue[]): ComputeValue
 }
-
-// LogicNode extends DataNode with computation capabilities
-export interface LogicNode extends DataNode, LogicConfig {}
 
 // Command node configuration
 export interface CommandConfig {
@@ -74,7 +81,10 @@ export interface CommandConfig {
   writeMode: 'normal' | 'override' | 'release'
 }
 
-export interface CommandNode extends DataNode, CommandConfig {}
+// CommandNode with typed handles
+export interface CommandNode
+  extends DataNode<CommandInputHandle, CommandOutputHandle>,
+    CommandConfig {}
 
 // Type-safe handle types for logic nodes
 export type CalculationInputHandle = 'input1' | 'input2'
@@ -84,6 +94,27 @@ export type LogicOutputHandle = 'output'
 // Type-safe handle types for command nodes
 export type CommandInputHandle = 'setpoint'
 export type CommandOutputHandle = 'output'
+
+// Type-safe handle types for control flow nodes
+export type SwitchInputHandle = 'input'
+export type SwitchOutputHandle = 'active' | 'inactive'
+export type GateInputHandle = 'condition' | 'value'
+export type GateOutputHandle = 'output'
+
+// Control flow node interface with typed handles
+export interface ControlFlowNode<
+  TInputHandle extends string = string,
+  TOutputHandle extends string = string,
+> extends DataNode<TInputHandle, TOutputHandle> {
+  readonly category: NodeCategory.CONTROL_FLOW
+  readonly direction: NodeDirection.BIDIRECTIONAL
+
+  // Clean public API
+  getValue(): ComputeValue | undefined
+  reset(): void
+  execute(inputs: ComputeValue[]): void
+  getActiveOutputHandles(): readonly TOutputHandle[]
+}
 
 // Type-safe BACnet properties (from BacnetProperties keys)
 export type BacnetPropertyKey = keyof BacnetProperties
@@ -102,6 +133,8 @@ export interface EdgeData extends Record<string, unknown> {
     nodeType: NodeTypeString
     handle?: string // e.g. 'presentValue', 'statusFlags', 'eventState', etc. connected to specific property
   }
+  // Control flow state - undefined means active by default
+  isActive?: boolean
 }
 
 // Single source of truth: derive valid properties from BacnetProperties interface
@@ -155,7 +188,10 @@ export interface BacnetConfig {
   position?: { x: number; y: number }
 }
 
-export interface BacnetInputOutput extends DataNode, BacnetConfig {}
+// BACnet nodes have no inputs, dynamic string outputs based on discovered properties
+export interface BacnetInputOutput
+  extends DataNode<never, string>,
+    BacnetConfig {}
 
 export interface Supervisor {
   id: string
@@ -209,4 +245,21 @@ export function generateBACnetPointId({
 
 export function generateInstanceId(): string {
   return uuidv4()
+}
+
+// Type guard functions
+export function isControlFlowNode(node: DataNode): node is ControlFlowNode {
+  return node.category === NodeCategory.CONTROL_FLOW
+}
+
+export function isLogicNode(node: DataNode): node is LogicNode {
+  return node.category === NodeCategory.LOGIC
+}
+
+export function isCommandNode(node: DataNode): node is CommandNode {
+  return node.category === NodeCategory.COMMAND
+}
+
+export function isBacnetNode(node: DataNode): node is BacnetInputOutput {
+  return node.category === NodeCategory.BACNET
 }

@@ -3,6 +3,7 @@ import { CalculationNode } from './calculation-node'
 import { ComparisonNode } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
 import { ConstantNodeUI } from './constant-node-ui'
+import { SwitchNode } from './switch-node'
 
 // Strongly typed node types for React Flow
 export const nodeTypes = {
@@ -26,4 +27,7 @@ export const nodeTypes = {
 
   // Command nodes
   'command.write-setpoint': WriteSetpointNode,
+
+  // Control flow nodes
+  'control-flow.switch': SwitchNode,
 } as const
