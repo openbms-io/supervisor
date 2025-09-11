@@ -370,7 +370,7 @@ Contributors will be recognized in:
 
 ## 📄 License
 
-By contributing to BMS Supervisor Controller, you agree that your contributions will be licensed under the [MIT License](LICENSE.md).
+By contributing to BMS Supervisor Controller, you agree that your contributions will be licensed under the AGPL-3.0 License.
 
 ---
 

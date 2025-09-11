@@ -2,6 +2,7 @@
   "name": "bms-supervisor-controller",
   "version": "0.1.0",
   "description": "BMS Supervisor Controller - Visual programming platform for building management systems",
+  "license": "AGPL-3.0",
   "private": true,
   "type": "module",
   "scripts": {

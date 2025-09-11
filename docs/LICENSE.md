@@ -1,24 +1,9 @@
-# MIT License
+# License
 
-Copyright (c) 2025 BMS Supervisor Controller Contributors
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL‑3.0).
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+- Full text: see the root `LICENSE` file
+- Summary: AGPL‑3.0 grants rights to use, modify, and distribute, includes an explicit patent license/retaliation, and requires providing corresponding source to users who interact with the software over a network (and to recipients of binaries/images)
 
 ---
 
@@ -53,10 +38,10 @@ This project incorporates several open-source libraries and components. Below ar
 - **ESLint** - MIT License
 - **Prettier** - MIT License
 
-### Future BACnet Dependencies (Planned)
+### BACnet Dependencies
 
-- **BAC0** - GNU Lesser General Public License (LGPL)
-- **bacpypes** - MIT License
+- **BAC0** - GNU General Public License v3.0 (GPL‑3.0)
+- **bacpypes3** - MIT License
 
 ### Database
 
@@ -69,21 +54,19 @@ This project incorporates several open-source libraries and components. Below ar
 
 ## Contributing
 
-By contributing to this project, you agree that your contributions will be licensed under the same MIT License that covers the project. For more details, see [CONTRIBUTING.md](CONTRIBUTING.md).
+By contributing to this project, you agree that your contributions will be licensed under the same AGPL‑3.0 License that covers the project. For more details, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
 ## Notice for BACnet Integration
 
-This project plans to integrate with BACnet protocol libraries. Some BACnet libraries may have different licensing terms:
+This project integrates with BACnet protocol libraries with distinct licensing terms:
 
-- **BAC0**: Licensed under LGPL, which requires compliance with LGPL terms for distribution
-- **bacpypes**: Licensed under MIT, compatible with this project's license
-
-When BACnet integration is implemented (Phase 7), appropriate licensing notices will be included for any LGPL dependencies.
+- **BAC0**: Licensed under GPL‑3.0; distributing an application that incorporates BAC0 imposes GPL/AGPL copyleft obligations
+- **bacpypes3**: Licensed under MIT; compatible with AGPL‑3.0
 
 ---
 
 **Project**: BMS Supervisor Controller
-**License**: MIT
+**License**: AGPL‑3.0
 **Repository**: https://github.com/[your-org]/bms-supervisor-controller

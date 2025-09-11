@@ -400,11 +400,11 @@ pnpm run hooks:run            # Run hooks on all files
 
 ## 📄 License
 
-This project is licensed under the MIT License - see [LICENSE.md](docs/LICENSE.md) for details.
+This project is licensed under the AGPL-3.0 License. See the root `LICENSE` file and [docs/LICENSE.md](docs/LICENSE.md) for third-party notices and details.
 
 ## 📚 Documentation
 
 - **[Project Status](docs/PROJECT_STATUS.md)** - Current development phase and progress
 - **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to the project
-- **[License](docs/LICENSE.md)** - MIT License and third-party notices
+- **[License](docs/LICENSE.md)** - AGPL-3.0 License and third-party notices
 - **[Coding Standards](docs/coding-standards.md)** - Development standards and practices
