@@ -106,6 +106,31 @@ npm run lint                    # ESLint
 npm run test                    # Jest + React Testing Library
 ```
 
+### Designer Database (SQLite local, Turso remote)
+
+- Local development (SQLite file):
+
+  - Uses `better-sqlite3` with `apps/designer/designer.db` when `TURSO_DATABASE_URL` is not set.
+  - Run migrations locally:
+    - `pnpm --filter designer db:migrate`
+  - Start app:
+    - `pnpm --filter designer dev`
+
+- Remote (Turso/libSQL, e.g. Vercel):
+
+  - Set env vars in your shell (or CI) when running migrations:
+    - `TURSO_DATABASE_URL='libsql://<your-db>.turso.io'`
+    - `TURSO_AUTH_TOKEN='<token>'` (if your DB requires it)
+  - Run migrations against Turso:
+    - `TURSO_DATABASE_URL='…' TURSO_AUTH_TOKEN='…' pnpm --filter designer db:migrate`
+  - On Vercel, add the same env vars in Project Settings → Environment Variables. At runtime the app auto‑detects Turso and uses `@libsql/client` with Drizzle.
+  - Migrations are not run at runtime in serverless. Run the command above locally (before deploy) or in your CI of choice.
+
+- Notes:
+  - The repository methods are async and work with both drivers.
+  - Keep API routes on the Node.js runtime (do not set `export const runtime = 'edge'`).
+  - The first migration seeds two example projects; you’ll see them after running migrations.
+
 ### IoT Supervisor App Commands
 
 ```bash
