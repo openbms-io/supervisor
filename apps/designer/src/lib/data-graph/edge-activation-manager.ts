@@ -111,7 +111,7 @@ export class EdgeActivationManager {
     return edges
   }
 
-  private getIncomingEdges(nodeId: string): Edge<EdgeData>[] {
+  getIncomingEdges(nodeId: string): Edge<EdgeData>[] {
     const edges: Edge<EdgeData>[] = []
     for (const edge of this.edgesMap.values()) {
       if (edge.target === nodeId) {
@@ -119,6 +119,45 @@ export class EdgeActivationManager {
       }
     }
     return edges
+  }
+
+  /**
+   * Reset all edges to inactive at start of execution
+   */
+  resetAllEdges(): void {
+    for (const edge of this.edgesMap.values()) {
+      if (edge.data) {
+        edge.data.isActive = false
+      }
+    }
+  }
+
+  /**
+   * Activate all output edges from a node (for regular nodes)
+   */
+  activateAllOutputHandleEdges(nodeId: string): void {
+    const edges = this.getOutgoingEdges(nodeId)
+    for (const edge of edges) {
+      if (edge.data) {
+        edge.data.isActive = true
+      }
+    }
+  }
+
+  /**
+   * Activate specific output handle edges (for control flow nodes)
+   */
+  activateSpecificOutputHandleEdges(
+    nodeId: string,
+    activeHandles: string[]
+  ): void {
+    const edges = this.getOutgoingEdges(nodeId)
+    for (const edge of edges) {
+      if (edge.data) {
+        const handle = edge.sourceHandle || 'default'
+        edge.data.isActive = activeHandles.includes(handle)
+      }
+    }
   }
 
   /**

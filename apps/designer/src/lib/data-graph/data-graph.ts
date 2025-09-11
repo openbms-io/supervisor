@@ -492,15 +492,17 @@ export class DataGraph {
     // Reset all computed values for fresh execution
     this.resetComputedValues()
 
-    // Initialize edge states
-    this.edgeManager.initializeEdgeStates()
+    // Start with all edges inactive
+    this.edgeManager.resetAllEdges()
 
     for (const nodeId of executionOrder) {
       const node = this.getNode(nodeId)
       if (!node) continue
 
-      // Skip unreachable nodes
-      if (!this.edgeManager.isNodeReachable(nodeId)) continue
+      // Check if node is reachable (has active input or is source)
+      const isReachable = this.isNodeReachable(nodeId)
+
+      if (!isReachable) continue
 
       const inputs = this.getNodeInputValues(nodeId)
 
@@ -510,9 +512,11 @@ export class DataGraph {
           const cfNode = node as ControlFlowNode
           cfNode.execute(inputs)
 
-          // Let edge manager handle activation
+          // Activate specific output handles based on control flow logic
           const activeHandles = cfNode.getActiveOutputHandles()
-          this.edgeManager.activateOutputs(nodeId, [...activeHandles])
+          this.edgeManager.activateSpecificOutputHandleEdges(nodeId, [
+            ...activeHandles,
+          ])
           break
         }
 
@@ -521,6 +525,8 @@ export class DataGraph {
           if (logicNode.execute) {
             logicNode.execute(inputs)
           }
+          // Activate all outputs for logic nodes
+          this.edgeManager.activateAllOutputHandleEdges(nodeId)
           break
         }
 
@@ -541,11 +547,14 @@ export class DataGraph {
               )
             }
           }
+          // Activate all outputs for command nodes
+          this.edgeManager.activateAllOutputHandleEdges(nodeId)
           break
         }
 
         case NodeCategory.BACNET:
-          // Data sources, no execution needed
+          // Data sources, activate their outputs
+          this.edgeManager.activateAllOutputHandleEdges(nodeId)
           break
 
         default: {
@@ -557,6 +566,20 @@ export class DataGraph {
 
       this.updateNodeData(nodeId)
     }
+  }
+
+  /**
+   * Check if a node is reachable (has active input or is a source node)
+   */
+  private isNodeReachable(nodeId: string): boolean {
+    // Source nodes (no incoming edges) are always reachable
+    const incomingEdges = this.edgeManager.getIncomingEdges(nodeId)
+    if (incomingEdges.length === 0) {
+      return true // It's a source/root node
+    }
+
+    // Non-source nodes need at least one active incoming edge
+    return incomingEdges.some((edge) => edge.data?.isActive === true)
   }
 
   private executeBacnetWrite(

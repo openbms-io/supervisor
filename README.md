@@ -1,6 +1,30 @@
 # BMS Supervisor Controller
 
+[![Phase](https://img.shields.io/badge/Phase-6%2F8-yellow.svg)](docs/PROJECT_STATUS.md)
+[![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](docs/PROJECT_STATUS.md)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](docs/LICENSE.md)
+
 Visual programming platform for building management systems with IoT device integration.
+
+## 📊 Project Status
+
+**Current Phase**: 6/8 (Persistence & Integration) - See [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for detailed progress tracking.
+
+- ✅ **Phases 1-5 Complete**: Core visual programming infrastructure
+- 🚧 **Phase 6 In Progress**: Database persistence, project management, edge refinements
+- 📋 **Phase 7 Planned**: Real BACnet device discovery and integration
+- 📋 **Phase 8 Deferred**: Multi-supervisor management
+
+## 🤝 Contributing
+
+We welcome contributions! This project is in active development and there are many areas where help is needed:
+
+- **BACnet Integration**: Real device discovery and protocol expertise
+- **Testing**: End-to-end scenarios and performance testing
+- **Documentation**: User guides and API documentation
+- **UI/UX**: Canvas improvements and mobile responsiveness
+
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed contribution guidelines.
 
 ## Architecture
 
@@ -105,6 +129,31 @@ npm run start                   # Start production server
 npm run lint                    # ESLint
 npm run test                    # Jest + React Testing Library
 ```
+
+### Designer Database (SQLite local, Turso remote)
+
+- Local development (SQLite file):
+
+  - Uses `better-sqlite3` with `apps/designer/designer.db` when `TURSO_DATABASE_URL` is not set.
+  - Run migrations locally:
+    - `pnpm --filter designer db:migrate`
+  - Start app:
+    - `pnpm --filter designer dev`
+
+- Remote (Turso/libSQL, e.g. Vercel):
+
+  - Set env vars in your shell (or CI) when running migrations:
+    - `TURSO_DATABASE_URL='libsql://<your-db>.turso.io'`
+    - `TURSO_AUTH_TOKEN='<token>'` (if your DB requires it)
+  - Run migrations against Turso:
+    - `TURSO_DATABASE_URL='…' TURSO_AUTH_TOKEN='…' pnpm --filter designer db:migrate`
+  - On Vercel, add the same env vars in Project Settings → Environment Variables. At runtime the app auto‑detects Turso and uses `@libsql/client` with Drizzle.
+  - Migrations are not run at runtime in serverless. Run the command above locally (before deploy) or in your CI of choice.
+
+- Notes:
+  - The repository methods are async and work with both drivers.
+  - Keep API routes on the Node.js runtime (do not set `export const runtime = 'edge'`).
+  - The first migration seeds two example projects; you’ll see them after running migrations.
 
 ### IoT Supervisor App Commands
 
@@ -348,3 +397,14 @@ pnpm run hooks:run            # Run hooks on all files
 - **Testing**: Jest, React Testing Library, pytest
 - **Build**: PNPM workspaces, TypeScript, tsx, datamodel-code-generator
 - **Code Quality**: Prettier, ESLint, Black, Ruff, pre-commit hooks
+
+## 📄 License
+
+This project is licensed under the AGPL-3.0 License. See the root `LICENSE` file and [docs/LICENSE.md](docs/LICENSE.md) for third-party notices and details.
+
+## 📚 Documentation
+
+- **[Project Status](docs/PROJECT_STATUS.md)** - Current development phase and progress
+- **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[License](docs/LICENSE.md)** - AGPL-3.0 License and third-party notices
+- **[Coding Standards](docs/coding-standards.md)** - Development standards and practices
