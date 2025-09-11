@@ -73,6 +73,32 @@
   - Schema validation pipeline (Zod → JSON Schema → Pydantic)
   - Basic IoT Supervisor integration
 - **In Progress**:
+
+  - Turing Completeness
+
+    - Memory/Register node
+      - Purpose: Holds mutable state across steps; outputs the previous stored value; can be written by a trigger.
+      - Inputs: value (any), write trigger (bool), optional reset.
+      - Output: current/previous value.
+      - Why: Provides memory so feedback loops can carry state; prevents algebraic loops when paired with Delay.
+      - Why: Provides memory so feedback loops can carry state; prevents algebraic loops when paired with Delay.
+    - Variable Set / Variable Get
+      - Purpose: Named variable store in the runtime context for general state, not just a single register.
+      - SetVar(name, value): writes to context; optionally emits the written value.
+      - GetVar(name): reads from context, emits current value (or default).
+      - Why: Gives a simple model of mutable variables; together with Switch and While you can implement while-language constructs.
+    - While loop node (or Repeat-Until)
+      - Purpose: Re-enter a body subgraph until a condition is false.
+      - Inputs: condition (bool), body entry (control-flow), optional loop locals.
+      - Outputs: done (control-flow), optional final accumulator value.
+      - Why: Gives explicit looping without having to rely on tricky cyclic edges. It’s the simplest to reason about for users and the engine.
+    - Boolean logic nodes
+      - NOT, AND, OR
+      - Why: Switch + comparisons cover many cases, but boolean combinators make control logic straightforward and readable.
+    - Delay node (one-tick / one-iteration delay)
+      - Purpose: Breaks instantaneous cycles; emits the previous tick’s input on the next tick.
+      - Why: Enables stable feedback loops (e.g., accumulators) without zero-time infinite loops.
+
   - Edge connection refinements
   - Control flow node edge states (active/inactive visualization)
   - Project deployment to IoT Supervisor
@@ -84,6 +110,7 @@
       - Schedule evaluation (weekly, daily, exception schedules)
       - Takes time input, schedule config
       - Outputs active/inactive state
+
 - **Remaining**:
   - Robust error handling for deployment
   - Advanced project management features
