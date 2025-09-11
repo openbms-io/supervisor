@@ -8,22 +8,36 @@ We're actively seeking contributions in several key areas:
 
 ### High Priority Areas
 
-1. **BACnet Integration** (Phase 7)
+1. **Supervisor Engine Core** (`packages/supervisor-engine`)
+
+   - Runtime graph and node registry/evaluators
+   - Deterministic scheduler (monotonic clock, drift-corrected)
+   - I/O adapter for IoT Service (HTTP/WS; batching, debouncing, COV-first)
+   - Bundle format/versioning/validation; preview execution utilities
+
+2. **Headless Engine App** (`apps/headless-engine`)
+
+   - Thin wrapper (CLI + local control API): deploy/reload/status/health
+   - Atomic bundle management (staging → activate → rollback)
+   - Health/readiness endpoints, structured logs
+
+3. **BACnet Integration** (Phase 7) — `apps/iot-supervisor-app`
 
    - Real BACnet device discovery
    - Network scanning and enumeration
-   - Protocol expertise and optimization
+   - BAC0 (GPL-3.0) integration or bacpypes3 (MIT) alternative
 
-2. **Testing & Quality Assurance**
+4. **Testing & Quality Assurance**
 
-   - End-to-end testing scenarios
+   - End-to-end and soak tests (timing, drift, network flaps)
    - Performance testing with large node graphs
-   - Cross-platform compatibility testing
+   - Cross-platform/browser compatibility testing
+   - Testing with real bacnet/ip controllers
 
-3. **Documentation**
+5. **Documentation**
    - User guides and tutorials
-   - API documentation improvements
-   - Deployment and setup guides
+   - API contracts (Engine control, IoT Service)
+   - Deployment and setup guides (AGPL source link, release artifacts)
 
 ### Medium Priority Areas
 
@@ -38,56 +52,12 @@ We're actively seeking contributions in several key areas:
    - CI/CD pipeline implementation
    - Deployment automation
 
-## 🚀 Getting Started
+## 🚀 Setup
 
-### Prerequisites
+For prerequisites and full environment setup (install, dev servers, schema generation), follow the root README:
 
-- **Node.js** ≥18.0.0
-- **PNPM** ≥9.0.0
-- **Python** ≥3.11
-- **Git**
-
-### Initial Setup
-
-1. **Fork and clone the repository**
-
-   ```bash
-   git clone https://github.com/[your-username]/bms-supervisor-controller.git
-   cd bms-supervisor-controller
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   pnpm install
-   ```
-
-3. **Generate schemas**
-
-   ```bash
-   pnpm run schema:generate
-   ```
-
-4. **Set up development environment**
-
-   ```bash
-   # Install pre-commit hooks
-   pnpm run setup:hooks
-
-   # Start development servers
-   pnpm run dev
-   ```
-
-5. **Verify setup**
-
-   ```bash
-   # Run all tests
-   pnpm run test
-
-   # Check applications are running
-   # - Designer: http://localhost:3000
-   # - IoT Supervisor: http://localhost:8080
-   ```
+- See README.md → Quick Start and Development sections
+- Optional: run `pnpm run setup:hooks` to enable pre-commit hooks
 
 ### Development Workflow
 
@@ -153,8 +123,10 @@ pytest tests/
 bms-supervisor-controller/
 ├── apps/
 │   ├── designer/             # Next.js visual programming interface
-│   └── iot-supervisor-app/   # FastAPI IoT runtime
+│   ├── headless-engine/      # Node service (engine wrapper; planned)
+│   └── iot-supervisor-app/   # FastAPI IoT runtime (BACnet)
 ├── packages/
+│   ├── supervisor-engine/    # Shared runtime engine core
 │   └── bms-schemas/          # Shared schema validation
 ├── docs/                     # Documentation
 └── specs/                    # Technical specifications
@@ -366,7 +338,7 @@ Contributors will be recognized in:
 
 - **GitHub Issues**: For bugs and feature requests
 - **GitHub Discussions**: For questions and community discussion
-- **Email**: [Maintainer email when available]
+- **Email**: support@openbms.io
 
 ## 📄 License
 

@@ -4,7 +4,7 @@
 
 [![Phase](https://img.shields.io/badge/Phase-6%2F8-yellow.svg)](docs/PROJECT_STATUS.md)
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](docs/PROJECT_STATUS.md)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](docs/LICENSE.md)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](docs/LICENSE.md)
 
 **BMS Supervisor Controller** is a visual programming platform for building management systems with IoT device integration. This document tracks the project's development progress and current status.
 
@@ -186,7 +186,7 @@
 - ✅ FastAPI with automatic OpenAPI docs
 - ✅ Typer CLI interface
 - ✅ uvicorn ASGI server
-- 🚧 BACnet libraries (BAC0, bacpypes) - planned for Phase 7
+- 🚧 BACnet libraries: BAC0 (GPL-3.0) as primary choice; bacpypes3 (MIT) as alternative — planned for Phase 7
 - ✅ pytest testing framework
 - ✅ Virtual environment setup
 
