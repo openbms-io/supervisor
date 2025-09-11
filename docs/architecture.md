@@ -1,14 +1,18 @@
 # BMS Supervisor Controller — Architecture
 
-This document captures the target architecture for running the Designer on-device as the control plane, with a headless execution engine for visual flows, and a Python FastAPI service providing BACnet access.
+This document captures the target architecture for running the Designer
+on-device as the control plane, with a headless execution engine for visual
+flows, and a Python FastAPI service providing BACnet access.
 
 Status: Draft (agreed direction)
 
 ## Goals
 
-- Single control plane on-device (Designer UI) for projects, validation, deployments, and monitoring
+- Single control plane on-device (Designer UI) for projects, validation,
+  deployments, and monitoring
 - One execution engine (Node) for all visual programming logic — no dual engines
-- Python BACnet service (FastAPI + BAC0/bacpypes3) as the sole path to BACnet devices
+- Python BACnet service (FastAPI + BAC0/bacpypes3) as the sole path to BACnet
+  devices
 - Offline-first, reliable, low-latency operation on industrial hardware
 
 ## High-Level Components
@@ -16,7 +20,8 @@ Status: Draft (agreed direction)
 - Designer UI (Next.js) — `apps/designer`
 
   - Projects, device config, validation, deployments, monitoring UI
-  - Local SQLite for dev; Turso/libSQL or equivalent for central storage when needed
+  - Local SQLite for dev; Turso/libSQL or equivalent for central storage when
+    needed
 
 - Headless Engine App (Node) — `apps/headless-engine` (planned)
 
@@ -36,32 +41,39 @@ Status: Draft (agreed direction)
 
   - BACnet discovery, read/write, COV subscription management
   - Normalizes units and point metadata
-  - Persists runtime cache, short-term logs, and device discovery in local SQLite (`runtime.db`)
+  - Persists runtime cache, short-term logs, and device discovery in local
+    SQLite (`runtime.db`)
 
 - Shared Schemas — `packages/bms-schemas`
+
   - Source of truth for configuration and node types (Zod/TS + Pydantic)
 
 ## Component Diagram
 
 ```mermaid
 flowchart LR
-  subgraph Device[On-Device]
-    UI[Designer UI (Next.js)\napps/designer :3000]
-    Engine[Headless Engine App (Node)\nflow executor]
-    PY[IoT Supervisor Service (FastAPI)\nPython + BAC0/bacpypes3 :8080]
+  subgraph Device [On Device]
+    UI["Designer UI - Next.js"]
+    Engine["Headless Engine App - Node"]
+    PY["IoT Service - FastAPI and BACnet"]
 
-    DB1[(projects.db\nDesigner/Turso)]
-    DB2[(runtime.db\nIoT cache/logs)]
-
-    UI -->|deploy bundle| Engine
-    Engine <--> |read/write, discover, COV| PY
-    UI -.-> |monitor via API/stream| PY
+    DB1["projects db or Turso - Designer data"]
+    DB2["runtime db - IoT cache and logs"]
 
     UI --- DB1
     PY --- DB2
+
+    UI <-->|Control API local| Engine
+    UI <-->|HTTP| PY
+    Engine <-->|HTTP| PY
   end
 
-  PY --> |BACnet/IP| BACNET[(BACnet Devices)]
+  P1["packages/supervisor-engine - shared runtime lib"]
+  P2["packages/bms-schemas - shared schemas"]
+
+  UI --> P1
+  Engine --> P1
+  UI --> P2
 ```
 
 ### Packages and Apps
@@ -69,20 +81,20 @@ flowchart LR
 ```mermaid
 flowchart TB
   subgraph Apps
-    A1[apps/designer\nNext.js UI]
-    A2[apps/headless-engine\nNode service]
-    A3[apps/iot-supervisor-app\nFastAPI + BACnet]
+    A1["apps/designer - UI"]
+    A2["apps/headless-engine - Node service"]
+    A3["apps/iot-supervisor-app - FastAPI"]
   end
 
   subgraph Packages
-    P1[packages/supervisor-engine\nshared runtime library]
-    P2[packages/bms-schemas\nshared schemas (optional, retained)]
+    P1["packages/supervisor-engine - engine core"]
+    P2["packages/bms-schemas - schemas"]
   end
 
-  A1 -->|deploy bundle| A2
-  A2 <--> |HTTP/WS| A3
-  A1 --> P2
+  A1 --> P1
   A2 --> P1
+  A1 <-->|HTTP| A3
+  A2 <-->|HTTP| A3
 ```
 
 ## Roles & Responsibilities
@@ -90,19 +102,27 @@ flowchart TB
 - Designer UI (apps/designer)
 
   - Authoring: project CRUD, flow editing, node configuration
-  - Validation: schema checks against `bms-schemas`
+  - Validation: schema checks (Zod) and static checks using shared code where
+    applicable
   - Bundling: compile/serialize flows to a versioned runtime bundle (signed)
-  - Deployment: send bundles to the local Engine; list history and support rollback
-  - Monitoring: display live execution state and device values from the IoT Service
-  - Storage: local SQLite for dev (`designer.db`), Turso/libSQL in multi-device setups
+  - Deployment: send bundles directly to the Headless Engine; list history and
+    support rollback
+  - Monitoring: display live execution state and device values from the IoT
+    Service
+  - Storage: local SQLite for dev (`designer.db`), Turso/libSQL in multi-device
+    (Vercel) setups
+  - Preview execution: may run flows in-process via `packages/supervisor-engine`
+    for editor preview and faster visual feedback; production execution runs in
+    the Headless Engine
 
-- Headless Engine (apps/headless-engine) [Not created]
+- Headless Engine (apps/headless-engine)
 
-  - Single runtime for executing flow logic (interpreted pipeline initially)
-  - Deterministic scheduling (drift-corrected timers, persisted last-run)
-  - State management (context, retries, error handling)
-  - I/O adapter to IoT Service (batching, debouncing, rate-limits, COV-first)
-  - Health endpoints and structured logs; loads last-good bundle on boot
+  - Thin wrapper service: CLI and HTTP API to load/start/stop/reload bundles
+  - Lifecycle: persists active bundle version; loads last-good bundle on boot
+  - Health and status: liveness/readiness and execution status endpoints;
+    structured logs
+  - Delegation: all scheduling, evaluation, and I/O orchestration is implemented
+    in `packages/supervisor-engine`
 
 - IoT Supervisor Service (apps/iot-supervisor-app)
 
@@ -115,12 +135,22 @@ flowchart TB
 - Shared Schemas (packages/bms-schemas) [optional, retained]
 
   - Central definitions for configuration/node schemas and versions
-  - Codegen: Zod/TypeScript for Designer; Pydantic for Python service (where applicable)
-  - Alternative (future): move config schemas into `packages/supervisor-engine` and generate Python models from an OpenAPI spec; choose a single source of truth to avoid drift
+  - Codegen: Zod/TypeScript for Designer; Pydantic for Python service (where
+    applicable)
+  - Alternative (future): consolidate config schemas into
+    `packages/supervisor-engine`.
 
-- Shared Engine (packages/supervisor-engine) [Requires refactoring from apps/designer app]
-  - Shared code between Headless Engine and Designer.
-  - Visual programing model data.
+- Shared Engine (packages/supervisor-engine)
+
+  - Core runtime engine consumed by both Designer (for validation/preview) and
+    Headless Engine (for execution)
+  - Deterministic scheduler (monotonic clock, drift correction) and runtime
+    state model
+  - Node registry and evaluators; expression evaluation utilities
+  - I/O adapter interfaces and HTTP client for IoT Service (batching,
+    debouncing, rate limits)
+  - Bundle helpers: versioning, validation, backward-compat checks, optional
+    signing
 
 ## Engine API Surface (local-only by default)
 
@@ -140,41 +170,29 @@ flowchart TB
 - `headless-engine status`
 - `headless-engine stop`
 
-## Runtime Bundle Format & Versioning
-
-- Top-level fields:
-  - `version` (semantic), `schemaVersion`, `createdAt`, `createdBy`
-  - `nodeTypes` (declared), `graph` (nodes, edges), `schedules`
-  - `defaults` (params), `constraints` (limits/interlocks)
-  - `signature` (optional, for tamper detection)
-- Validation pipeline:
-  1. Zod (Designer) → static checks
-  2. Engine validators → runtime-specific checks (e.g., cycles, rate limits)
-  3. Backward-compat checks on deploy (schema versions)
-
 ## Key Data Flows
 
-### 1) Deploy-Time (Designer → Engine)
+### 1) Deploy-Time (Designer UI → Headless Engine)
 
 ```mermaid
 sequenceDiagram
-  participant UI as Designer UI
-  participant ENG as Headless Engine
-  participant PY as IoT Service (FastAPI)
+  participant UI as Designer UI (apps/designer)
+  participant ENG as Headless Engine (apps/headless-engine)
+  participant PY as IoT Service (apps/iot-supervisor-app)
 
-  UI->>UI: Validate project → bundle (versioned, signed)
-  UI->>ENG: POST /engine/deploy { bundle }
-  ENG->>ENG: Persist bundle, set active version
-  ENG->>PY: (Optional) warm-up reads / discovery
-  ENG-->>UI: 200 OK { version, status }
+  UI->>UI: Validate project then build bundle (versioned, signed)
+  UI->>ENG: POST /engine/deploy (bundle)
+  ENG->>ENG: Persist bundle and set active version
+  ENG->>PY: Optional warm-up reads or discovery
+  ENG-->>UI: 200 OK with version and status
 ```
 
-### 2) Runtime Tick (Engine → IoT Service → BACnet)
+### 2) Runtime Tick (Headless Engine → IoT Service → BACnet)
 
 ```mermaid
 sequenceDiagram
-  participant ENG as Headless Engine
-  participant PY as IoT Service
+  participant ENG as Headless Engine (apps/headless-engine)
+  participant PY as IoT Service (apps/iot-supervisor-app)
   participant BAC as BACnet Devices
 
   loop Every schedule
@@ -188,10 +206,13 @@ sequenceDiagram
   end
 ```
 
-### 3) Monitoring (UI ↔ IoT Service)
+### 3) Monitoring (Designer UI ↔ IoT Service)
 
-- UI subscribes to live value streams from IoT Service via SSE/WebSocket (preferred) or polls HTTP endpoints.
-- UI displays execution state (per-flow, per-node metrics) surfaced by the Engine.
+- Designer UI (apps/designer) subscribes to live value streams from IoT Service
+  (apps/iot-supervisor-app) via SSE/WebSocket (preferred) or polls HTTP
+  endpoints.
+- Designer UI displays execution state (per-flow, per-node metrics) surfaced by
+  the Headless Engine (apps/headless-engine).
 
 ## Deployment & Process Model
 
@@ -200,18 +221,68 @@ sequenceDiagram
   - `designer-engine` (Node worker, long-lived)
   - `iot-service` (FastAPI, port 8080)
 - Startup order: iot-service → designer-engine → designer-ui
-- Supervision: systemd or docker-compose/Balena; restart on failure; health/readiness checks
+- Supervision: systemd or docker-compose/Balena; restart on failure;
+  health/readiness checks
 
 ### Pros & Cons of Separate Engine App
 
-- Pros: isolation from Next.js lifecycle, simpler restarts, clearer boundaries, easier packaging
-- Cons: one more process to supervise; minor packaging overhead — mitigated by supervision and clean contracts
+- Pros: isolation from Next.js lifecycle, simpler restarts, clearer boundaries,
+  easier packaging
+- Cons: one more process to supervise; minor packaging overhead — mitigated by
+  supervision and clean contracts
 
 ## Storage
 
-- Designer data: `projects.db` (SQLite local) or Turso/libSQL; project metadata, deployments, device configuration
-- IoT runtime data: `runtime.db` (SQLite, WAL) for discovery cache, last values, short-term logs
+- Designer data: `projects.db` (SQLite local) or Turso/libSQL; project metadata,
+  deployments, device configuration
+- IoT runtime data: `runtime.db` (SQLite, WAL) for discovery cache, last values,
+  short-term logs
 - Separation prevents cross-process contention and clarifies ownership
+
+### Storage Ownership
+
+- designer.db — Owned by Designer UI (apps/designer)
+
+  - Contents: projects, versions/deployments, device registry, UI settings
+  - Access: Designer read/write; Engine and IoT Service do not access this DB directly
+
+- runtime.db — Owned by IoT Service (apps/iot-supervisor-app)
+
+  - Contents: device discovery/cache, COV subscription state, last/aggregated values, short-term telemetry/logs, BACnet metadata
+  - Access: IoT Service is the sole writer; Designer and Engine read runtime data via IoT Service APIs (HTTP/WS), not via direct DB access
+
+- Engine state — Owned by Headless Engine (apps/headless-engine)
+  - Contents: active and last-good bundles, scheduler metadata (e.g., last run timestamps), engine logs
+  - Storage: filesystem-based, immutable bundles with atomic symlink switching (no engine.db). Engine does not write to runtime.db
+
+### Engine Bundle Storage (files, not DB)
+
+- Directory layout (example):
+
+```
+/var/lib/headless-engine/
+  bundles/
+    2025-09-12T12-33-01Z-abc123/
+      bundle.json
+      manifest.json   # version, schemaVersion, hash/signature, createdBy
+    2025-09-10T09-00-00Z-def456/
+      bundle.json
+      manifest.json
+  active -> bundles/2025-09-12T12-33-01Z-abc123  # symlink
+  last_good -> bundles/2025-09-10T09-00-00Z-def456 # symlink
+  state.json           # optional: last run timestamps, counters
+  logs/                # structured logs
+```
+
+- Atomic deploy flow:
+
+  - Write to `bundles/.staging/<version>/bundle.json` and `manifest.json`, fsync
+  - Rename `.staging/<version>` → `bundles/<version>` atomically
+  - Update `active` symlink atomically; keep `last_good` pointing to previous
+  - Trigger reload; on failure, revert `active` to `last_good`
+
+- Rollback:
+  - Switch `active` to a previous version (via CLI or control API), keep retention of last N versions
 
 ## Testing Strategy
 
@@ -234,12 +305,14 @@ sequenceDiagram
 ## Non-Goals
 
 - No second executor in Python; one engine (Node) defines flow semantics
-- Designer does not talk to BACnet directly
+- Designer UI and Headless Engine do not speak BACnet directly — all BACnet operations go through the IoT Service (FastAPI) API
 
 ## Extensibility
 
-- Add protocol plugins behind the IoT Service (e.g., Modbus) — consistent API to Engine
-- Optional streaming via MQTT/NATS for higher-frequency telemetry (HTTP remains fallback)
+- Add protocol plugins behind the IoT Service (e.g., Modbus) — consistent API to
+  Engine
+- Optional streaming via MQTT/NATS for higher-frequency telemetry (HTTP remains
+  fallback)
 - Future: compiled hot paths or native addons for numeric-heavy transforms
 
 ## Mapping to Repository
@@ -266,7 +339,10 @@ sequenceDiagram
   - Pydantic models for Python (optional usage)
 
 - `packages/supervisor-engine` (new)
-  - Shared engine library (scheduler, graph, adapters, validators)
-  - Consumed by Designer (for validation) and headless engine app (for execution)
 
-Engine code lives alongside Designer as a separate process and will be introduced incrementally; this doc defines its role and interfaces up front.
+  - Shared engine library (scheduler, graph, adapters, validators)
+  - Consumed by Designer (for validation) and headless engine app (for
+    execution)
+
+Engine code lives alongside Designer as a separate process and will be
+introduced incrementally; this doc defines its role and interfaces up front.
