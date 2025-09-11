@@ -134,6 +134,14 @@ export const ConstantNodeUI = memo(({ data, id }: NodeProps) => {
         {renderValueInput()}
       </div>
 
+      {/* Trigger Input Handle - purely for visual connection */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="trigger"
+        className="w-3 h-3 bg-gray-500 border-2 border-background"
+      />
+
       {/* Output Handle */}
       <Handle
         type="source"

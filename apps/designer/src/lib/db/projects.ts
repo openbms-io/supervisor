@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { eq, like, or, asc, desc, count } from 'drizzle-orm'
+import { eq, like, or, asc, desc } from 'drizzle-orm'
 import { getDatabase } from './client'
 import { projects, type Project } from './schema'
 import {

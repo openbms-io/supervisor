@@ -1,6 +1,30 @@
 # BMS Supervisor Controller
 
+[![Phase](https://img.shields.io/badge/Phase-6%2F8-yellow.svg)](docs/PROJECT_STATUS.md)
+[![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](docs/PROJECT_STATUS.md)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](docs/LICENSE.md)
+
 Visual programming platform for building management systems with IoT device integration.
+
+## 📊 Project Status
+
+**Current Phase**: 6/8 (Persistence & Integration) - See [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for detailed progress tracking.
+
+- ✅ **Phases 1-5 Complete**: Core visual programming infrastructure
+- 🚧 **Phase 6 In Progress**: Database persistence, project management, edge refinements
+- 📋 **Phase 7 Planned**: Real BACnet device discovery and integration
+- 📋 **Phase 8 Deferred**: Multi-supervisor management
+
+## 🤝 Contributing
+
+We welcome contributions! This project is in active development and there are many areas where help is needed:
+
+- **BACnet Integration**: Real device discovery and protocol expertise
+- **Testing**: End-to-end scenarios and performance testing
+- **Documentation**: User guides and API documentation
+- **UI/UX**: Canvas improvements and mobile responsiveness
+
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed contribution guidelines.
 
 ## Architecture
 
@@ -373,3 +397,14 @@ pnpm run hooks:run            # Run hooks on all files
 - **Testing**: Jest, React Testing Library, pytest
 - **Build**: PNPM workspaces, TypeScript, tsx, datamodel-code-generator
 - **Code Quality**: Prettier, ESLint, Black, Ruff, pre-commit hooks
+
+## 📄 License
+
+This project is licensed under the MIT License - see [LICENSE.md](docs/LICENSE.md) for details.
+
+## 📚 Documentation
+
+- **[Project Status](docs/PROJECT_STATUS.md)** - Current development phase and progress
+- **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[License](docs/LICENSE.md)** - MIT License and third-party notices
+- **[Coding Standards](docs/coding-standards.md)** - Development standards and practices
