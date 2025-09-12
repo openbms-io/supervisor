@@ -141,6 +141,7 @@ export interface FlowSlice {
 
   // Execute graph
   executeGraph: () => void
+  executeWithMessages: () => Promise<void>
 }
 
 // This will be imported from factory once we create it
@@ -468,8 +469,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
         `Successfully executed ${nodeCount} node${nodeCount !== 1 ? 's' : ''}`
       )
 
-      // Force UI update to show updated values
-      // Create new edge objects to ensure React Flow detects edge data changes
+      // Force UI update to show updated edge states
       const updatedEdges = dataGraph.getEdgesArray().map((edge) => ({
         ...edge,
         data: edge.data ? { ...edge.data } : undefined,
@@ -485,6 +485,33 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
         error instanceof Error
           ? error.message
           : 'An unknown error occurred during execution'
+      )
+    }
+  },
+
+  // Execute graph with message passing (POC)
+  executeWithMessages: async () => {
+    const { dataGraph, showError, showSuccess } = get()
+
+    try {
+      console.log('🚀 [FlowStore] Starting message-based execution...')
+
+      // Execute with messages
+      await dataGraph.executeWithMessages()
+
+      // Show success notification
+      showSuccess(
+        '✅ Message Execution Complete',
+        'Successfully executed graph using message passing'
+      )
+
+      // No need to force UI updates - BacnetNodeUI subscribes to store directly via Zustand
+    } catch (error) {
+      showError(
+        '⚠️ Message Execution Failed',
+        error instanceof Error
+          ? error.message
+          : 'An unknown error occurred during message execution'
       )
     }
   },

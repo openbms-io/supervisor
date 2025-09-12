@@ -13,6 +13,9 @@ import { EDGE_TYPES } from '@/types/edge-types'
 import { NodeData } from '@/types/node-data-types'
 import { Node, Edge } from '@xyflow/react'
 import { EdgeActivationManager } from './edge-activation-manager'
+import { MessageRouter } from '@/lib/message-system/message-router'
+import { SendCallback, Message } from '@/lib/message-system/types'
+import { v4 as uuidv4 } from 'uuid'
 
 // Type for React Flow node data - using NodeData from node-data-types
 export type NodeDataRecord = NodeData
@@ -34,11 +37,13 @@ export class DataGraph {
    */
   private edgesMap: Map<string, Edge<EdgeData>>
   private edgeManager: EdgeActivationManager
+  private messageRouter: MessageRouter
 
   constructor() {
     this.nodesMap = new Map()
     this.edgesMap = new Map()
     this.edgeManager = new EdgeActivationManager(this.edgesMap, this.nodesMap)
+    this.messageRouter = new MessageRouter()
   }
 
   getNodesArray(): Node<NodeDataRecord>[] {
@@ -106,6 +111,37 @@ export class DataGraph {
   }
 
   addNode(node: DataNode, position: { x: number; y: number }): void {
+    // Inject routing callback if node supports messages
+    if (
+      'setSendCallback' in node &&
+      typeof node.setSendCallback === 'function'
+    ) {
+      const callback = async (
+        message: Message,
+        nodeId: string,
+        handle: string
+      ) => {
+        // Activate only the edges from this specific handle
+        this.edgeManager.activateSpecificOutputEdges(nodeId, handle)
+
+        // Get fresh arrays each time for pure router
+        const nodes = this.getNodesArray()
+        const edges = this.getEdgesArray()
+
+        // Use pure router function
+        await this.messageRouter.routeMessage(
+          message,
+          nodeId,
+          handle,
+          nodes,
+          edges
+        )
+      }
+      ;(
+        node as DataNode & { setSendCallback: (cb: any) => void }
+      ).setSendCallback(callback)
+    }
+
     // For nodes without category, use type as-is. For custom nodes, prepend category
     const nodeType = !node.category
       ? node.type
@@ -566,6 +602,58 @@ export class DataGraph {
 
       this.updateNodeData(nodeId)
     }
+  }
+
+  // Message-based execution using pure router
+  async executeWithMessages(): Promise<void> {
+    console.log('🚀 Starting message-based execution')
+
+    const nodes = this.getNodesArray()
+    const edges = this.getEdgesArray()
+
+    // Use pure router to check for cycles
+    if (this.messageRouter.hasCycles(nodes, edges)) {
+      console.error('Graph contains cycles - execution aborted')
+      throw new Error('Graph contains cycles')
+    }
+
+    // Reset nodes
+    this.resetComputedValues()
+
+    // Reset edge activation
+    this.edgeManager.resetAllEdges()
+
+    // Find source nodes using pure router
+    const sourceNodeIds = this.messageRouter.findSourceNodes(nodes, edges)
+    console.log('🎯 Found source nodes:', sourceNodeIds)
+
+    // Activate edges from source nodes
+    for (const nodeId of sourceNodeIds) {
+      this.edgeManager.activateAllOutputHandleEdges(nodeId)
+    }
+
+    // Start the chain reaction by triggering source nodes
+    for (const nodeId of sourceNodeIds) {
+      const node = this.nodesMap.get(nodeId)
+      if (node) {
+        const dataNode = node.data as DataNode
+        console.log(`⚡ Triggering source node: ${nodeId}`)
+
+        // Send trigger message to start the flow
+        await dataNode.receive(
+          {
+            _msgid: uuidv4(),
+            timestamp: Date.now(),
+            payload: undefined,
+            metadata: { trigger: true },
+          },
+          'input',
+          'system'
+        )
+      }
+    }
+
+    console.log('✨ Message-based execution completed')
   }
 
   /**

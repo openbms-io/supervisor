@@ -161,6 +161,18 @@ export class EdgeActivationManager {
   }
 
   /**
+   * Activate output edges for a specific handle (for message routing)
+   */
+  activateSpecificOutputEdges(nodeId: string, handle: string): void {
+    const edges = this.getOutgoingEdges(nodeId)
+    for (const edge of edges) {
+      if (edge.data && (edge.sourceHandle || 'output') === handle) {
+        edge.data.isActive = true
+      }
+    }
+  }
+
+  /**
    * Get activation state for visualization
    */
   getEdgeVisualizationState(edgeId: string): {

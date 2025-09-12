@@ -1,5 +1,6 @@
 import { v4 as uuidv4, v5 as uuidv5 } from 'uuid'
 import { BacnetProperties } from './bacnet-properties'
+import { MessageNode } from '@/lib/message-system/types'
 
 // BACnet namespace for deterministic UUIDs
 export const BACNET_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
@@ -47,7 +48,7 @@ export enum NodeDirection {
 export interface DataNode<
   TInputHandle extends string = string,
   TOutputHandle extends string = string,
-> {
+> extends MessageNode<TInputHandle, TOutputHandle> {
   readonly id: string // UUID v4 - instance ID
   readonly type: NodeTypeString
   readonly category: NodeCategory
@@ -94,6 +95,10 @@ export type LogicOutputHandle = 'output'
 // Type-safe handle types for command nodes
 export type CommandInputHandle = 'setpoint'
 export type CommandOutputHandle = 'output'
+
+// Type-safe handle types for BACnet nodes (dynamic based on properties)
+export type BacnetInputHandle = BacnetPropertyKey
+export type BacnetOutputHandle = BacnetPropertyKey
 
 // Type-safe handle types for control flow nodes
 export type SwitchInputHandle = 'input'
@@ -188,9 +193,9 @@ export interface BacnetConfig {
   position?: { x: number; y: number }
 }
 
-// BACnet nodes have no inputs, dynamic string outputs based on discovered properties
+// BACnet nodes have dynamic inputs and outputs based on discovered properties
 export interface BacnetInputOutput
-  extends DataNode<never, string>,
+  extends DataNode<BacnetInputHandle, BacnetOutputHandle>,
     BacnetConfig {}
 
 export interface Supervisor {

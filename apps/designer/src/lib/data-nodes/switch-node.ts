@@ -8,6 +8,8 @@ import {
   SwitchOutputHandle,
   generateInstanceId,
 } from '@/types/infrastructure'
+import { Message, SendCallback } from '@/lib/message-system/types'
+import { v4 as uuidv4 } from 'uuid'
 
 export class SwitchNode
   implements ControlFlowNode<SwitchInputHandle, SwitchOutputHandle>
@@ -25,6 +27,7 @@ export class SwitchNode
   private _computedValue?: ComputeValue
   private _condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
   private _threshold: number
+  private sendCallback?: SendCallback<SwitchOutputHandle>
 
   // Public getters for UI access
   get computedValue(): ComputeValue | undefined {
@@ -150,5 +153,62 @@ export class SwitchNode
     const isActive = this.evaluate()
     const handle: SwitchOutputHandle = isActive ? 'active' : 'inactive'
     return [handle] as const
+  }
+
+  // Message passing API implementation
+  setSendCallback(callback: SendCallback<SwitchOutputHandle>): void {
+    this.sendCallback = callback
+  }
+
+  private async send(
+    message: Message,
+    handle: SwitchOutputHandle
+  ): Promise<void> {
+    if (this.sendCallback) {
+      await this.sendCallback(message, this.id, handle)
+    }
+  }
+
+  async receive(
+    message: Message,
+    handle: SwitchInputHandle,
+    fromNodeId: string
+  ): Promise<void> {
+    console.log(
+      `🔀 [${this.id}] Switch received on ${handle}:`,
+      message.payload,
+      `from ${fromNodeId}`
+    )
+
+    // Set the input value and evaluate condition
+    this._computedValue = message.payload
+    const isActive = this.evaluate()
+
+    // Send to the appropriate output
+    const outputHandle: SwitchOutputHandle = isActive ? 'active' : 'inactive'
+    const outputLabel = isActive ? this.activeLabel : this.inactiveLabel
+
+    console.log(
+      `🔀 [${this.id}] Condition ${this._condition} ${this._threshold}:`,
+      message.payload,
+      '→',
+      outputLabel,
+      `(${outputHandle})`
+    )
+
+    // Forward the original payload to the selected output
+    await this.send(
+      {
+        payload: message.payload,
+        _msgid: uuidv4(),
+        timestamp: Date.now(),
+        metadata: {
+          source: this.id,
+          condition: this._condition,
+          selected: outputHandle,
+        },
+      },
+      outputHandle
+    )
   }
 }
