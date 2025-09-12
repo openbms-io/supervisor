@@ -6,6 +6,7 @@ import {
   NodeCategory,
 } from './infrastructure'
 import { ConstantNodeMetadata } from '@/lib/data-nodes/constant-node'
+import { MemoryNodeMetadata } from '@/lib/data-nodes/memory-node'
 
 // Base node data that ensures compatibility with React Flow
 // This just ensures Record<string, unknown> compatibility
@@ -39,6 +40,12 @@ export interface ConstantNodeData extends LogicNode, BaseNodeData {
   metadata: ConstantNodeMetadata
 }
 
+export interface MemoryNodeData extends LogicNode, BaseNodeData {
+  category: NodeCategory.LOGIC
+  type: 'memory'
+  metadata: MemoryNodeMetadata
+}
+
 // Command node data types
 export interface WriteSetpointNodeData extends CommandNode, BaseNodeData {
   category: NodeCategory.COMMAND
@@ -61,6 +68,7 @@ export type NodeData =
   | CalculationNodeData
   | ComparisonNodeData
   | ConstantNodeData
+  | MemoryNodeData
   | WriteSetpointNodeData
   | SwitchNodeData
 
@@ -81,6 +89,7 @@ export interface NodeTypesMap {
   'logic.calculation': CalculationNodeData
   'logic.comparison': ComparisonNodeData
   'logic.constant': ConstantNodeData
+  'logic.memory': MemoryNodeData
 
   // Command nodes
   'command.write-setpoint': WriteSetpointNodeData

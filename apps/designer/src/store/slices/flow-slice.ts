@@ -19,6 +19,7 @@ import type {
   ComparisonOperation,
 } from '@/lib/data-nodes'
 import type { ValueType } from '@/lib/data-nodes/constant-node'
+import { MemoryNode } from '@/lib/data-nodes/memory-node'
 import { ConstantNode } from '@/lib/data-nodes/constant-node'
 import { SwitchNode } from '@/lib/data-nodes/switch-node'
 
@@ -76,6 +77,20 @@ export type NodeUpdate =
       nodeId: string
       condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
       threshold: number
+    }
+  | {
+      type: 'UPDATE_MEMORY_INIT'
+      nodeId: string
+      initValue: number | boolean
+    }
+  | {
+      type: 'UPDATE_MEMORY_TYPE'
+      nodeId: string
+      valueType: 'number' | 'boolean'
+    }
+  | {
+      type: 'RESET_MEMORY_NOW'
+      nodeId: string
     }
 
 export interface FlowSlice {
@@ -229,6 +244,12 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       dataNode = factory.createComparisonNode({
         label,
         operation: (metadata?.operation as ComparisonOperation) || 'equals',
+      })
+    } else if (nodeType === 'memory') {
+      dataNode = factory.createMemoryNode({
+        label,
+        initValue: (metadata?.initValue as number | boolean) ?? 0,
+        valueType: (metadata?.valueType as 'number' | 'boolean') ?? 'number',
       })
     } else {
       console.warn('Unknown logic node type:', nodeType)
@@ -403,6 +424,39 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 
           // Execute graph after configuration change
           get().executeGraph()
+        }
+        break
+      }
+
+      case 'UPDATE_MEMORY_INIT': {
+        const dataNode = dataGraph.getNode(update.nodeId)
+        if (dataNode && dataNode instanceof MemoryNode) {
+          dataNode.setInitValue(update.initValue)
+          dataGraph.updateNodeData(update.nodeId)
+          set({ nodes: dataGraph.getNodesArray() })
+          // No immediate execute; user can run graph
+        }
+        break
+      }
+
+      case 'UPDATE_MEMORY_TYPE': {
+        const dataNode = dataGraph.getNode(update.nodeId)
+        if (dataNode && dataNode instanceof MemoryNode) {
+          dataNode.setValueType(update.valueType)
+          dataGraph.updateNodeData(update.nodeId)
+          set({ nodes: dataGraph.getNodesArray() })
+          // Execute to refresh downstream typing/values
+          get().executeGraph()
+        }
+        break
+      }
+
+      case 'RESET_MEMORY_NOW': {
+        const dataNode = dataGraph.getNode(update.nodeId)
+        if (dataNode && dataNode instanceof MemoryNode) {
+          dataNode.reset()
+          dataGraph.updateNodeData(update.nodeId)
+          set({ nodes: dataGraph.getNodesArray() })
         }
         break
       }

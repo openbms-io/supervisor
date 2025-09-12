@@ -34,6 +34,7 @@ export type NodeTypeString =
   | 'schedule'
   | 'write-setpoint'
   | 'constant'
+  | 'memory'
   | 'switch'
   | 'gate'
 
@@ -90,6 +91,8 @@ export interface CommandNode
 export type CalculationInputHandle = 'input1' | 'input2'
 export type ComparisonInputHandle = 'value1' | 'value2'
 export type LogicOutputHandle = 'output'
+// Memory node handles
+export type MemoryInputHandle = 'value' | 'write' | 'reset'
 
 // Type-safe handle types for command nodes
 export type CommandInputHandle = 'setpoint'

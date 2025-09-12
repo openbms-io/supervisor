@@ -3,6 +3,7 @@ import { CalculationNode } from './calculation-node'
 import { ComparisonNode } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
 import { ConstantNodeUI } from './constant-node-ui'
+import { MemoryNodeUI } from './memory-node'
 import { SwitchNode } from './switch-node'
 
 // Strongly typed node types for React Flow
@@ -24,6 +25,7 @@ export const nodeTypes = {
   'logic.calculation': CalculationNode,
   'logic.comparison': ComparisonNode,
   'logic.constant': ConstantNodeUI,
+  'logic.memory': MemoryNodeUI,
 
   // Command nodes
   'command.write-setpoint': WriteSetpointNode,
