@@ -9,6 +9,12 @@ export {
   type ValueType,
   type ConstantNodeMetadata,
 } from './constant-node'
+export {
+  MemoryNode,
+  type MemoryInputHandle,
+  type MemoryValueType,
+  type MemoryNodeMetadata,
+} from './memory-node'
 
 // Factory for creating nodes
 export { default as nodeFactory } from './factory'

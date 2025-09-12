@@ -90,7 +90,10 @@ export function ControllersTreeContainer() {
   }, [selectPoint])
 
   return (
-    <div className="flex flex-col h-full" onClick={handleContainerClick}>
+    <div
+      className="flex flex-col h-full min-h-0 overflow-y-auto"
+      onClick={handleContainerClick}
+    >
       <div className="flex items-center justify-between p-3 border-b">
         <h3 className="text-sm font-semibold">Controllers</h3>
         <div className="flex items-center gap-1">

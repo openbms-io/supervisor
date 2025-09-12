@@ -63,7 +63,8 @@ export class EdgeActivationManager {
     if (this.isSourceNode(node.data)) return true
 
     // Check incoming edges for active paths
-    return this.hasActiveIncomingEdge(nodeId)
+    const hasActiveIncomingEdge = this.hasActiveIncomingEdge(nodeId)
+    return hasActiveIncomingEdge
   }
 
   private isSourceNode(nodeData: NodeDataRecord): boolean {

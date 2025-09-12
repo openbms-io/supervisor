@@ -9,6 +9,7 @@ import {
   Hash,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Database } from 'lucide-react'
 
 interface DraggableNodeItem {
   type: string
@@ -117,6 +118,12 @@ export function LogicNodesSection() {
       label: 'Constant',
       icon: <Hash className="w-4 h-4" />,
       metadata: { value: 0, valueType: 'number' },
+    },
+    {
+      type: 'memory',
+      label: 'Memory/Register',
+      icon: <Database className="w-4 h-4" />,
+      metadata: { initValue: 0, valueType: 'number' },
     },
   ]
 

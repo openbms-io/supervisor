@@ -16,6 +16,7 @@ import { CalculationNode, CalculationOperation } from './calculation-node'
 import { ComparisonNode, ComparisonOperation } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
 import { ConstantNode, ValueType } from './constant-node'
+import { MemoryNode, MemoryValueType } from './memory-node'
 import { SwitchNode } from './switch-node'
 
 // Simple factory pattern for creating nodes
@@ -97,6 +98,23 @@ class DataNodeFactory {
     valueType?: ValueType
   }): DataNode {
     return new ConstantNode(label, value ?? 0, valueType ?? 'number')
+  }
+
+  // Create memory/register node
+  createMemoryNode({
+    label,
+    initValue,
+    valueType,
+  }: {
+    label?: string
+    initValue?: number | boolean
+    valueType?: MemoryValueType
+  }): DataNode {
+    return new MemoryNode(
+      label || 'Memory',
+      initValue ?? 0,
+      valueType ?? 'number'
+    )
   }
 
   // Create switch node

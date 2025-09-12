@@ -21,7 +21,7 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
   readonly type = 'constant' as const
   readonly category = NodeCategory.LOGIC
   readonly label: string
-  readonly direction = NodeDirection.OUTPUT
+  readonly direction = NodeDirection.BIDIRECTIONAL
 
   private _metadata: ConstantNodeMetadata
 

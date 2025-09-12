@@ -238,7 +238,7 @@ export class DataGraph {
     return this.getEdgesArray()
   }
 
-  // DFS execution order
+  // DFS execution order with topological sort.
   getExecutionOrderDFS(): string[] {
     const adjacencyList = this.buildAdjacencyList()
     const reverseAdjacencyList = this.buildReverseAdjacencyList()
@@ -260,7 +260,8 @@ export class DataGraph {
       }
     }
 
-    return executionOrder
+    // Reverse to get correct topological order (post-order DFS gives reverse topo sort)
+    return executionOrder.reverse()
   }
 
   private dfsTraversal(
@@ -271,16 +272,16 @@ export class DataGraph {
   ): void {
     visited.add(nodeId)
 
-    // Process current node
-    executionOrder.push(nodeId)
-
-    // Visit all neighbors (DFS)
+    // Visit all neighbors FIRST (post-order traversal)
     const neighbors = adjacencyList.get(nodeId) || new Set()
     for (const neighborId of neighbors) {
       if (!visited.has(neighborId)) {
         this.dfsTraversal(neighborId, visited, executionOrder, adjacencyList)
       }
     }
+
+    // Add to execution order AFTER visiting neighbors (post-order)
+    executionOrder.push(nodeId)
   }
 
   validateConnection(sourceId: string, targetId: string): boolean {
@@ -447,7 +448,9 @@ export class DataGraph {
 
     for (const edge of incomingEdges) {
       // Skip inactive edges
-      if (edge.data?.isActive === false) continue
+      if (edge.data?.isActive === false) {
+        continue
+      }
 
       if (!edge.data || !edge.targetHandle) continue
 
@@ -500,7 +503,7 @@ export class DataGraph {
       if (!node) continue
 
       // Check if node is reachable (has active input or is source)
-      const isReachable = this.isNodeReachable(nodeId)
+      const isReachable = this.edgeManager.isNodeReachable(nodeId)
 
       if (!isReachable) continue
 
@@ -571,16 +574,16 @@ export class DataGraph {
   /**
    * Check if a node is reachable (has active input or is a source node)
    */
-  private isNodeReachable(nodeId: string): boolean {
-    // Source nodes (no incoming edges) are always reachable
-    const incomingEdges = this.edgeManager.getIncomingEdges(nodeId)
-    if (incomingEdges.length === 0) {
-      return true // It's a source/root node
-    }
+  // private isNodeReachable(nodeId: string): boolean {
+  //   // Source nodes (no incoming edges) are always reachable
+  //   const incomingEdges = this.edgeManager.getIncomingEdges(nodeId)
+  //   if (incomingEdges.length === 0) {
+  //     return true // It's a source/root node
+  //   }
 
-    // Non-source nodes need at least one active incoming edge
-    return incomingEdges.some((edge) => edge.data?.isActive === true)
-  }
+  //   // Non-source nodes need at least one active incoming edge
+  //   return incomingEdges.some((edge) => edge.data?.isActive === true)
+  // }
 
   private executeBacnetWrite(
     bacnetNode: BacnetInputOutput,
