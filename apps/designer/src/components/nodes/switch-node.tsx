@@ -18,11 +18,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useFlowStore } from '@/store/use-flow-store'
+import { ComputeValue } from '@/types/infrastructure'
 
 export const SwitchNode = memo(({ data, id }: NodeProps) => {
   const typedData = data as SwitchNodeData
   const updateNode = useFlowStore((state) => state.updateNode)
 
+  // Subscribe to the input value specifically
+  const inputValue = useFlowStore((state) => {
+    const node = state.nodes.find((n) => n.id === id)
+    const nodeData = node?.data
+    return nodeData?.inputValue as ComputeValue | undefined
+  })
   const [isEditingThreshold, setIsEditingThreshold] = useState(false)
   const [tempThreshold, setTempThreshold] = useState(
     typedData.threshold.toString()
@@ -103,7 +110,7 @@ export const SwitchNode = memo(({ data, id }: NodeProps) => {
             />
             <div className="text-xs flex-1">
               <div className="font-mono font-medium">
-                Input: {formatValue(typedData.computedValue)}
+                Input: {formatValue(inputValue)}
               </div>
             </div>
           </div>

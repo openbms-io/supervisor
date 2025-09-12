@@ -76,7 +76,7 @@ export interface LogicNode<
 
 // Command node configuration
 export interface CommandConfig {
-  receivedValue?: ComputeValue // Value received from input
+  inputValue?: ComputeValue // Value received from input
   priority: number // Node's configured priority (1-16)
   writeMode: 'normal' | 'override' | 'release'
 }
