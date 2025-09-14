@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, GitBranch } from 'lucide-react'
+import { ChevronDown, ChevronRight, GitBranch, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface DraggableNodeItem {
@@ -47,6 +47,14 @@ export function ControlFlowSection() {
       metadata: {
         condition: 'gt',
         threshold: 0,
+      },
+    },
+    {
+      type: 'timer',
+      label: 'Timer',
+      icon: <Clock className="w-4 h-4 text-orange-500" />,
+      metadata: {
+        duration: 1000,
       },
     },
     // Gate node - not yet implemented

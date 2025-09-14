@@ -12,7 +12,12 @@ import {
 
 // Internal absolute imports
 import { DataGraph, NodeDataRecord } from '@/lib/data-graph/data-graph'
-import { BacnetConfig, DataNode, EdgeData } from '@/types/infrastructure'
+import {
+  BacnetConfig,
+  DataNode,
+  EdgeData,
+  NodeTypeString,
+} from '@/types/infrastructure'
 import { NodeData } from '@/types/node-data-types'
 import type {
   CalculationOperation,
@@ -21,6 +26,8 @@ import type {
 import type { ValueType } from '@/lib/data-nodes/constant-node'
 import { ConstantNode } from '@/lib/data-nodes/constant-node'
 import { SwitchNode } from '@/lib/data-nodes/switch-node'
+import { TimerNode } from '@/lib/data-nodes/timer-node'
+import factory from '@/lib/data-nodes/factory'
 
 export interface DraggedPoint {
   type: 'bacnet-point'
@@ -30,7 +37,7 @@ export interface DraggedPoint {
 
 export interface DraggedLogicNode {
   type: 'logic-node'
-  nodeType: string
+  nodeType: NodeTypeString
   label: string
   metadata?: Record<string, unknown>
   draggedFrom: 'logic-section'
@@ -38,7 +45,7 @@ export interface DraggedLogicNode {
 
 export interface DraggedCommandNode {
   type: 'command-node'
-  nodeType: string
+  nodeType: NodeTypeString
   label: string
   metadata?: Record<string, unknown>
   draggedFrom: 'command-section'
@@ -46,7 +53,7 @@ export interface DraggedCommandNode {
 
 export interface DraggedControlFlowNode {
   type: 'control-flow-node'
-  nodeType: string
+  nodeType: NodeTypeString
   label: string
   metadata?: Record<string, unknown>
   draggedFrom: 'control-flow-section'
@@ -77,6 +84,11 @@ export type NodeUpdate =
       condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
       threshold: number
     }
+  | {
+      type: 'UPDATE_TIMER_DURATION'
+      nodeId: string
+      duration: number
+    }
 
 export interface FlowSlice {
   // React Flow state with properly typed nodes
@@ -99,19 +111,19 @@ export interface FlowSlice {
     position: XYPosition
   ) => void
   addLogicNode: (
-    nodeType: string,
+    nodeType: NodeTypeString,
     label: string,
     position: XYPosition,
     metadata?: Record<string, unknown>
   ) => void
   addCommandNode: (
-    nodeType: string,
+    nodeType: NodeTypeString,
     label: string,
     position: XYPosition,
     metadata?: Record<string, unknown>
   ) => void
   addControlFlowNode: (
-    nodeType: string,
+    nodeType: NodeTypeString,
     label: string,
     position: XYPosition,
     metadata?: Record<string, unknown>
@@ -150,7 +162,6 @@ async function createDataNodeFromBacnetConfig({
   config: BacnetConfig
 }): Promise<DataNode> {
   // Placeholder - will be replaced with actual implementation
-  const { default: factory } = await import('@/lib/data-nodes/factory')
   return factory.createDataNodeFromBacnetConfig({ config })
 }
 
@@ -164,7 +175,6 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   dataGraph: new DataGraph(),
   notification: null,
 
-  // React Flow change handlers
   onNodesChange: (changes: NodeChange[]) => {
     const currentNodes = get().nodes
     const updatedNodes = applyNodeChanges(
@@ -172,10 +182,8 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       currentNodes
     ) as Node<NodeDataRecord>[]
 
-    // Update DataGraph with new nodes
     get().dataGraph.setNodesArray(updatedNodes)
 
-    // Update React Flow state
     set({ nodes: updatedNodes })
   },
 
@@ -196,13 +204,10 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   addNodeFromInfrastructure: async (draggedPoint, position) => {
     const { config } = draggedPoint
 
-    // Create DataNode from BacnetConfig
     const dataNode = await createDataNodeFromBacnetConfig({ config })
 
-    // Add to graph (single source of truth)
     get().dataGraph.addNode(dataNode, position)
 
-    // Update React Flow state
     set({
       nodes: get().dataGraph.getNodesArray(),
       edges: get().dataGraph.getEdgesArray(),
@@ -210,7 +215,6 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   },
 
   addLogicNode: async (nodeType, label, position, metadata) => {
-    const { default: factory } = await import('@/lib/data-nodes/factory')
     let dataNode: DataNode
 
     if (nodeType === 'constant') {
@@ -236,7 +240,6 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 
     get().dataGraph.addNode(dataNode, position)
 
-    // Update React Flow state
     set({
       nodes: get().dataGraph.getNodesArray(),
       edges: get().dataGraph.getEdgesArray(),
@@ -244,8 +247,6 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   },
 
   addCommandNode: async (nodeType, label, position, metadata) => {
-    const { default: factory } = await import('@/lib/data-nodes/factory')
-
     if (nodeType === 'write-setpoint') {
       const dataNode = factory.createWriteSetpointNode({
         label,
@@ -262,14 +263,24 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   },
 
   addControlFlowNode: async (nodeType, label, position, metadata) => {
-    const { default: factory } = await import('@/lib/data-nodes/factory')
-
     if (nodeType === 'switch') {
       const dataNode = factory.createSwitchNode({
         label,
         condition:
           (metadata?.condition as 'gt' | 'lt' | 'eq' | 'gte' | 'lte') || 'gt',
         threshold: (metadata?.threshold as number) ?? 0,
+      })
+      get().dataGraph.addNode(dataNode, position)
+
+      // Update React Flow state
+      set({
+        nodes: get().dataGraph.getNodesArray(),
+        edges: get().dataGraph.getEdgesArray(),
+      })
+    } else if (nodeType === 'timer') {
+      const dataNode = factory.createTimerNode({
+        label,
+        duration: (metadata?.duration as number) ?? 1000,
       })
       get().dataGraph.addNode(dataNode, position)
 
@@ -359,8 +370,6 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
           set({
             nodes: dataGraph.getNodesArray(),
           })
-
-          // Don't execute graph on every value change - let UI handle it
         }
         break
       }
@@ -402,6 +411,18 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 
           // Execute graph after configuration change
           get().executeWithMessages()
+        }
+        break
+      }
+
+      case 'UPDATE_TIMER_DURATION': {
+        const dataNode = dataGraph.getNode(update.nodeId)
+        if (dataNode && dataNode instanceof TimerNode) {
+          dataNode.setDuration(update.duration)
+          dataGraph.updateNodeData(update.nodeId)
+          set({
+            nodes: dataGraph.getNodesArray(),
+          })
         }
         break
       }

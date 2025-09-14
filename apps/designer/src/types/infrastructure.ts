@@ -102,6 +102,8 @@ export type BacnetOutputHandle = BacnetPropertyKey
 // Type-safe handle types for control flow nodes
 export type SwitchInputHandle = 'input'
 export type SwitchOutputHandle = 'active' | 'inactive'
+export type TimerInputHandle = 'trigger'
+export type TimerOutputHandle = 'output'
 export type GateInputHandle = 'condition' | 'value'
 export type GateOutputHandle = 'output'
 
