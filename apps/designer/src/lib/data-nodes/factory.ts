@@ -17,6 +17,7 @@ import { ComparisonNode, ComparisonOperation } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
 import { ConstantNode, ValueType } from './constant-node'
 import { SwitchNode } from './switch-node'
+import { TimerNode } from './timer-node'
 
 // Simple factory pattern for creating nodes
 class DataNodeFactory {
@@ -120,6 +121,17 @@ class DataNodeFactory {
       activeLabel,
       inactiveLabel
     )
+  }
+
+  // Create timer node
+  createTimerNode({
+    label,
+    duration,
+  }: {
+    label?: string
+    duration?: number
+  }): TimerNode {
+    return new TimerNode(label || 'Timer', duration || 1000)
   }
 }
 

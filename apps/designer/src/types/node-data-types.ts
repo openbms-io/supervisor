@@ -6,6 +6,7 @@ import {
   NodeCategory,
 } from './infrastructure'
 import { ConstantNodeMetadata } from '@/lib/data-nodes/constant-node'
+import { TimerNodeMetadata } from '@/lib/data-nodes/timer-node'
 
 // Base node data that ensures compatibility with React Flow
 // This just ensures Record<string, unknown> compatibility
@@ -55,6 +56,14 @@ export interface SwitchNodeData extends ControlFlowNode, BaseNodeData {
   inactiveLabel: string
 }
 
+export interface TimerNodeData extends ControlFlowNode, BaseNodeData {
+  category: NodeCategory.CONTROL_FLOW
+  type: 'timer'
+  metadata: TimerNodeMetadata
+  // Updating ui state, without triggering a react flow update. Used for timer node.
+  stateDidChange?: (stateData: { running: boolean; tickCount: number }) => void
+}
+
 // Discriminated union of all node data types
 export type NodeData =
   | BacnetNodeData
@@ -63,6 +72,7 @@ export type NodeData =
   | ConstantNodeData
   | WriteSetpointNodeData
   | SwitchNodeData
+  | TimerNodeData
 
 // Map node type strings to their data types
 export interface NodeTypesMap {
@@ -87,6 +97,7 @@ export interface NodeTypesMap {
 
   // Control flow nodes
   'control-flow.switch': SwitchNodeData
+  'control-flow.timer': TimerNodeData
 }
 
 // Type helper to get node data type from node type string

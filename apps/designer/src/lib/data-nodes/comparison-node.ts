@@ -63,7 +63,7 @@ export class ComparisonNode
     this.messageBuffer.clear()
   }
 
-  execute(inputs: ComputeValue[]): boolean {
+  private execute(inputs: ComputeValue[]): boolean {
     const v1 = inputs[0]
     const v2 = inputs[1]
 

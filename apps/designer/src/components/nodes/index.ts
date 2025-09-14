@@ -4,6 +4,7 @@ import { ComparisonNode } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
 import { ConstantNodeUI } from './constant-node-ui'
 import { SwitchNode } from './switch-node'
+import { TimerNode } from './timer-node'
 
 // Strongly typed node types for React Flow
 export const nodeTypes = {
@@ -30,4 +31,5 @@ export const nodeTypes = {
 
   // Control flow nodes
   'control-flow.switch': SwitchNode,
+  'control-flow.timer': TimerNode,
 } as const
