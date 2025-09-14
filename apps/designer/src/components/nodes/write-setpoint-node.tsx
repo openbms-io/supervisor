@@ -5,17 +5,27 @@ import { Handle, Position, NodeProps } from '@xyflow/react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { CustomHandle } from './custom-handle'
-import { CommandInputHandle, CommandOutputHandle } from '@/types/infrastructure'
+import {
+  CommandInputHandle,
+  CommandOutputHandle,
+  ComputeValue,
+} from '@/types/infrastructure'
 import { WriteSetpointNodeData } from '@/types/node-data-types'
+import { useFlowStore } from '@/store/use-flow-store'
 
-export const WriteSetpointNode = memo(({ data }: NodeProps) => {
+export const WriteSetpointNode = memo(({ data, id }: NodeProps) => {
   const typedData = data as WriteSetpointNodeData
-  const { label, receivedValue, priority } = typedData
+  const { label, priority } = typedData
 
   const INPUT_HANDLE: CommandInputHandle = 'setpoint'
   const OUTPUT_HANDLE: CommandOutputHandle = 'output'
 
-  // receivedValue and priority are already available from data destructuring
+  // Subscribe to inputValue via useFlowStore for reactive updates
+  const inputValue = useFlowStore((state) => {
+    const node = state.nodes.find((n) => n.id === id)
+    const nodeData = node?.data
+    return nodeData?.inputValue as ComputeValue | undefined
+  })
 
   const formatValue = (value: number | boolean | undefined): string => {
     if (value === undefined) return '-'
@@ -37,7 +47,7 @@ export const WriteSetpointNode = memo(({ data }: NodeProps) => {
           <div className="flex justify-between">
             <span className="text-muted-foreground">Value:</span>
             <span className="font-mono font-semibold">
-              {formatValue(receivedValue)}
+              {formatValue(inputValue)}
             </span>
           </div>
           <div className="flex justify-between">

@@ -18,7 +18,7 @@ export class WriteSetpointNode implements CommandNode {
   readonly label: string
   readonly direction = NodeDirection.BIDIRECTIONAL
 
-  receivedValue?: ComputeValue
+  inputValue?: ComputeValue
   priority: number = 8 // Default BACnet priority
   writeMode: 'normal' | 'override' | 'release' = 'normal'
   private sendCallback?: SendCallback<CommandOutputHandle>
@@ -71,18 +71,18 @@ export class WriteSetpointNode implements CommandNode {
     )
 
     // Store the setpoint value
-    this.receivedValue = message.payload
+    this.inputValue = message.payload
 
     console.log(
       `📝 [${this.id}] Writing setpoint:`,
-      this.receivedValue,
+      this.inputValue,
       `priority: ${this.priority}`
     )
 
     // Forward the setpoint value to connected BACnet nodes
     await this.send(
       {
-        payload: this.receivedValue,
+        payload: this.inputValue,
         _msgid: uuidv4(),
         timestamp: Date.now(),
         metadata: {

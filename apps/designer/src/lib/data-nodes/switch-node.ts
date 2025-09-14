@@ -24,14 +24,18 @@ export class SwitchNode
   label: string
 
   // Private internal state
-  private _computedValue?: ComputeValue
+  private _inputValue?: ComputeValue
   private _condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
   private _threshold: number
   private sendCallback?: SendCallback<SwitchOutputHandle>
 
   // Public getters for UI access
+  get inputValue(): ComputeValue | undefined {
+    return this._inputValue
+  }
+
   get computedValue(): ComputeValue | undefined {
-    return this._computedValue
+    return this._inputValue // Pass through the input
   }
 
   get condition(): 'gt' | 'lt' | 'eq' | 'gte' | 'lte' {
@@ -116,17 +120,17 @@ export class SwitchNode
   }
 
   getValue(): ComputeValue | undefined {
-    return this._computedValue
+    return this._inputValue
   }
 
   reset(): void {
-    this._computedValue = undefined
+    this._inputValue = undefined
   }
 
   private evaluate(): boolean {
-    if (this._computedValue === undefined) return false
+    if (this._inputValue === undefined) return false
 
-    const value = Number(this._computedValue)
+    const value = Number(this._inputValue)
     const thresh = Number(this._threshold)
 
     switch (this._condition) {
@@ -146,7 +150,7 @@ export class SwitchNode
   }
 
   execute(inputs: ComputeValue[]): void {
-    this._computedValue = inputs[0]
+    this._inputValue = inputs[0]
   }
 
   getActiveOutputHandles(): readonly SwitchOutputHandle[] {
@@ -181,7 +185,7 @@ export class SwitchNode
     )
 
     // Set the input value and evaluate condition
-    this._computedValue = message.payload
+    this._inputValue = message.payload
     const isActive = this.evaluate()
 
     // Send to the appropriate output
