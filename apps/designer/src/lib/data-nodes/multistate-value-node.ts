@@ -14,6 +14,7 @@ import {
 } from '@/types/bacnet-properties'
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { v4 as uuidv4 } from 'uuid'
+import { convertToComputeValue } from './bacnet-utils'
 import { prepareMultistateProperties } from './bacnet-utils'
 
 export class MultistateValueNode implements BacnetInputOutput {
@@ -23,7 +24,7 @@ export class MultistateValueNode implements BacnetInputOutput {
   readonly objectId: number
   readonly supervisorId: string
   readonly controllerId: string
-  readonly discoveredProperties: BacnetProperties
+  discoveredProperties: BacnetProperties
   readonly name: string
   readonly position?: { x: number; y: number }
 
@@ -150,7 +151,7 @@ export class MultistateValueNode implements BacnetInputOutput {
         if (currentValue !== undefined) {
           await this.send(
             {
-              payload: currentValue,
+              payload: convertToComputeValue(currentValue) || 0,
               _msgid: uuidv4(),
               timestamp: Date.now(),
             },

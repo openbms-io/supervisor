@@ -137,10 +137,8 @@ export interface FlowSlice {
   getNodes: () => Node[]
   getEdges: () => Edge[]
   validateConnection: (sourceId: string, targetId: string) => boolean
-  getExecutionOrder: () => string[]
 
   // Execute graph
-  executeGraph: () => void
   executeWithMessages: () => Promise<void>
 }
 
@@ -323,7 +321,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       })
 
       // Execute graph after new connection
-      get().executeGraph()
+      get().executeWithMessages()
     } else {
       showWarning(
         'Invalid Connection',
@@ -382,7 +380,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
           })
 
           // Execute graph after type change
-          get().executeGraph()
+          get().executeWithMessages()
         }
         break
       }
@@ -403,7 +401,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
           })
 
           // Execute graph after configuration change
-          get().executeGraph()
+          get().executeWithMessages()
         }
         break
       }
@@ -420,7 +418,6 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   getEdges: () => get().dataGraph.getEdgesArray(),
   validateConnection: (sourceId, targetId) =>
     get().dataGraph.validateConnection(sourceId, targetId),
-  getExecutionOrder: () => get().dataGraph.getExecutionOrderDFS(), // DFS execution
 
   // Notification actions
   setNotification: (notification) => set({ notification }),
@@ -442,54 +439,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       notification: { type: 'warning', title, message },
     }),
 
-  // Execute graph
-  executeGraph: () => {
-    const { dataGraph, showError, showSuccess } = get()
-
-    // Check for cycles
-    if (dataGraph.hasCycles()) {
-      showError(
-        '🔄 Cycle Detected',
-        'Graph contains cycles. Please remove circular dependencies before executing.'
-      )
-      return
-    }
-
-    try {
-      // Execute the graph
-      dataGraph.executeGraph()
-
-      // Get execution stats
-      const executionOrder = dataGraph.getExecutionOrderDFS()
-      const nodeCount = executionOrder.length
-
-      // Show success notification
-      showSuccess(
-        '✅ Execution Complete',
-        `Successfully executed ${nodeCount} node${nodeCount !== 1 ? 's' : ''}`
-      )
-
-      // Force UI update to show updated edge states
-      const updatedEdges = dataGraph.getEdgesArray().map((edge) => ({
-        ...edge,
-        data: edge.data ? { ...edge.data } : undefined,
-      }))
-
-      set({
-        nodes: dataGraph.getNodesArray(),
-        edges: updatedEdges,
-      })
-    } catch (error) {
-      showError(
-        '⚠️ Execution Failed',
-        error instanceof Error
-          ? error.message
-          : 'An unknown error occurred during execution'
-      )
-    }
-  },
-
-  // Execute graph with message passing (POC)
+  // Execute graph with message passing
   executeWithMessages: async () => {
     const { dataGraph, showError, showSuccess } = get()
 

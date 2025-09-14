@@ -159,10 +159,17 @@ export class ComparisonNode
       console.log(
         `🔍 [${this.id}] Compared:`,
         inputs[0],
+        `(${typeof inputs[0]})`,
         this.metadata.operation,
         inputs[1],
+        `(${typeof inputs[1]})`,
         '=',
         result
+      )
+      console.log(
+        `🔍 [${this.id}] Raw comparison: ${inputs[0]} === ${inputs[1]} = ${
+          inputs[0] === inputs[1]
+        }`
       )
 
       // Send result - this triggers downstream nodes!

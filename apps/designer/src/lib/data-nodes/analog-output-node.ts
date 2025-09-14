@@ -13,7 +13,6 @@ import {
   getPropertyMetadata,
 } from '@/types/bacnet-properties'
 import { Message, SendCallback } from '@/lib/message-system/types'
-import { v4 as uuidv4 } from 'uuid'
 
 export class AnalogOutputNode implements BacnetInputOutput {
   // From BacnetConfig
@@ -22,7 +21,7 @@ export class AnalogOutputNode implements BacnetInputOutput {
   readonly objectId: number
   readonly supervisorId: string
   readonly controllerId: string
-  readonly discoveredProperties: BacnetProperties
+  discoveredProperties: BacnetProperties
   readonly name: string
   readonly position?: { x: number; y: number }
 

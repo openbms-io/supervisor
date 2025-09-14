@@ -14,6 +14,7 @@ import {
 } from '@/types/bacnet-properties'
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { v4 as uuidv4 } from 'uuid'
+import { convertToComputeValue } from './bacnet-utils'
 
 export class AnalogInputNode implements BacnetInputOutput {
   // From BacnetConfig
@@ -22,7 +23,7 @@ export class AnalogInputNode implements BacnetInputOutput {
   readonly objectId: number
   readonly supervisorId: string
   readonly controllerId: string
-  readonly discoveredProperties: BacnetProperties
+  discoveredProperties: BacnetProperties
   readonly name: string
   readonly position?: { x: number; y: number }
 
@@ -142,14 +143,18 @@ export class AnalogInputNode implements BacnetInputOutput {
       for (const propertyHandle of outputHandles) {
         const currentValue = this.discoveredProperties[propertyHandle]
         if (currentValue !== undefined) {
-          await this.send(
-            {
-              payload: currentValue,
-              _msgid: uuidv4(),
-              timestamp: Date.now(),
-            },
-            propertyHandle
-          )
+          // Convert BACnet value to ComputeValue
+          const computeValue = convertToComputeValue(currentValue)
+          if (computeValue !== undefined) {
+            await this.send(
+              {
+                payload: computeValue,
+                _msgid: uuidv4(),
+                timestamp: Date.now(),
+              },
+              propertyHandle
+            )
+          }
         }
       }
     }

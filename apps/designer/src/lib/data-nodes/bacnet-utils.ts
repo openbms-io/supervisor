@@ -1,4 +1,5 @@
 import { BacnetProperties } from '@/types/bacnet-properties'
+import { ComputeValue } from '@/types/infrastructure'
 
 /**
  * Prepares discovered properties for multistate objects by converting
@@ -22,4 +23,19 @@ export function prepareMultistateProperties(
   }
 
   return prepared
+}
+
+/**
+ * Convert a BACnet property value to a ComputeValue for message passing
+ */
+export function convertToComputeValue(
+  value: unknown
+): ComputeValue | undefined {
+  if (typeof value === 'number') return value
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') {
+    const num = Number(value)
+    return !isNaN(num) ? num : undefined
+  }
+  return undefined
 }

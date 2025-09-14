@@ -72,7 +72,6 @@ export interface LogicNode<
   getValue(): ComputeValue | undefined
   getInputValues?(): ComputeValue[] // Optional - for nodes that have inputs
   reset?(): void // Optional - only for nodes that compute
-  execute?(inputs: ComputeValue[]): ComputeValue
 }
 
 // Command node configuration

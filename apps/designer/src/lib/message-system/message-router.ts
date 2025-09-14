@@ -1,5 +1,6 @@
 import { Node, Edge } from '@xyflow/react'
 import { EdgeData, DataNode } from '@/types/infrastructure'
+import { DEFAULT_INPUT_HANDLE, DEFAULT_OUTPUT_HANDLE } from '@/types/edge-types'
 import { NodeDataRecord } from '@/lib/data-graph/data-graph'
 import { Message } from './types'
 import { v4 as uuidv4 } from 'uuid'
@@ -37,7 +38,9 @@ export class MessageRouter {
     edges: Edge<EdgeData>[],
     handle: string
   ): Edge<EdgeData>[] {
-    return edges.filter((edge) => (edge.sourceHandle || 'output') === handle)
+    return edges.filter(
+      (edge) => (edge.sourceHandle || DEFAULT_OUTPUT_HANDLE) === handle
+    )
   }
 
   /**
@@ -105,7 +108,7 @@ export class MessageRouter {
       if (!targetNode) continue
 
       const targetNodeData = targetNode.data as DataNode
-      const targetHandle = edge.targetHandle || 'input'
+      const targetHandle = edge.targetHandle || DEFAULT_INPUT_HANDLE
 
       console.log(`  📬 → [${edge.target}] handle '${targetHandle}'`)
 
@@ -192,7 +195,7 @@ export class MessageRouter {
    * DFS helper for cycle detection
    * Pure recursive function
    */
-  private hasCyclesDFS(
+  hasCyclesDFS(
     nodeId: string,
     visited: Set<string>,
     recursionStack: Set<string>,

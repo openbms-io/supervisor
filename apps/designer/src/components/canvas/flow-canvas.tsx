@@ -53,7 +53,6 @@ export function FlowCanvas() {
   const addCommandNode = useFlowStore((state) => state.addCommandNode)
   const addControlFlowNode = useFlowStore((state) => state.addControlFlowNode)
   const removeNode = useFlowStore((state) => state.removeNode)
-  const executeGraph = useFlowStore((state) => state.executeGraph)
   const executeWithMessages = useFlowStore((state) => state.executeWithMessages)
 
   const onConnect = useCallback(
@@ -187,22 +186,13 @@ export function FlowCanvas() {
         <Panel position="top-center" className="m-2">
           <div className="flex gap-2">
             <Button
-              onClick={executeGraph}
+              onClick={executeWithMessages}
               size="sm"
               className="flex items-center gap-2"
               variant="default"
             >
               <PlayIcon className="h-4 w-4" />
-              Run (DFS)
-            </Button>
-            <Button
-              onClick={executeWithMessages}
-              size="sm"
-              className="flex items-center gap-2"
-              variant="outline"
-            >
-              <PlayIcon className="h-4 w-4" />
-              Run (Messages)
+              Run
             </Button>
           </div>
         </Panel>

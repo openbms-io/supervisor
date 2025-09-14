@@ -29,7 +29,7 @@ export const BacnetNodeUI = memo(({ data, id }: NodeProps) => {
   const discoveredProperties = useFlowStore((state) => {
     const node = state.nodes.find((n) => n.id === id)
     return node?.data?.discoveredProperties ?? typedData.discoveredProperties
-  })
+  }) as BacnetProperties
 
   // Local state for which properties to show in UI
   const [visibleProperties, setVisibleProperties] = useState<

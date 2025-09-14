@@ -111,9 +111,12 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
   }
 
   async receive(
-    message: Message,
-    handle: never,
-    fromNodeId: string
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _message: Message,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _handle: never,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _fromNodeId: string
   ): Promise<void> {
     // Source node - when triggered, send the constant value
     await this.trigger()
