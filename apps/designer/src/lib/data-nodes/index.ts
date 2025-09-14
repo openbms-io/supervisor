@@ -9,7 +9,7 @@ export {
   type ValueType,
   type ConstantNodeMetadata,
 } from './constant-node'
-export { TimerNode, type TimerMode, type TimerNodeMetadata } from './timer-node'
+export { TimerNode, type TimerNodeMetadata } from './timer-node'
 
 // Factory for creating nodes
 export { default as nodeFactory } from './factory'
