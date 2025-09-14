@@ -1,26 +1,18 @@
+import { DataNode, EdgeData } from '@/types/infrastructure'
 import {
-  DataNode,
-  LogicNode,
-  ComputeValue,
-  NodeCategory,
-  BacnetInputOutput,
-  EdgeData,
-  isBacnetProperty,
-  CommandNode,
-  ControlFlowNode,
-} from '@/types/infrastructure'
-import { EDGE_TYPES } from '@/types/edge-types'
+  EDGE_TYPES,
+  DEFAULT_INPUT_HANDLE,
+  DEFAULT_OUTPUT_HANDLE,
+} from '@/types/edge-types'
 import { NodeData } from '@/types/node-data-types'
 import { Node, Edge } from '@xyflow/react'
 import { EdgeActivationManager } from './edge-activation-manager'
+import { MessageRouter } from '@/lib/message-system/message-router'
+import { Message } from '@/lib/message-system/types'
+import { v4 as uuidv4 } from 'uuid'
 
-// Type for React Flow node data - using NodeData from node-data-types
 export type NodeDataRecord = NodeData
 
-/**
- * DataGraph manages the execution logic using DFS traversal.
- * It maintains only two maps as the source of truth, deriving everything else on-demand.
- */
 export class DataGraph {
   // Single source of truth - only two maps!
   private nodesMap: Map<string, Node<NodeDataRecord>>
@@ -34,11 +26,13 @@ export class DataGraph {
    */
   private edgesMap: Map<string, Edge<EdgeData>>
   private edgeManager: EdgeActivationManager
+  private messageRouter: MessageRouter
 
   constructor() {
     this.nodesMap = new Map()
     this.edgesMap = new Map()
     this.edgeManager = new EdgeActivationManager(this.edgesMap, this.nodesMap)
+    this.messageRouter = new MessageRouter()
   }
 
   getNodesArray(): Node<NodeDataRecord>[] {
@@ -65,47 +59,49 @@ export class DataGraph {
     })
   }
 
-  // Build adjacency list on-demand from edges
-  private buildAdjacencyList(): Map<string, Set<string>> {
-    const adjacencyList = new Map<string, Set<string>>()
-
-    // Initialize all nodes
-    for (const nodeId of this.nodesMap.keys()) {
-      adjacencyList.set(nodeId, new Set())
-    }
-
-    // Build from edges
-    for (const edge of this.edgesMap.values()) {
-      const sourceSet = adjacencyList.get(edge.source)
-      if (sourceSet) {
-        sourceSet.add(edge.target)
-      }
-    }
-
-    return adjacencyList
-  }
-
-  // Build reverse adjacency list on-demand from edges
-  private buildReverseAdjacencyList(): Map<string, Set<string>> {
-    const reverseAdjacencyList = new Map<string, Set<string>>()
-
-    // Initialize all nodes
-    for (const nodeId of this.nodesMap.keys()) {
-      reverseAdjacencyList.set(nodeId, new Set())
-    }
-
-    // Build from edges
-    for (const edge of this.edgesMap.values()) {
-      const targetSet = reverseAdjacencyList.get(edge.target)
-      if (targetSet) {
-        targetSet.add(edge.source)
-      }
-    }
-
-    return reverseAdjacencyList
-  }
-
   addNode(node: DataNode, position: { x: number; y: number }): void {
+    // Inject routing callback if node supports messages
+    if (
+      'setSendCallback' in node &&
+      typeof node.setSendCallback === 'function'
+    ) {
+      const callback = async (
+        message: Message,
+        nodeId: string,
+        handle: string
+      ) => {
+        // Activate only the edges from this specific handle
+        this.edgeManager.activateSpecificOutputEdges(nodeId, handle)
+
+        // Get fresh arrays each time for pure router
+        const nodes = this.getNodesArray()
+        const edges = this.getEdgesArray()
+
+        // Use pure router function
+        await this.messageRouter.routeMessage(
+          message,
+          nodeId,
+          handle,
+          nodes,
+          edges
+        )
+      }
+
+      ;(
+        node as DataNode & {
+          setSendCallback: (
+            cb: (
+              message: Message,
+              nodeId: string,
+              handle: string
+            ) => Promise<void>
+          ) => void
+        }
+      ).setSendCallback(callback)
+    } else {
+      console.log('Node does not support messages. setSendCallback')
+    }
+
     // For nodes without category, use type as-is. For custom nodes, prepend category
     const nodeType = !node.category
       ? node.type
@@ -162,8 +158,8 @@ export class DataGraph {
     sourceHandle?: string | null,
     targetHandle?: string | null
   ): string {
-    const source = `${sourceId}:${sourceHandle || '_'}`
-    const target = `${targetId}:${targetHandle || '_'}`
+    const source = `${sourceId}:${sourceHandle || DEFAULT_OUTPUT_HANDLE}`
+    const target = `${targetId}:${targetHandle || DEFAULT_INPUT_HANDLE}`
     return `${source}->${target}`
   }
 
@@ -238,51 +234,6 @@ export class DataGraph {
     return this.getEdgesArray()
   }
 
-  // DFS execution order
-  getExecutionOrderDFS(): string[] {
-    const adjacencyList = this.buildAdjacencyList()
-    const reverseAdjacencyList = this.buildReverseAdjacencyList()
-    const visited = new Set<string>()
-    const executionOrder: string[] = []
-
-    // Find source nodes (no incoming edges)
-    const sourceNodes: string[] = []
-    for (const [nodeId, incoming] of reverseAdjacencyList) {
-      if (incoming.size === 0) {
-        sourceNodes.push(nodeId)
-      }
-    }
-
-    // DFS from each source node
-    for (const nodeId of sourceNodes) {
-      if (!visited.has(nodeId)) {
-        this.dfsTraversal(nodeId, visited, executionOrder, adjacencyList)
-      }
-    }
-
-    return executionOrder
-  }
-
-  private dfsTraversal(
-    nodeId: string,
-    visited: Set<string>,
-    executionOrder: string[],
-    adjacencyList: Map<string, Set<string>>
-  ): void {
-    visited.add(nodeId)
-
-    // Process current node
-    executionOrder.push(nodeId)
-
-    // Visit all neighbors (DFS)
-    const neighbors = adjacencyList.get(nodeId) || new Set()
-    for (const neighborId of neighbors) {
-      if (!visited.has(neighborId)) {
-        this.dfsTraversal(neighborId, visited, executionOrder, adjacencyList)
-      }
-    }
-  }
-
   validateConnection(sourceId: string, targetId: string): boolean {
     const sourceNode = this.nodesMap.get(sourceId)
     const targetNode = this.nodesMap.get(targetId)
@@ -321,152 +272,6 @@ export class DataGraph {
     }
   }
 
-  // Check if graph has cycles
-  hasCycles(): boolean {
-    const adjacencyList = this.buildAdjacencyList()
-    const visited = new Set<string>()
-    const recursionStack = new Set<string>()
-
-    for (const nodeId of this.nodesMap.keys()) {
-      if (!visited.has(nodeId)) {
-        if (this.hasCyclesDFS(nodeId, visited, recursionStack, adjacencyList)) {
-          return true
-        }
-      }
-    }
-
-    return false
-  }
-
-  private hasCyclesDFS(
-    nodeId: string,
-    visited: Set<string>,
-    recursionStack: Set<string>,
-    adjacencyList: Map<string, Set<string>>
-  ): boolean {
-    visited.add(nodeId)
-    recursionStack.add(nodeId)
-
-    const neighbors = adjacencyList.get(nodeId) || new Set()
-    for (const neighborId of neighbors) {
-      if (!visited.has(neighborId)) {
-        if (
-          this.hasCyclesDFS(neighborId, visited, recursionStack, adjacencyList)
-        ) {
-          return true
-        }
-      } else if (recursionStack.has(neighborId)) {
-        return true // Cycle detected
-      }
-    }
-
-    recursionStack.delete(nodeId)
-    return false
-  }
-
-  // Get upstream nodes (nodes that feed into this node)
-  getUpstreamNodes(nodeId: string): DataNode[] {
-    const reverseAdjacencyList = this.buildReverseAdjacencyList()
-    const sourceIds = reverseAdjacencyList.get(nodeId) || new Set()
-    return Array.from(sourceIds)
-      .map((id) => this.getNode(id))
-      .filter((node): node is DataNode => node !== undefined)
-  }
-
-  // Get downstream nodes (nodes that this node feeds into)
-  getDownstreamNodes(nodeId: string): DataNode[] {
-    const adjacencyList = this.buildAdjacencyList()
-    const targetIds = adjacencyList.get(nodeId) || new Set()
-    return Array.from(targetIds)
-      .map((id) => this.getNode(id))
-      .filter((node): node is DataNode => node !== undefined)
-  }
-
-  private getNodeOutputValue(
-    node: DataNode,
-    handle?: string
-  ): ComputeValue | undefined {
-    switch (node.category) {
-      case NodeCategory.BACNET:
-        if (handle && isBacnetProperty(handle)) {
-          const bacnetNode = node as BacnetInputOutput
-          const value = bacnetNode.discoveredProperties[handle]
-          if (typeof value === 'number' || typeof value === 'boolean') {
-            return value
-          }
-        }
-        return undefined
-
-      case NodeCategory.LOGIC:
-        const logicNode = node as LogicNode
-        return logicNode.getValue()
-
-      case NodeCategory.COMMAND:
-        // Command nodes pass through their setpoint value
-        const commandNode = node as CommandNode
-        return commandNode.receivedValue
-
-      case NodeCategory.CONTROL_FLOW:
-        // Control flow nodes pass through their input value
-        const cfNode = node as ControlFlowNode
-        return cfNode.getValue()
-
-      default:
-        return undefined
-    }
-  }
-
-  // Get incoming edges for a node
-  private getIncomingEdges(nodeId: string): Edge<EdgeData>[] {
-    const edges: Edge<EdgeData>[] = []
-    for (const edge of this.edgesMap.values()) {
-      if (edge.target === nodeId) {
-        edges.push(edge)
-      }
-    }
-    return edges
-  }
-
-  private getNodeInputValues(nodeId: string): ComputeValue[] {
-    const node = this.getNode(nodeId)
-    if (!node) return []
-
-    // Use the node's getInputHandles method if available
-    let expectedHandles: string[] = []
-    if (
-      'getInputHandles' in node &&
-      typeof node.getInputHandles === 'function'
-    ) {
-      expectedHandles = node.getInputHandles() as string[]
-    } else {
-      return [] // Node has no inputs
-    }
-
-    const incomingEdges = this.getIncomingEdges(nodeId)
-    const handleValues = new Map<string, ComputeValue>()
-
-    for (const edge of incomingEdges) {
-      // Skip inactive edges
-      if (edge.data?.isActive === false) continue
-
-      if (!edge.data || !edge.targetHandle) continue
-
-      const sourceNode = this.getNode(edge.data.sourceData.nodeId)
-      if (sourceNode) {
-        const value = this.getNodeOutputValue(
-          sourceNode,
-          edge.data.sourceData.handle
-        )
-        if (value !== undefined) {
-          handleValues.set(edge.targetHandle, value)
-        }
-      }
-    }
-
-    return expectedHandles.map((handle) => handleValues.get(handle) ?? 0)
-  }
-
-  // Execute all nodes in topological order
   // Reset all computed values to ensure fresh execution
   private resetComputedValues(): void {
     for (const node of this.nodesMap.values()) {
@@ -479,131 +284,56 @@ export class DataGraph {
     }
   }
 
-  executeGraph(): void {
-    // Check for cycles before execution
-    if (this.hasCycles()) {
+  // Message-based execution using pure router
+  async executeWithMessages(): Promise<void> {
+    console.log('🚀 Starting message-based execution')
+
+    const nodes = this.getNodesArray()
+    const edges = this.getEdgesArray()
+
+    // Use pure router to check for cycles
+    if (this.messageRouter.hasCycles(nodes, edges)) {
       console.error('Graph contains cycles - execution aborted')
-      // Let the store handle notifications
       throw new Error('Graph contains cycles')
     }
 
-    const executionOrder = this.getExecutionOrderDFS()
-
-    // Reset all computed values for fresh execution
+    // Reset nodes
     this.resetComputedValues()
 
-    // Start with all edges inactive
+    // Reset edge activation
     this.edgeManager.resetAllEdges()
 
-    for (const nodeId of executionOrder) {
-      const node = this.getNode(nodeId)
-      if (!node) continue
+    // Find source nodes using pure router
+    const sourceNodeIds = this.messageRouter.findSourceNodes(nodes, edges)
+    console.log('🎯 Found source nodes:', sourceNodeIds)
 
-      // Check if node is reachable (has active input or is source)
-      const isReachable = this.isNodeReachable(nodeId)
+    // Activate edges from source nodes
+    for (const nodeId of sourceNodeIds) {
+      this.edgeManager.activateAllOutputHandleEdges(nodeId)
+    }
 
-      if (!isReachable) continue
+    // Start the chain reaction by triggering source nodes
+    for (const nodeId of sourceNodeIds) {
+      const node = this.nodesMap.get(nodeId)
+      if (node) {
+        const dataNode = node.data as DataNode
+        console.log(`⚡ Triggering source node: ${nodeId}`)
 
-      const inputs = this.getNodeInputValues(nodeId)
-
-      // Execute based on category using switch statement
-      switch (node.category) {
-        case NodeCategory.CONTROL_FLOW: {
-          const cfNode = node as ControlFlowNode
-          cfNode.execute(inputs)
-
-          // Activate specific output handles based on control flow logic
-          const activeHandles = cfNode.getActiveOutputHandles()
-          this.edgeManager.activateSpecificOutputHandleEdges(nodeId, [
-            ...activeHandles,
-          ])
-          break
-        }
-
-        case NodeCategory.LOGIC: {
-          const logicNode = node as LogicNode
-          if (logicNode.execute) {
-            logicNode.execute(inputs)
-          }
-          // Activate all outputs for logic nodes
-          this.edgeManager.activateAllOutputHandleEdges(nodeId)
-          break
-        }
-
-        case NodeCategory.COMMAND: {
-          const commandNode = node as CommandNode
-          commandNode.receivedValue = inputs[0]
-
-          // Find connected BACnet nodes
-          const downstreamNodes = this.getDownstreamNodes(nodeId)
-          for (const target of downstreamNodes) {
-            if (target.category === NodeCategory.BACNET) {
-              const bacnetNode = target as BacnetInputOutput
-              this.executeBacnetWrite(
-                bacnetNode,
-                commandNode.receivedValue,
-                commandNode.priority,
-                commandNode.writeMode
-              )
-            }
-          }
-          // Activate all outputs for command nodes
-          this.edgeManager.activateAllOutputHandleEdges(nodeId)
-          break
-        }
-
-        case NodeCategory.BACNET:
-          // Data sources, activate their outputs
-          this.edgeManager.activateAllOutputHandleEdges(nodeId)
-          break
-
-        default: {
-          // Exhaustive check
-          const _exhaustive: never = node.category
-          console.warn('Unknown node category:', _exhaustive)
-        }
+        // Send trigger message to start the flow
+        await dataNode.receive(
+          {
+            _msgid: uuidv4(),
+            timestamp: Date.now(),
+            payload: undefined,
+            metadata: { trigger: true },
+          },
+          'input',
+          'system'
+        )
       }
-
-      this.updateNodeData(nodeId)
-    }
-  }
-
-  /**
-   * Check if a node is reachable (has active input or is a source node)
-   */
-  private isNodeReachable(nodeId: string): boolean {
-    // Source nodes (no incoming edges) are always reachable
-    const incomingEdges = this.edgeManager.getIncomingEdges(nodeId)
-    if (incomingEdges.length === 0) {
-      return true // It's a source/root node
     }
 
-    // Non-source nodes need at least one active incoming edge
-    return incomingEdges.some((edge) => edge.data?.isActive === true)
-  }
-
-  private executeBacnetWrite(
-    bacnetNode: BacnetInputOutput,
-    value: ComputeValue | undefined,
-    priority: number,
-    writeMode: 'normal' | 'override' | 'release'
-  ): void {
-    if (value === undefined) return
-
-    // TODO: In real implementation, this would:
-    // 1. Send write command to IoT supervisor
-    // 2. IoT supervisor writes to actual BACnet device
-    // 3. Device responds with new value
-    // 4. discoveredProperties would be updated from device response
-
-    console.log('BACnet Write Command:', {
-      pointId: bacnetNode.pointId,
-      objectType: bacnetNode.objectType,
-      objectId: bacnetNode.objectId,
-      value,
-      priority,
-      writeMode,
-    })
+    console.log('✨ Message-based execution completed')
   }
 
   // Check if an edge exists between nodes with specific handles
@@ -620,32 +350,5 @@ export class DataGraph {
       targetHandle
     )
     return this.edgesMap.has(edgeId)
-  }
-
-  // Get edge by nodes and handles
-  getEdge(
-    sourceId: string,
-    targetId: string,
-    sourceHandle?: string | null,
-    targetHandle?: string | null
-  ): Edge<EdgeData> | undefined {
-    const edgeId = this.generateEdgeId(
-      sourceId,
-      targetId,
-      sourceHandle,
-      targetHandle
-    )
-    return this.edgesMap.get(edgeId)
-  }
-
-  // Get all edges between two nodes regardless of handles
-  getEdgesBetween(sourceId: string, targetId: string): Edge<EdgeData>[] {
-    const edges: Edge<EdgeData>[] = []
-    for (const edge of this.edgesMap.values()) {
-      if (edge.source === sourceId && edge.target === targetId) {
-        edges.push(edge)
-      }
-    }
-    return edges
   }
 }

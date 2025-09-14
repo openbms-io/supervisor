@@ -8,6 +8,8 @@ import {
   generateInstanceId,
   DataNode,
 } from '@/types/infrastructure'
+import { Message, SendCallback } from '@/lib/message-system/types'
+import { v4 as uuidv4 } from 'uuid'
 
 export type ComparisonOperation =
   | 'equals'
@@ -29,6 +31,8 @@ export class ComparisonNode
   // Private internal state
   private _computedValue?: boolean
   private _inputValues: ComputeValue[] = []
+  private sendCallback?: SendCallback<LogicOutputHandle>
+  private messageBuffer: Map<ComparisonInputHandle, Message> = new Map()
 
   // Public getters for UI access
   get computedValue(): boolean | undefined {
@@ -56,6 +60,7 @@ export class ComparisonNode
   reset(): void {
     this._computedValue = undefined
     this._inputValues = []
+    this.messageBuffer.clear()
   }
 
   execute(inputs: ComputeValue[]): boolean {
@@ -105,5 +110,83 @@ export class ComparisonNode
 
   getOutputHandles(): readonly LogicOutputHandle[] {
     return ['output'] as const
+  }
+
+  // Message passing API implementation
+  setSendCallback(callback: SendCallback<LogicOutputHandle>): void {
+    this.sendCallback = callback
+  }
+
+  private async send(
+    message: Message,
+    handle: LogicOutputHandle
+  ): Promise<void> {
+    if (this.sendCallback) {
+      await this.sendCallback(message, this.id, handle)
+    }
+  }
+
+  async receive(
+    message: Message,
+    handle: ComparisonInputHandle,
+    fromNodeId: string
+  ): Promise<void> {
+    console.log(
+      `📥 [${this.id}] Received on ${handle}:`,
+      message.payload,
+      `from ${fromNodeId}`
+    )
+
+    // Buffer the message
+    this.messageBuffer.set(handle, message)
+
+    // Check if we have all inputs
+    const requiredHandles = this.getInputHandles()
+    const hasAllInputs = requiredHandles.every((h) => this.messageBuffer.has(h))
+
+    if (hasAllInputs) {
+      console.log(
+        `✅ [${this.id}] All inputs received, processing comparison...`
+      )
+
+      // Collect and execute
+      const inputs: ComputeValue[] = requiredHandles.map(
+        (h) => this.messageBuffer.get(h)?.payload ?? 0
+      )
+
+      const result = this.execute(inputs)
+
+      console.log(
+        `🔍 [${this.id}] Compared:`,
+        inputs[0],
+        `(${typeof inputs[0]})`,
+        this.metadata.operation,
+        inputs[1],
+        `(${typeof inputs[1]})`,
+        '=',
+        result
+      )
+      console.log(
+        `🔍 [${this.id}] Raw comparison: ${inputs[0]} === ${inputs[1]} = ${
+          inputs[0] === inputs[1]
+        }`
+      )
+
+      // Send result - this triggers downstream nodes!
+      await this.send(
+        {
+          payload: result,
+          _msgid: uuidv4(),
+          timestamp: Date.now(),
+          metadata: { source: this.id, operation: this.metadata.operation },
+        },
+        'output'
+      )
+
+      // Clear buffer for next comparison
+      this.messageBuffer.clear()
+    } else {
+      console.log(`⏳ [${this.id}] Waiting for more inputs...`)
+    }
   }
 }

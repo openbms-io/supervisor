@@ -5,6 +5,7 @@ import {
   NodeDirection,
   DataNode,
 } from '@/types/infrastructure'
+import { DEFAULT_OUTPUT_HANDLE } from '@/types/edge-types'
 import { NodeDataRecord } from './data-graph'
 
 export class EdgeActivationManager {
@@ -47,7 +48,7 @@ export class EdgeActivationManager {
       if (!edge.data) continue
 
       // Activate if handle matches
-      const handle = edge.sourceHandle || 'default'
+      const handle = edge.sourceHandle || DEFAULT_OUTPUT_HANDLE
       edge.data.isActive = activeHandles.includes(handle)
     }
   }
@@ -154,8 +155,23 @@ export class EdgeActivationManager {
     const edges = this.getOutgoingEdges(nodeId)
     for (const edge of edges) {
       if (edge.data) {
-        const handle = edge.sourceHandle || 'default'
+        const handle = edge.sourceHandle || DEFAULT_OUTPUT_HANDLE
         edge.data.isActive = activeHandles.includes(handle)
+      }
+    }
+  }
+
+  /**
+   * Activate output edges for a specific handle (for message routing)
+   */
+  activateSpecificOutputEdges(nodeId: string, handle: string): void {
+    const edges = this.getOutgoingEdges(nodeId)
+    for (const edge of edges) {
+      if (
+        edge.data &&
+        (edge.sourceHandle || DEFAULT_OUTPUT_HANDLE) === handle
+      ) {
+        edge.data.isActive = true
       }
     }
   }

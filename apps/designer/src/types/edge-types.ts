@@ -25,3 +25,10 @@ export const EDGE_TYPES = {
 } as const
 
 export type EdgeType = (typeof EDGE_TYPES)[keyof typeof EDGE_TYPES]
+
+/**
+ * Default handle names used across the message routing system
+ * These ensure consistency in edge activation and message routing
+ */
+export const DEFAULT_INPUT_HANDLE = 'input' as const
+export const DEFAULT_OUTPUT_HANDLE = 'output' as const

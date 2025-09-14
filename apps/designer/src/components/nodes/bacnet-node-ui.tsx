@@ -19,10 +19,17 @@ import {
   StatusFlags,
 } from '@/types/bacnet-properties'
 import { BacnetNodeData } from '@/types/node-data-types'
+import { useFlowStore } from '@/store/use-flow-store'
 
-export const BacnetNodeUI = memo(({ data }: NodeProps) => {
+export const BacnetNodeUI = memo(({ data, id }: NodeProps) => {
   const typedData = data as BacnetNodeData
   const [showProperties, setShowProperties] = useState(false)
+
+  // Subscribe to discoveredProperties from store for reactive updates
+  const discoveredProperties = useFlowStore((state) => {
+    const node = state.nodes.find((n) => n.id === id)
+    return node?.data?.discoveredProperties ?? typedData.discoveredProperties
+  }) as BacnetProperties
 
   // Local state for which properties to show in UI
   const [visibleProperties, setVisibleProperties] = useState<
@@ -30,10 +37,10 @@ export const BacnetNodeUI = memo(({ data }: NodeProps) => {
   >(() => {
     // Start with presentValue and statusFlags if available
     const initial = new Set<keyof BacnetProperties>()
-    if (typedData.discoveredProperties.presentValue !== undefined) {
+    if (discoveredProperties.presentValue !== undefined) {
       initial.add('presentValue')
     }
-    if (typedData.discoveredProperties.statusFlags !== undefined) {
+    if (discoveredProperties.statusFlags !== undefined) {
       initial.add('statusFlags')
     }
     return initial
@@ -42,10 +49,10 @@ export const BacnetNodeUI = memo(({ data }: NodeProps) => {
   // Get list of discovered properties that aren't visible
   const availableToAdd = useMemo(() => {
     const discovered = Object.keys(
-      typedData.discoveredProperties
+      discoveredProperties
     ) as (keyof BacnetProperties)[]
     return discovered.filter((prop) => !visibleProperties.has(prop))
-  }, [typedData.discoveredProperties, visibleProperties])
+  }, [discoveredProperties, visibleProperties])
 
   // Add property to visible list
   const addProperty = (propertyName: keyof BacnetProperties) => {
@@ -90,7 +97,7 @@ export const BacnetNodeUI = memo(({ data }: NodeProps) => {
           {/* Visible Properties */}
           <div className="space-y-2">
             {Array.from(visibleProperties).map((propertyName) => {
-              const value = typedData.discoveredProperties[propertyName]
+              const value = discoveredProperties[propertyName]
               const metadata = getPropertyMetadata(
                 typedData.objectType,
                 propertyName

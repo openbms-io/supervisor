@@ -137,10 +137,9 @@ export interface FlowSlice {
   getNodes: () => Node[]
   getEdges: () => Edge[]
   validateConnection: (sourceId: string, targetId: string) => boolean
-  getExecutionOrder: () => string[]
 
   // Execute graph
-  executeGraph: () => void
+  executeWithMessages: () => Promise<void>
 }
 
 // This will be imported from factory once we create it
@@ -322,7 +321,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       })
 
       // Execute graph after new connection
-      get().executeGraph()
+      get().executeWithMessages()
     } else {
       showWarning(
         'Invalid Connection',
@@ -381,7 +380,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
           })
 
           // Execute graph after type change
-          get().executeGraph()
+          get().executeWithMessages()
         }
         break
       }
@@ -402,7 +401,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
           })
 
           // Execute graph after configuration change
-          get().executeGraph()
+          get().executeWithMessages()
         }
         break
       }
@@ -419,7 +418,6 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   getEdges: () => get().dataGraph.getEdgesArray(),
   validateConnection: (sourceId, targetId) =>
     get().dataGraph.validateConnection(sourceId, targetId),
-  getExecutionOrder: () => get().dataGraph.getExecutionOrderDFS(), // DFS execution
 
   // Notification actions
   setNotification: (notification) => set({ notification }),
@@ -441,50 +439,29 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       notification: { type: 'warning', title, message },
     }),
 
-  // Execute graph
-  executeGraph: () => {
+  // Execute graph with message passing
+  executeWithMessages: async () => {
     const { dataGraph, showError, showSuccess } = get()
 
-    // Check for cycles
-    if (dataGraph.hasCycles()) {
-      showError(
-        '🔄 Cycle Detected',
-        'Graph contains cycles. Please remove circular dependencies before executing.'
-      )
-      return
-    }
-
     try {
-      // Execute the graph
-      dataGraph.executeGraph()
+      console.log('🚀 [FlowStore] Starting message-based execution...')
 
-      // Get execution stats
-      const executionOrder = dataGraph.getExecutionOrderDFS()
-      const nodeCount = executionOrder.length
+      // Execute with messages
+      await dataGraph.executeWithMessages()
 
       // Show success notification
       showSuccess(
-        '✅ Execution Complete',
-        `Successfully executed ${nodeCount} node${nodeCount !== 1 ? 's' : ''}`
+        '✅ Message Execution Complete',
+        'Successfully executed graph using message passing'
       )
 
-      // Force UI update to show updated values
-      // Create new edge objects to ensure React Flow detects edge data changes
-      const updatedEdges = dataGraph.getEdgesArray().map((edge) => ({
-        ...edge,
-        data: edge.data ? { ...edge.data } : undefined,
-      }))
-
-      set({
-        nodes: dataGraph.getNodesArray(),
-        edges: updatedEdges,
-      })
+      // No need to force UI updates - BacnetNodeUI subscribes to store directly via Zustand
     } catch (error) {
       showError(
-        '⚠️ Execution Failed',
+        '⚠️ Message Execution Failed',
         error instanceof Error
           ? error.message
-          : 'An unknown error occurred during execution'
+          : 'An unknown error occurred during message execution'
       )
     }
   },

@@ -471,8 +471,8 @@ export function generateMockBACnetPoints(
               stateText: MULTISTATE_CONFIGS[item.multistateConfig].stateText,
             }
           : {}),
-        // Add some optional properties randomly for analog objects
-        ...(Math.random() > 0.5 && item.objectType.includes('analog')
+        // Add some optional properties for analog objects
+        ...(item.objectType.includes('analog')
           ? {
               minPresValue: 0,
               maxPresValue: 100,

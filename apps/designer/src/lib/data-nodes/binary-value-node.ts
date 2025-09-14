@@ -5,8 +5,16 @@ import {
   BacnetConfig,
   BacnetInputOutput,
   generateInstanceId,
+  BacnetInputHandle,
+  BacnetOutputHandle,
 } from '@/types/infrastructure'
-import { BacnetProperties } from '@/types/bacnet-properties'
+import {
+  BacnetProperties,
+  getPropertyMetadata,
+} from '@/types/bacnet-properties'
+import { Message, SendCallback } from '@/lib/message-system/types'
+import { v4 as uuidv4 } from 'uuid'
+import { convertToComputeValue } from './bacnet-utils'
 
 export class BinaryValueNode implements BacnetInputOutput {
   // From BacnetConfig
@@ -15,7 +23,7 @@ export class BinaryValueNode implements BacnetInputOutput {
   readonly objectId: number
   readonly supervisorId: string
   readonly controllerId: string
-  readonly discoveredProperties: BacnetProperties
+  discoveredProperties: BacnetProperties
   readonly name: string
   readonly position?: { x: number; y: number }
 
@@ -25,6 +33,7 @@ export class BinaryValueNode implements BacnetInputOutput {
   readonly category = NodeCategory.BACNET
   readonly label: string
   readonly direction = NodeDirection.BIDIRECTIONAL
+  private sendCallback?: SendCallback<BacnetOutputHandle>
 
   constructor(config: BacnetConfig) {
     // Copy all BacnetConfig properties
@@ -32,9 +41,9 @@ export class BinaryValueNode implements BacnetInputOutput {
     this.objectId = config.objectId
     this.supervisorId = config.supervisorId
     this.controllerId = config.controllerId
-    this.discoveredProperties = Object.freeze({
+    this.discoveredProperties = {
       ...config.discoveredProperties,
-    })
+    }
     this.name = config.name
     this.position = config.position
 
@@ -47,5 +56,103 @@ export class BinaryValueNode implements BacnetInputOutput {
   canConnectWith(target: DataNode): boolean {
     // Value nodes can connect bidirectionally
     return true
+  }
+
+  getInputHandles(): readonly BacnetInputHandle[] {
+    const handles: BacnetInputHandle[] = []
+    for (const [property, value] of Object.entries(this.discoveredProperties)) {
+      if (value !== undefined) {
+        const metadata = getPropertyMetadata(
+          this.objectType,
+          property as BacnetInputHandle
+        )
+        if (metadata?.writable) {
+          handles.push(property as BacnetInputHandle)
+        }
+      }
+    }
+    return handles
+  }
+
+  getOutputHandles(): readonly BacnetOutputHandle[] {
+    const handles: BacnetOutputHandle[] = []
+    for (const [property, value] of Object.entries(this.discoveredProperties)) {
+      if (value !== undefined) {
+        const metadata = getPropertyMetadata(
+          this.objectType,
+          property as BacnetOutputHandle
+        )
+        if (metadata?.readable) {
+          handles.push(property as BacnetOutputHandle)
+        }
+      }
+    }
+    return handles
+  }
+
+  // Message passing API implementation
+  setSendCallback(callback: SendCallback<BacnetOutputHandle>): void {
+    this.sendCallback = callback
+  }
+
+  private async send(
+    message: Message,
+    handle: BacnetOutputHandle
+  ): Promise<void> {
+    if (this.sendCallback) {
+      await this.sendCallback(message, this.id, handle)
+    }
+  }
+
+  async receive(
+    message: Message,
+    handle: BacnetInputHandle,
+    fromNodeId: string
+  ): Promise<void> {
+    const inputHandles = this.getInputHandles()
+
+    if (inputHandles.includes(handle)) {
+      // Write to a writable property
+      console.log(
+        `🟢 [${this.id}] BinaryValue received write to ${handle}:`,
+        message.payload,
+        `from ${fromNodeId}`
+      )
+
+      // Update the property value locally for UI updates
+      // NOTE: Currently focusing on top-level properties only. Nested properties are not spread correctly.
+      this.discoveredProperties = {
+        ...this.discoveredProperties,
+        [handle]: message.payload,
+      }
+
+      // Send the updated value downstream
+      await this.send(
+        {
+          payload: message.payload,
+          _msgid: uuidv4(),
+          timestamp: Date.now(),
+        },
+        handle
+      )
+    } else {
+      // Trigger - send all readable property values
+      console.log(`🟢 [${this.id}] BinaryValue triggered from ${fromNodeId}`)
+
+      const outputHandles = this.getOutputHandles()
+      for (const propertyHandle of outputHandles) {
+        const currentValue = this.discoveredProperties[propertyHandle]
+        if (currentValue !== undefined) {
+          await this.send(
+            {
+              payload: convertToComputeValue(currentValue) || 0,
+              _msgid: uuidv4(),
+              timestamp: Date.now(),
+            },
+            propertyHandle
+          )
+        }
+      }
+    }
   }
 }

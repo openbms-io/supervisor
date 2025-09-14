@@ -1,11 +1,6 @@
 import React from 'react'
-import {
-  getBezierPath,
-  useStore,
-  BaseEdge,
-  type EdgeProps,
-  type ReactFlowState,
-} from '@xyflow/react'
+import { getBezierPath, BaseEdge, type EdgeProps } from '@xyflow/react'
+import { useFlowStore } from '@/store/use-flow-store'
 
 export type GetSpecialPathParams = {
   sourceX: number
@@ -38,8 +33,8 @@ export default function BidirectionalFlowEdge(props: EdgeProps) {
     targetPosition,
     markerEnd,
   } = props
-  const isBiDirectionEdge = useStore((s: ReactFlowState) => {
-    const edgeExists = s.edges.some(
+  const isBiDirectionEdge = useFlowStore((state) => {
+    const edgeExists = state.edges.some(
       (e) =>
         (e.source === target && e.target === source) ||
         (e.target === source && e.source === target)

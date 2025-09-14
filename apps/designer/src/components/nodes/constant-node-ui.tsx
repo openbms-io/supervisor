@@ -23,9 +23,9 @@ export const ConstantNodeUI = memo(({ data, id }: NodeProps) => {
   const updateNode = useFlowStore((state) => state.updateNode)
 
   // Get value from metadata
-  const storeValue = metadata.value
+  const storeValue = metadata?.value ?? 0
 
-  const valueType = metadata.valueType
+  const valueType = metadata?.valueType ?? 'number'
 
   // label is already available from data destructuring
 

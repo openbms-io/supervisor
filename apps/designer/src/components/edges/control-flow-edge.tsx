@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { EdgeProps, getSmoothStepPath, BaseEdge } from '@xyflow/react'
+import { useFlowStore } from '@/store/use-flow-store'
 
 /**
  * Custom edge component for control flow visualization
@@ -9,16 +10,21 @@ import { EdgeProps, getSmoothStepPath, BaseEdge } from '@xyflow/react'
  */
 export default function ControlFlowEdge(props: EdgeProps) {
   const {
+    id,
     sourceX = 0,
     sourceY = 0,
     targetX = 0,
     targetY = 0,
     sourcePosition,
     targetPosition,
-    data,
     markerEnd,
     style,
   } = props
+
+  const isActive = useFlowStore(
+    (state) => state.edges.find((e) => e.id === id)?.data?.isActive !== false
+  )
+
   // Use smooth step path for better visual appearance
   const [edgePath] = getSmoothStepPath({
     sourceX,
@@ -28,9 +34,6 @@ export default function ControlFlowEdge(props: EdgeProps) {
     targetY,
     targetPosition,
   })
-
-  // Edge is active unless explicitly set to false
-  const isActive = data?.isActive !== false
 
   // Handle optional style prop
   const edgeStyle = style || {}

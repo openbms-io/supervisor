@@ -7,6 +7,8 @@ import {
   NodeDirection,
   generateInstanceId,
 } from '@/types/infrastructure'
+import { Message, SendCallback } from '@/lib/message-system/types'
+import { v4 as uuidv4 } from 'uuid'
 
 export type ValueType = 'number' | 'boolean' | 'string'
 
@@ -24,6 +26,7 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
   readonly direction = NodeDirection.OUTPUT
 
   private _metadata: ConstantNodeMetadata
+  private sendCallback?: SendCallback<LogicOutputHandle>
 
   get metadata(): ConstantNodeMetadata {
     return this._metadata
@@ -91,5 +94,48 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
     }
 
     this._metadata = { valueType, value: newValue }
+  }
+
+  // Message passing API implementation
+  setSendCallback(callback: SendCallback<LogicOutputHandle>): void {
+    this.sendCallback = callback
+  }
+
+  private async send(
+    message: Message,
+    handle: LogicOutputHandle
+  ): Promise<void> {
+    if (this.sendCallback) {
+      await this.sendCallback(message, this.id, handle)
+    }
+  }
+
+  async receive(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _message: Message,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _handle: never,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _fromNodeId: string
+  ): Promise<void> {
+    // Source node - when triggered, send the constant value
+    await this.trigger()
+  }
+
+  // Internal API - called by DataGraph execution system
+  async trigger(): Promise<void> {
+    const value = this.getValue()
+    if (value !== undefined) {
+      console.log(`🔢 [${this.id}] Triggered, sending constant value:`, value)
+      await this.send(
+        {
+          payload: value,
+          _msgid: uuidv4(),
+          timestamp: Date.now(),
+          metadata: { source: this.id, type: this.type },
+        },
+        'output'
+      )
+    }
   }
 }
