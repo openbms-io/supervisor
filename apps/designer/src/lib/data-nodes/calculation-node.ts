@@ -63,7 +63,7 @@ export class CalculationNode
     this.messageBuffer.clear()
   }
 
-  execute(inputs: ComputeValue[]): number {
+  private execute(inputs: ComputeValue[]): number {
     // Convert boolean to number: true=1, false=0
     const num1 = typeof inputs[0] === 'number' ? inputs[0] : inputs[0] ? 1 : 0
     const num2 = typeof inputs[1] === 'number' ? inputs[1] : inputs[1] ? 1 : 0

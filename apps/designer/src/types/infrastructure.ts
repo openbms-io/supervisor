@@ -118,7 +118,6 @@ export interface ControlFlowNode<
   // Clean public API
   getValue(): ComputeValue | undefined
   reset(): void
-  execute(inputs: ComputeValue[]): void
   getActiveOutputHandles(): readonly TOutputHandle[]
 }
 

@@ -84,10 +84,6 @@ export class TimerNode
     this.stateDidChange?.({ running: false, tickCount: 0 })
   }
 
-  execute(inputs: ComputeValue[]): void {
-    // Not used - handled via receive
-  }
-
   getActiveOutputHandles(): readonly TimerOutputHandle[] {
     return this._isRunning ? (['output'] as const) : []
   }

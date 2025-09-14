@@ -149,10 +149,6 @@ export class SwitchNode
     }
   }
 
-  execute(inputs: ComputeValue[]): void {
-    this._inputValue = inputs[0]
-  }
-
   getActiveOutputHandles(): readonly SwitchOutputHandle[] {
     const isActive = this.evaluate()
     const handle: SwitchOutputHandle = isActive ? 'active' : 'inactive'
