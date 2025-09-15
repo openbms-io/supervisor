@@ -104,6 +104,8 @@ export type SwitchInputHandle = 'input'
 export type SwitchOutputHandle = 'active' | 'inactive'
 export type TimerInputHandle = 'trigger'
 export type TimerOutputHandle = 'output'
+export type ScheduleInputHandle = 'input'
+export type ScheduleOutputHandle = 'output'
 export type GateInputHandle = 'condition' | 'value'
 export type GateOutputHandle = 'output'
 

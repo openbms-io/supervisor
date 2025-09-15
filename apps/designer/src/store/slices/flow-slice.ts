@@ -27,6 +27,7 @@ import type { ValueType } from '@/lib/data-nodes/constant-node'
 import { ConstantNode } from '@/lib/data-nodes/constant-node'
 import { SwitchNode } from '@/lib/data-nodes/switch-node'
 import { TimerNode } from '@/lib/data-nodes/timer-node'
+import { ScheduleNode, DayOfWeek } from '@/lib/data-nodes/schedule-node'
 import factory from '@/lib/data-nodes/factory'
 
 export interface DraggedPoint {
@@ -88,6 +89,13 @@ export type NodeUpdate =
       type: 'UPDATE_TIMER_DURATION'
       nodeId: string
       duration: number
+    }
+  | {
+      type: 'UPDATE_SCHEDULE_CONFIG'
+      nodeId: string
+      startTime: string
+      endTime: string
+      days: DayOfWeek[]
     }
 
 export interface FlowSlice {
@@ -263,34 +271,40 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   },
 
   addControlFlowNode: async (nodeType, label, position, metadata) => {
+    let dataNode: DataNode | null = null
+
     if (nodeType === 'switch') {
-      const dataNode = factory.createSwitchNode({
+      dataNode = factory.createSwitchNode({
         label,
         condition:
           (metadata?.condition as 'gt' | 'lt' | 'eq' | 'gte' | 'lte') || 'gt',
         threshold: (metadata?.threshold as number) ?? 0,
       })
-      get().dataGraph.addNode(dataNode, position)
-
-      // Update React Flow state
-      set({
-        nodes: get().dataGraph.getNodesArray(),
-        edges: get().dataGraph.getEdgesArray(),
-      })
     } else if (nodeType === 'timer') {
-      const dataNode = factory.createTimerNode({
+      dataNode = factory.createTimerNode({
         label,
         duration: (metadata?.duration as number) ?? 1000,
       })
+    } else if (nodeType === 'schedule') {
+      dataNode = factory.createScheduleNode({
+        label,
+        startTime: metadata?.startTime as string,
+        endTime: metadata?.endTime as string,
+        days: metadata?.days as DayOfWeek[],
+      })
+    } else {
+      console.warn('Unknown control flow node type:', nodeType)
+      return // Exit early if unknown type
+    }
+
+    if (dataNode) {
       get().dataGraph.addNode(dataNode, position)
 
-      // Update React Flow state
+      // Single state update for all control flow nodes
       set({
         nodes: get().dataGraph.getNodesArray(),
         edges: get().dataGraph.getEdgesArray(),
       })
-    } else {
-      console.warn('Unknown control flow node type:', nodeType)
     }
   },
 
@@ -419,6 +433,17 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
         const dataNode = dataGraph.getNode(update.nodeId)
         if (dataNode && dataNode instanceof TimerNode) {
           dataNode.setDuration(update.duration)
+          dataGraph.updateNodeData(update.nodeId)
+          set({
+            nodes: dataGraph.getNodesArray(),
+          })
+        }
+        break
+      }
+      case 'UPDATE_SCHEDULE_CONFIG': {
+        const dataNode = dataGraph.getNode(update.nodeId)
+        if (dataNode && dataNode instanceof ScheduleNode) {
+          dataNode.setSchedule(update.startTime, update.endTime, update.days)
           dataGraph.updateNodeData(update.nodeId)
           set({
             nodes: dataGraph.getNodesArray(),
