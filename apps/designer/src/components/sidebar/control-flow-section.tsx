@@ -1,7 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, GitBranch, Clock } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  GitBranch,
+  Clock,
+  Calendar,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface DraggableNodeItem {
@@ -55,6 +61,16 @@ export function ControlFlowSection() {
       icon: <Clock className="w-4 h-4 text-orange-500" />,
       metadata: {
         duration: 1000,
+      },
+    },
+    {
+      type: 'schedule',
+      label: 'Schedule',
+      icon: <Calendar className="w-4 h-4 text-blue-500" />,
+      metadata: {
+        startTime: '08:00',
+        endTime: '17:00',
+        days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       },
     },
     // Gate node - not yet implemented

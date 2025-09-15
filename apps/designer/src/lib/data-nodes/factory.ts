@@ -18,6 +18,7 @@ import { WriteSetpointNode } from './write-setpoint-node'
 import { ConstantNode, ValueType } from './constant-node'
 import { SwitchNode } from './switch-node'
 import { TimerNode } from './timer-node'
+import { ScheduleNode, DayOfWeek } from './schedule-node'
 
 // Simple factory pattern for creating nodes
 class DataNodeFactory {
@@ -132,6 +133,26 @@ class DataNodeFactory {
     duration?: number
   }): TimerNode {
     return new TimerNode(label || 'Timer', duration || 1000)
+  }
+
+  // Create schedule node
+  createScheduleNode({
+    label,
+    startTime,
+    endTime,
+    days,
+  }: {
+    label?: string
+    startTime?: string
+    endTime?: string
+    days?: DayOfWeek[]
+  }): ScheduleNode {
+    return new ScheduleNode(
+      label || 'Schedule',
+      startTime || '08:00',
+      endTime || '17:00',
+      days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    )
   }
 }
 

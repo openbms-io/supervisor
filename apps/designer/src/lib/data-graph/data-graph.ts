@@ -117,6 +117,16 @@ export class DataGraph {
   }
 
   removeNode(nodeId: string): void {
+    // Get node before removal for cleanup
+    const node = this.nodesMap.get(nodeId)
+    if (node) {
+      const dataNode = node.data as DataNode
+      // Call reset if available to cleanup timers/intervals
+      if ('reset' in dataNode && typeof dataNode.reset === 'function') {
+        dataNode.reset()
+      }
+    }
+
     // Remove all edges connected to this node
     const edgesToRemove: string[] = []
     for (const [edgeId, edge] of this.edgesMap) {
@@ -324,10 +334,10 @@ export class DataGraph {
           {
             _msgid: uuidv4(),
             timestamp: Date.now(),
-            payload: undefined,
+            payload: true,
             metadata: { trigger: true },
           },
-          'input',
+          DEFAULT_INPUT_HANDLE,
           'system'
         )
       }
