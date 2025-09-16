@@ -11,6 +11,7 @@ import {
   ScheduleNodeMetadata,
   ScheduleState,
 } from '@/lib/data-nodes/schedule-node'
+import { FunctionNodeMetadata } from '@/lib/data-nodes/function-node'
 
 // Base node data that ensures compatibility with React Flow
 // This just ensures Record<string, unknown> compatibility
@@ -42,6 +43,14 @@ export interface ConstantNodeData extends LogicNode, BaseNodeData {
   category: NodeCategory.LOGIC
   type: 'constant'
   metadata: ConstantNodeMetadata
+}
+
+export interface FunctionNodeData extends LogicNode, BaseNodeData {
+  category: NodeCategory.LOGIC
+  type: 'function'
+  metadata: FunctionNodeMetadata
+  lastError?: string
+  consoleLogs?: string[]
 }
 
 // Command node data types
@@ -82,6 +91,7 @@ export type NodeData =
   | CalculationNodeData
   | ComparisonNodeData
   | ConstantNodeData
+  | FunctionNodeData
   | WriteSetpointNodeData
   | SwitchNodeData
   | TimerNodeData
@@ -104,6 +114,7 @@ export interface NodeTypesMap {
   'logic.calculation': CalculationNodeData
   'logic.comparison': ComparisonNodeData
   'logic.constant': ConstantNodeData
+  'logic.function': FunctionNodeData
 
   // Command nodes
   'command.write-setpoint': WriteSetpointNodeData

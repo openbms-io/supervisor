@@ -28,6 +28,7 @@ import { ConstantNode } from '@/lib/data-nodes/constant-node'
 import { SwitchNode } from '@/lib/data-nodes/switch-node'
 import { TimerNode } from '@/lib/data-nodes/timer-node'
 import { ScheduleNode, DayOfWeek } from '@/lib/data-nodes/schedule-node'
+import { FunctionInput, FunctionNode } from '@/lib/data-nodes/function-node'
 import factory from '@/lib/data-nodes/factory'
 
 export interface DraggedPoint {
@@ -96,6 +97,13 @@ export type NodeUpdate =
       startTime: string
       endTime: string
       days: DayOfWeek[]
+    }
+  | {
+      type: 'UPDATE_FUNCTION_CONFIG'
+      nodeId: string
+      code: string
+      inputs: FunctionInput[]
+      timeout: number
     }
 
 export interface FlowSlice {
@@ -240,6 +248,17 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       dataNode = factory.createComparisonNode({
         label,
         operation: (metadata?.operation as ComparisonOperation) || 'equals',
+      })
+    } else if (nodeType === 'function') {
+      dataNode = factory.createFunctionNode({
+        label,
+        code:
+          (metadata?.code as string) ||
+          'function execute(input1) {\n  return input1;\n}',
+        inputs: (metadata?.inputs as FunctionInput[]) || [
+          { id: 'input1', label: 'Input 1' },
+        ],
+        timeout: (metadata?.timeout as number) || 1000,
       })
     } else {
       console.warn('Unknown logic node type:', nodeType)
@@ -437,6 +456,31 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
           set({
             nodes: dataGraph.getNodesArray(),
           })
+        }
+        break
+      }
+
+      case 'UPDATE_FUNCTION_CONFIG': {
+        const dataNode = dataGraph.getNode(update.nodeId)
+        if (dataNode && dataNode.type === 'function') {
+          // Use public methods instead of direct access
+          const functionNode = dataNode as FunctionNode
+          functionNode.updateConfig({
+            code: update.code,
+            inputs: update.inputs,
+            timeout: update.timeout,
+          })
+
+          // Force React Flow to detect the change
+          dataGraph.updateNodeData(update.nodeId)
+
+          // Get fresh nodes array
+          set({
+            nodes: dataGraph.getNodesArray(),
+          })
+
+          // Execute graph after configuration change
+          get().executeWithMessages()
         }
         break
       }

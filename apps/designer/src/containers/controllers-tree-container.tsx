@@ -123,19 +123,22 @@ export function ControllersTreeContainer() {
         showSearch={true}
       />
 
-      <TreeView
-        nodes={filteredTreeData}
-        selectedNodeId={selectedPointId}
-        onToggle={toggleNode}
-        onSelect={selectPoint}
-        isDraggable={true}
-        onDragStart={handleDragStart}
-        className="flex-1"
-      />
+      {/* Scrollable container for TreeView and node sections */}
+      <div className="flex-1 overflow-y-auto">
+        <TreeView
+          nodes={filteredTreeData}
+          selectedNodeId={selectedPointId}
+          onToggle={toggleNode}
+          onSelect={selectPoint}
+          isDraggable={true}
+          onDragStart={handleDragStart}
+          className="min-h-0"
+        />
 
-      <LogicNodesSection />
-      <ControlFlowSection />
-      <CommandNodesSection />
+        <LogicNodesSection />
+        <ControlFlowSection />
+        <CommandNodesSection />
+      </div>
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>

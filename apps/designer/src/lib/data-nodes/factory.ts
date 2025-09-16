@@ -19,6 +19,7 @@ import { ConstantNode, ValueType } from './constant-node'
 import { SwitchNode } from './switch-node'
 import { TimerNode } from './timer-node'
 import { ScheduleNode, DayOfWeek } from './schedule-node'
+import { FunctionNode, FunctionInput } from './function-node'
 
 // Simple factory pattern for creating nodes
 class DataNodeFactory {
@@ -153,6 +154,25 @@ class DataNodeFactory {
       endTime || '17:00',
       days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     )
+  }
+
+  // Create function node
+  createFunctionNode({
+    label,
+    code,
+    inputs,
+    timeout,
+  }: {
+    label?: string
+    code?: string
+    inputs?: FunctionInput[]
+    timeout?: number
+  }): FunctionNode {
+    return new FunctionNode(label || 'Function', {
+      code,
+      inputs,
+      timeout,
+    })
   }
 }
 

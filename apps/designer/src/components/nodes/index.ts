@@ -3,6 +3,7 @@ import { CalculationNode } from './calculation-node'
 import { ComparisonNode } from './comparison-node'
 import { WriteSetpointNode } from './write-setpoint-node'
 import { ConstantNodeUI } from './constant-node-ui'
+import { FunctionNode } from './function-node'
 import { SwitchNode } from './switch-node'
 import { TimerNode } from './timer-node'
 import { ScheduleNode } from './schedule-node'
@@ -26,6 +27,7 @@ export const nodeTypes = {
   'logic.calculation': CalculationNode,
   'logic.comparison': ComparisonNode,
   'logic.constant': ConstantNodeUI,
+  'logic.function': FunctionNode,
 
   // Command nodes
   'command.write-setpoint': WriteSetpointNode,
