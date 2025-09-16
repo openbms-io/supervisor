@@ -1,6 +1,9 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useFlowStore } from '@/store/use-flow-store'
-import { FunctionInput } from '@/lib/data-nodes/function-node'
+import {
+  FunctionInput,
+  FunctionNodeMetadata,
+} from '@/lib/data-nodes/function-node'
 import { useFunctionSignature } from './use-function-signature'
 
 interface UseFunctionPropertiesProps {
@@ -18,20 +21,21 @@ export const useFunctionProperties = ({
 
   // Initialize local state from node metadata with useMemo to avoid re-creation
   const metadata = useMemo(
-    () =>
-      node?.data?.metadata || {
-        code: 'function execute(input1) {\n  return input1;\n}',
-        inputs: [{ id: 'input1', label: 'Input 1' }],
-        timeout: 1000,
-      },
+    () => node?.data?.metadata as FunctionNodeMetadata | undefined,
     [node?.data?.metadata]
   )
 
-  const [code, setCode] = useState(metadata.code)
-  const [inputs, setInputs] = useState<FunctionInput[]>(metadata.inputs)
-  const [timeout, setTimeout] = useState(metadata.timeout || 1000)
+  const [code, setCode] = useState(
+    metadata?.code || 'function execute(input1) {\n  return input1;\n}'
+  )
+  const [inputs, setInputs] = useState<FunctionInput[]>(
+    metadata?.inputs || [{ id: 'input1', label: 'Input 1' }]
+  )
+  const [timeout, setTimeout] = useState(metadata?.timeout || 1000)
   const [showExpandedEditor, setShowExpandedEditor] = useState(false)
-  const [expandedCode, setExpandedCode] = useState(code)
+  const [expandedCode, setExpandedCode] = useState(
+    metadata?.code || 'function execute(input1) {\n  return input1;\n}'
+  )
 
   const handleAddInput = useCallback(() => {
     const newInputId = `input${inputs.length + 1}`
@@ -93,9 +97,9 @@ export const useFunctionProperties = ({
 
   const handleCancel = useCallback(() => {
     // Reset to original values
-    setCode(metadata.code)
-    setInputs(metadata.inputs)
-    setTimeout(metadata.timeout || 1000)
+    setCode(metadata?.code || 'function execute(input1) {\n  return input1;\n}')
+    setInputs(metadata?.inputs || [{ id: 'input1', label: 'Input 1' }])
+    setTimeout(metadata?.timeout || 1000)
     onClose()
   }, [metadata, onClose])
 

@@ -38,6 +38,10 @@ export class QuickJSExecutor {
 
       // Add console.log, console.error, console.warn support
       const createLogFunction = (prefix: string) => {
+        if (!this.context) {
+          return
+        }
+
         return this.context.newFunction(prefix, (...args) => {
           const nativeArgs = args.map((arg) => this.context!.dump(arg))
           const message = nativeArgs
@@ -60,19 +64,23 @@ export class QuickJSExecutor {
       }
 
       const consoleHandle = this.context.newObject()
+      if (!consoleHandle) {
+        return
+      }
+
       const logHandle = createLogFunction('log')
       const errorHandle = createLogFunction('error')
       const warnHandle = createLogFunction('warn')
 
-      this.context.setProp(consoleHandle, 'log', logHandle)
-      this.context.setProp(consoleHandle, 'error', errorHandle)
-      this.context.setProp(consoleHandle, 'warn', warnHandle)
+      logHandle && this.context.setProp(consoleHandle, 'log', logHandle)
+      errorHandle && this.context.setProp(consoleHandle, 'error', errorHandle)
+      warnHandle && this.context.setProp(consoleHandle, 'warn', warnHandle)
       this.context.setProp(this.context.global, 'console', consoleHandle)
 
-      logHandle.dispose()
-      errorHandle.dispose()
-      warnHandle.dispose()
-      consoleHandle.dispose()
+      logHandle && logHandle.dispose()
+      errorHandle && errorHandle.dispose()
+      warnHandle && warnHandle.dispose()
+      consoleHandle && consoleHandle.dispose()
 
       this.initialized = true
 
