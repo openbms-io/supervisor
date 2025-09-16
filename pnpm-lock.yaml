@@ -19,6 +19,9 @@ importers:
       "@libsql/client":
         specifier: ^0.10.0
         version: 0.10.0
+      "@monaco-editor/react":
+        specifier: ^4.7.0
+        version: 4.7.0(monaco-editor@0.53.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       "@radix-ui/react-dialog":
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.1.9(@types/react@19.1.12))(@types/react@19.1.12)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -72,16 +75,22 @@ importers:
         version: 2.1.1
       drizzle-orm:
         specifier: ^0.44.5
-        version: 0.44.5(@libsql/client@0.10.0)(@types/better-sqlite3@7.6.13)(better-sqlite3@12.2.0)
+        version: 0.44.5(@libsql/client@0.10.0)(@types/better-sqlite3@7.6.13)(better-sqlite3@12.2.0)(bun-types@1.2.22(@types/react@19.1.12))
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@19.1.0)
+      monaco-editor:
+        specifier: ^0.53.0
+        version: 0.53.0
       next:
         specifier: 15.5.2
         version: 15.5.2(@babel/core@7.28.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      quickjs-emscripten:
+        specifier: ^0.31.0
+        version: 0.31.0
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -1505,6 +1514,36 @@ packages:
       }
     engines: { node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0 }
 
+  "@jitl/quickjs-ffi-types@0.31.0":
+    resolution:
+      {
+        integrity: sha512-1yrgvXlmXH2oNj3eFTrkwacGJbmM0crwipA3ohCrjv52gBeDaD7PsTvFYinlAnqU8iPME3LGP437yk05a2oejw==,
+      }
+
+  "@jitl/quickjs-wasmfile-debug-asyncify@0.31.0":
+    resolution:
+      {
+        integrity: sha512-YkdzQdr1uaftFhgEnTRjTTZHk2SFZdpWO7XhOmRVbi6CEVsH9g5oNF8Ta1q3OuSJHRwwT8YsuR1YzEiEIJEk6w==,
+      }
+
+  "@jitl/quickjs-wasmfile-debug-sync@0.31.0":
+    resolution:
+      {
+        integrity: sha512-8XvloaaWBONqcHXYs5tWOjdhQVxzULilIfB2hvZfS6S+fI4m2+lFiwQy7xeP8ExHmiZ7D8gZGChNkdLgjGfknw==,
+      }
+
+  "@jitl/quickjs-wasmfile-release-asyncify@0.31.0":
+    resolution:
+      {
+        integrity: sha512-uz0BbQYTxNsFkvkurd7vk2dOg57ElTBLCuvNtRl4rgrtbC++NIndD5qv2+AXb6yXDD3Uy1O2PCwmoaH0eXgEOg==,
+      }
+
+  "@jitl/quickjs-wasmfile-release-sync@0.31.0":
+    resolution:
+      {
+        integrity: sha512-hYduecOByj9AsAfsJhZh5nA6exokmuFC8cls39+lYmTCGY51bgjJJJwReEu7Ff7vBWaQCL6TeDdVlnp2WYz0jw==,
+      }
+
   "@jridgewell/gen-mapping@0.3.13":
     resolution:
       {
@@ -1628,6 +1667,22 @@ packages:
       }
     cpu: [x64]
     os: [win32]
+
+  "@monaco-editor/loader@1.5.0":
+    resolution:
+      {
+        integrity: sha512-hKoGSM+7aAc7eRTRjpqAZucPmoNOC4UUbknb/VNoTkEIkCPhqV8LfbsgM1webRM7S/z21eHEx9Fkwx8Z/C/+Xw==,
+      }
+
+  "@monaco-editor/react@4.7.0":
+    resolution:
+      {
+        integrity: sha512-cyzXQCtO47ydzxpQtCGSQGOC8Gk3ZUeBXFAxD+CWXYFo5OqZyZUonFl0DwUlTyAfRHntBfw2p3w4s9R6oe1eCA==,
+      }
+    peerDependencies:
+      monaco-editor: ">= 0.25.0 < 1"
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   "@napi-rs/wasm-runtime@0.2.12":
     resolution:
@@ -2675,6 +2730,12 @@ packages:
         integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==,
       }
 
+  "@types/trusted-types@1.0.6":
+    resolution:
+      {
+        integrity: sha512-230RC8sFeHoT6sSUlRO6a8cAnclO06eeiq1QDfiv2FGCLWFvvERWgwIQD4FWqD9A69BN7Lzee4OXwoMVnnsWDw==,
+      }
+
   "@types/uuid@10.0.0":
     resolution:
       {
@@ -3296,6 +3357,14 @@ packages:
       {
         integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==,
       }
+
+  bun-types@1.2.22:
+    resolution:
+      {
+        integrity: sha512-hwaAu8tct/Zn6Zft4U9BsZcXkYomzpHJX28ofvx7k0Zz2HNz54n1n+tDgxoWFGB4PcFvJXJQloPhaV2eP3Q6EA==,
+      }
+    peerDependencies:
+      "@types/react": ^19
 
   call-bind-apply-helpers@1.0.2:
     resolution:
@@ -5615,6 +5684,12 @@ packages:
     engines: { node: ">=10" }
     hasBin: true
 
+  monaco-editor@0.53.0:
+    resolution:
+      {
+        integrity: sha512-0WNThgC6CMWNXXBxTbaYYcunj08iB5rnx4/G56UOPeL9UVIUGGHA1GR0EWIh9Ebabj7NpCRawQ5b0hfN1jQmYQ==,
+      }
+
   ms@2.1.3:
     resolution:
       {
@@ -6049,6 +6124,19 @@ packages:
         integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==,
       }
 
+  quickjs-emscripten-core@0.31.0:
+    resolution:
+      {
+        integrity: sha512-oQz8p0SiKDBc1TC7ZBK2fr0GoSHZKA0jZIeXxsnCyCs4y32FStzCW4d1h6E1sE0uHDMbGITbk2zhNaytaoJwXQ==,
+      }
+
+  quickjs-emscripten@0.31.0:
+    resolution:
+      {
+        integrity: sha512-K7Yt78aRPLjPcqv3fIuLW1jW3pvwO21B9pmFOolsjM/57ZhdVXBr51GqJpalgBlkPu9foAvhEAuuQPnvIGvLvQ==,
+      }
+    engines: { node: ">=16.0.0" }
+
   rc@1.2.8:
     resolution:
       {
@@ -6452,6 +6540,12 @@ packages:
         integrity: sha512-XlkWvfIm6RmsWtNJx+uqtKLS8eqFbxUg0ZzLXqY0caEy9l7hruX8IpiDnjsLavoBgqCCR71TqWO8MaXYheJ3RQ==,
       }
     engines: { node: ">=10" }
+
+  state-local@1.0.7:
+    resolution:
+      {
+        integrity: sha512-HTEHMNieakEnoe33shBYcZ7NX83ACUjCu8c40iOGEZsngj9zRnkqS9j1pqQPXwobB0ZcVTk27REb7COQ0UR59w==,
+      }
 
   stop-iteration-iterator@1.1.0:
     resolution:
@@ -8049,6 +8143,24 @@ snapshots:
       "@types/yargs": 17.0.33
       chalk: 4.1.2
 
+  "@jitl/quickjs-ffi-types@0.31.0": {}
+
+  "@jitl/quickjs-wasmfile-debug-asyncify@0.31.0":
+    dependencies:
+      "@jitl/quickjs-ffi-types": 0.31.0
+
+  "@jitl/quickjs-wasmfile-debug-sync@0.31.0":
+    dependencies:
+      "@jitl/quickjs-ffi-types": 0.31.0
+
+  "@jitl/quickjs-wasmfile-release-asyncify@0.31.0":
+    dependencies:
+      "@jitl/quickjs-ffi-types": 0.31.0
+
+  "@jitl/quickjs-wasmfile-release-sync@0.31.0":
+    dependencies:
+      "@jitl/quickjs-ffi-types": 0.31.0
+
   "@jridgewell/gen-mapping@0.3.13":
     dependencies:
       "@jridgewell/sourcemap-codec": 1.5.5
@@ -8128,6 +8240,17 @@ snapshots:
 
   "@libsql/win32-x64-msvc@0.4.7":
     optional: true
+
+  "@monaco-editor/loader@1.5.0":
+    dependencies:
+      state-local: 1.0.7
+
+  "@monaco-editor/react@4.7.0(monaco-editor@0.53.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)":
+    dependencies:
+      "@monaco-editor/loader": 1.5.0
+      monaco-editor: 0.53.0
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
 
   "@napi-rs/wasm-runtime@0.2.12":
     dependencies:
@@ -8808,6 +8931,8 @@ snapshots:
 
   "@types/tough-cookie@4.0.5": {}
 
+  "@types/trusted-types@1.0.6": {}
+
   "@types/uuid@10.0.0": {}
 
   "@types/ws@8.18.1":
@@ -9242,6 +9367,12 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
+  bun-types@1.2.22(@types/react@19.1.12):
+    dependencies:
+      "@types/node": 22.18.0
+      "@types/react": 19.1.12
+    optional: true
+
   call-bind-apply-helpers@1.0.2:
     dependencies:
       es-errors: 1.3.0
@@ -9467,11 +9598,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.44.5(@libsql/client@0.10.0)(@types/better-sqlite3@7.6.13)(better-sqlite3@12.2.0):
+  drizzle-orm@0.44.5(@libsql/client@0.10.0)(@types/better-sqlite3@7.6.13)(better-sqlite3@12.2.0)(bun-types@1.2.22(@types/react@19.1.12)):
     optionalDependencies:
       "@libsql/client": 0.10.0
       "@types/better-sqlite3": 7.6.13
       better-sqlite3: 12.2.0
+      bun-types: 1.2.22(@types/react@19.1.12)
 
   dunder-proto@1.0.1:
     dependencies:
@@ -10990,6 +11122,10 @@ snapshots:
 
   mkdirp@3.0.1: {}
 
+  monaco-editor@0.53.0:
+    dependencies:
+      "@types/trusted-types": 1.0.6
+
   ms@2.1.3: {}
 
   nanoid@3.3.11: {}
@@ -11242,6 +11378,18 @@ snapshots:
   pure-rand@7.0.1: {}
 
   queue-microtask@1.2.3: {}
+
+  quickjs-emscripten-core@0.31.0:
+    dependencies:
+      "@jitl/quickjs-ffi-types": 0.31.0
+
+  quickjs-emscripten@0.31.0:
+    dependencies:
+      "@jitl/quickjs-wasmfile-debug-asyncify": 0.31.0
+      "@jitl/quickjs-wasmfile-debug-sync": 0.31.0
+      "@jitl/quickjs-wasmfile-release-asyncify": 0.31.0
+      "@jitl/quickjs-wasmfile-release-sync": 0.31.0
+      quickjs-emscripten-core: 0.31.0
 
   rc@1.2.8:
     dependencies:
@@ -11519,6 +11667,8 @@ snapshots:
   stack-utils@2.0.6:
     dependencies:
       escape-string-regexp: 2.0.0
+
+  state-local@1.0.7: {}
 
   stop-iteration-iterator@1.1.0:
     dependencies:

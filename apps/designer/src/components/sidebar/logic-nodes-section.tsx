@@ -7,6 +7,7 @@ import {
   Calculator,
   GitCompare,
   Hash,
+  Code,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -117,6 +118,15 @@ export function LogicNodesSection() {
       label: 'Constant',
       icon: <Hash className="w-4 h-4" />,
       metadata: { value: 0, valueType: 'number' },
+    },
+    {
+      type: 'function',
+      label: 'JS Function',
+      icon: <Code className="w-4 h-4" />,
+      metadata: {
+        code: 'function execute(input1) {\n  return input1;\n}',
+        inputs: [{ id: 'input1', label: 'Input 1' }],
+      },
     },
   ]
 

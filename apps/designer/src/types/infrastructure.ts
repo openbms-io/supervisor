@@ -37,6 +37,7 @@ export type NodeTypeString =
   | 'constant'
   | 'switch'
   | 'gate'
+  | 'function'
 
 export enum NodeDirection {
   INPUT = 'input',

@@ -9,6 +9,11 @@ export {
   type ValueType,
   type ConstantNodeMetadata,
 } from './constant-node'
+export {
+  FunctionNode,
+  type FunctionNodeMetadata,
+  type FunctionInput,
+} from './function-node'
 export { TimerNode, type TimerNodeMetadata } from './timer-node'
 export {
   ScheduleNode,
