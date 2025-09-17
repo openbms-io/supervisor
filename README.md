@@ -4,7 +4,8 @@
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](docs/PROJECT_STATUS.md)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](docs/LICENSE.md)
 
-Visual programming platform for building management systems with IoT device integration.
+Visual programming platform for building management systems with IoT device integration. 
+[Live Preview](https://supervisor-designer.vercel.app/projects)
 
 ## 📊 Project Status
 
