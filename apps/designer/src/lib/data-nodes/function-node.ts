@@ -36,6 +36,12 @@ export class FunctionNode implements LogicNode {
   private _lastError?: string
   private _consoleLogs: string[] = []
 
+  public stateDidChange?: (stateData: {
+    result?: ComputeValue
+    error?: string
+    consoleLogs: string[]
+  }) => void
+
   get metadata(): FunctionNodeMetadata {
     return this._metadata
   }
@@ -73,6 +79,10 @@ export class FunctionNode implements LogicNode {
           (error as Error).message
         }`
         console.error(`[${this.id}] Runtime initialization failed:`, error)
+        this.stateDidChange?.({
+          error: this._lastError,
+          consoleLogs: this._consoleLogs,
+        })
       }
     }
   }
@@ -94,6 +104,10 @@ export class FunctionNode implements LogicNode {
   updateCode(code: string): void {
     this._metadata.code = code
     this._lastError = undefined
+    this.stateDidChange?.({
+      error: undefined,
+      consoleLogs: this._consoleLogs,
+    })
   }
 
   // Public methods for proper encapsulation
@@ -121,6 +135,10 @@ export class FunctionNode implements LogicNode {
     }
     // Clear error when config updates
     this._lastError = undefined
+    this.stateDidChange?.({
+      error: undefined,
+      consoleLogs: this._consoleLogs,
+    })
   }
 
   // LogicNode interface implementation
@@ -138,6 +156,11 @@ export class FunctionNode implements LogicNode {
     this._computedValue = undefined
     this._lastError = undefined
     this.messageBuffer.clear()
+    this.stateDidChange?.({
+      result: undefined,
+      error: undefined,
+      consoleLogs: this._consoleLogs,
+    })
   }
 
   canConnectWith(target: DataNode): boolean {
@@ -202,6 +225,13 @@ export class FunctionNode implements LogicNode {
 
         console.log(`🔧 [${this.id}] Function executed:`, result)
 
+        // Notify UI of successful execution
+        this.stateDidChange?.({
+          result,
+          error: undefined,
+          consoleLogs: this._consoleLogs,
+        })
+
         // Send result
         await this.send(
           {
@@ -215,6 +245,13 @@ export class FunctionNode implements LogicNode {
       } catch (error) {
         this._lastError = (error as Error).message
         console.error(`❌ [${this.id}] Function error:`, error)
+
+        // Notify UI of error
+        this.stateDidChange?.({
+          result: this._computedValue,
+          error: this._lastError,
+          consoleLogs: this._consoleLogs,
+        })
 
         // Send undefined on error
         await this.send(
