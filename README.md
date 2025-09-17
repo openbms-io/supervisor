@@ -2,7 +2,7 @@
 
 [![Phase](https://img.shields.io/badge/Phase-6%2F8-yellow.svg)](docs/PROJECT_STATUS.md)
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](docs/PROJECT_STATUS.md)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](docs/LICENSE.md)
+[![License](https://img.shields.io/badge/License-AGPL-blue.svg)](docs/LICENSE.md)
 [![Discord](https://img.shields.io/discord/1417899927304016146)](https://discord.gg/SUkvbwkDGz)
 
 Visual programming platform for building management systems with IoT device integration. 
