@@ -90,7 +90,6 @@ export interface FunctionNodeData extends LogicNode, BaseNodeData {
   metadata: FunctionNodeMetadata
   lastError?: string
   consoleLogs?: string[]
-  computedValue?: ComputeValue
   stateDidChange?: (stateData: {
     result?: ComputeValue
     error?: string

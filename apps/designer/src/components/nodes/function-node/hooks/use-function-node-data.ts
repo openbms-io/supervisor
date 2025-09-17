@@ -36,7 +36,7 @@ export const useFunctionNodeData = (nodeId: string) => {
         setConsoleLogs(stateData.consoleLogs)
       }
 
-      setResult(functionNodeInstance.computedValue)
+      setResult(functionNodeInstance.getValue())
       setError(functionNodeInstance.lastError)
       setConsoleLogs(functionNodeInstance.consoleLogs || [])
 
