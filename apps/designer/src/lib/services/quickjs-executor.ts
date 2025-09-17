@@ -72,15 +72,15 @@ export class QuickJSExecutor {
       const errorHandle = createLogFunction('error')
       const warnHandle = createLogFunction('warn')
 
-      logHandle && this.context.setProp(consoleHandle, 'log', logHandle)
-      errorHandle && this.context.setProp(consoleHandle, 'error', errorHandle)
-      warnHandle && this.context.setProp(consoleHandle, 'warn', warnHandle)
+      if (logHandle) this.context.setProp(consoleHandle, 'log', logHandle)
+      if (errorHandle) this.context.setProp(consoleHandle, 'error', errorHandle)
+      if (warnHandle) this.context.setProp(consoleHandle, 'warn', warnHandle)
       this.context.setProp(this.context.global, 'console', consoleHandle)
 
-      logHandle && logHandle.dispose()
-      errorHandle && errorHandle.dispose()
-      warnHandle && warnHandle.dispose()
-      consoleHandle && consoleHandle.dispose()
+      if (logHandle) logHandle.dispose()
+      if (errorHandle) errorHandle.dispose()
+      if (warnHandle) warnHandle.dispose()
+      if (consoleHandle) consoleHandle.dispose()
 
       this.initialized = true
 
