@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useFlowStore } from '@/store/use-flow-store'
 import { NodeCategory, ComputeValue } from '@/types/infrastructure'
 import { FunctionNodeData } from '@/types/node-data-types'
@@ -14,32 +15,36 @@ export const useFunctionNodeData = (nodeId: string) => {
     return EMPTY_INPUTS
   })
 
-  const result = useFlowStore((state) => {
+  const functionNodeInstance = useFlowStore((state) => {
     const node = state.nodes.find((n) => n.id === nodeId)
     if (node?.data?.category === NodeCategory.LOGIC) {
-      const logicData = node.data as FunctionNodeData
-      return logicData.computedValue
+      return node.data as FunctionNodeData
     }
-    return undefined
+    return null
   })
 
-  const error = useFlowStore((state) => {
-    const node = state.nodes.find((n) => n.id === nodeId)
-    if (node?.data?.category === NodeCategory.LOGIC) {
-      const logicData = node.data as FunctionNodeData
-      return logicData.lastError
-    }
-    return undefined
-  })
+  // Local state for execution results (updated via callback)
+  const [result, setResult] = useState<ComputeValue | undefined>(undefined)
+  const [error, setError] = useState<string | undefined>(undefined)
+  const [consoleLogs, setConsoleLogs] = useState<string[]>([])
 
-  const consoleLogs = useFlowStore((state) => {
-    const node = state.nodes.find((n) => n.id === nodeId)
-    if (node?.data?.category === NodeCategory.LOGIC) {
-      const logicData = node.data as FunctionNodeData
-      return logicData.consoleLogs || []
+  useEffect(() => {
+    if (functionNodeInstance) {
+      functionNodeInstance.stateDidChange = (stateData) => {
+        setResult(stateData.result)
+        setError(stateData.error)
+        setConsoleLogs(stateData.consoleLogs)
+      }
+
+      setResult(functionNodeInstance.getValue())
+      setError(functionNodeInstance.lastError)
+      setConsoleLogs(functionNodeInstance.consoleLogs || [])
+
+      return () => {
+        functionNodeInstance.stateDidChange = undefined
+      }
     }
-    return []
-  })
+  }, [functionNodeInstance])
 
   return { inputs, result, error, consoleLogs }
 }

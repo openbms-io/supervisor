@@ -4,6 +4,7 @@ import {
   CommandNode,
   ControlFlowNode,
   NodeCategory,
+  ComputeValue,
 } from './infrastructure'
 import { ConstantNodeMetadata } from '@/lib/data-nodes/constant-node'
 import { TimerNodeMetadata } from '@/lib/data-nodes/timer-node'
@@ -12,6 +13,44 @@ import {
   ScheduleState,
 } from '@/lib/data-nodes/schedule-node'
 import { FunctionNodeMetadata } from '@/lib/data-nodes/function-node'
+
+/**
+  - React Flow UI node data types
+  -
+  - These interfaces type the view-layer node.data for React Flow by composing
+  - the domain contracts from '@/types/infrastructure' (DataNode/LogicNode/CommandNode)
+  - and, when needed, extending with UI-only fields (e.g., lastError, stateDidChange).
+  -
+  - Not duplication:
+  -
+      - The single source of truth for behavior/shape is in '@/types/infrastructure'
+  - and the classes under 'lib/data-nodes' that implement those interfaces.
+  -
+      - UI types here exist to make components type-safe and to allow UI-only fields
+  - without polluting domain classes.
+  -
+  - Why separate:
+  -
+      - Separation of concerns: domain behavior vs. UI/view concerns.
+  -
+      - Structural typing: we store domain class instances directly in React Flow
+  - node.data; they satisfy these interfaces at runtime.
+  -
+      - Flexibility: add/remove UI-only fields here without changing domain code.
+  -
+  - Maintenance:
+  -
+      - Change domain fields in '@/types/infrastructure' and the matching class in
+  - 'lib/data-nodes'; these UI types inherit automatically.
+  -
+      - Only update this file when introducing/removing UI-only fields.
+  -
+  - Example:
+  -
+      - WriteSetpointNode implements CommandNode (domain)
+  -
+      - WriteSetpointNodeData extends CommandNode (UI), adding view-specific fields
+  */
 
 // Base node data that ensures compatibility with React Flow
 // This just ensures Record<string, unknown> compatibility
@@ -51,6 +90,11 @@ export interface FunctionNodeData extends LogicNode, BaseNodeData {
   metadata: FunctionNodeMetadata
   lastError?: string
   consoleLogs?: string[]
+  stateDidChange?: (stateData: {
+    result?: ComputeValue
+    error?: string
+    consoleLogs: string[]
+  }) => void
 }
 
 // Command node data types
