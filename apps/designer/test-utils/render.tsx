@@ -20,12 +20,6 @@ function createTestQueryClient() {
         retry: false,
       },
     },
-    // Suppress error logging in tests
-    logger: {
-      log: console.log,
-      warn: console.warn,
-      error: () => {}, // Suppress error logs in tests
-    },
   })
 }
 

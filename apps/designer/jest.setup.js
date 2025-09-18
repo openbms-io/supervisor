@@ -4,6 +4,14 @@ import path from 'path'
 
 // Clean up test database before tests
 beforeAll(() => {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('NODE_ENV is not test')
+  }
+
+  // Ensure Turso is not used in tests
+  delete process.env.TURSO_DATABASE_URL
+  delete process.env.TURSO_AUTH_TOKEN
+
   const testDbPath = path.join(process.cwd(), 'designer-test.db')
   const testDbWalPath = path.join(process.cwd(), 'designer-test.db-wal')
   const testDbShmPath = path.join(process.cwd(), 'designer-test.db-shm')
