@@ -7,9 +7,8 @@ Thank you for your interest in contributing to BMS Supervisor Controller! This p
 > New to open source? No problem!
 >
 > - Start with our [Fork & Pull Request Guide](#-contributing-via-fork--pull-request)
-> - Look for issues labeled `good-first-issue`
 > - Try our [testing tickets](https://github.com/openbms-io/supervisor/issues?q=is%3Aissue+is%3Aopen+label%3Atesting) (#15-22) - perfect for learning!
-> - Ask questions in [GitHub Discussions](https://github.com/openbms-io/supervisor/discussions)
+> - Join our Discord community: https://discord.gg/SUkvbwkDGz
 
 ## 🎯 How You Can Help
 
@@ -429,7 +428,7 @@ pnpm --filter designer test --watch
 ### Getting Help
 
 - Check existing issues and documentation
-- Ask in GitHub Discussions for general questions
+- Join our Discord community: https://discord.gg/SUkvbwkDGz
 - Tag maintainers for urgent issues only
 - Be patient with response times
 
@@ -445,7 +444,7 @@ Contributors will be recognized in:
 ## 📞 Contact
 
 - **GitHub Issues**: For bugs and feature requests
-- **GitHub Discussions**: For questions and community discussion
+- **Discord**: Join our community at https://discord.gg/SUkvbwkDGz
 - **Email**: support@openbms.io
 
 ## 📄 License

@@ -75,7 +75,7 @@
 > - View current sprint progress
 > - See testing infrastructure tickets (#15-22)
 > - Track P0/P1/P2 priorities
-> - Find good first issues for contributors
+> - Find suitable issues for contributors
 
 - **Completed Features**:
   - SQLite/Turso database integration
@@ -304,9 +304,8 @@ We've created **8 comprehensive testing tickets** that are perfect entry points 
 New to open source or this project?
 
 1. **First-time contributors**: Start with our [Fork & Pull Request Guide](CONTRIBUTING.md#-contributing-via-fork--pull-request)
-2. **Pick a testing ticket**: Browse [tickets #15-22](https://github.com/openbms-io/supervisor/issues?q=is%3Aissue+is%3Aopen+label%3Atesting) for perfect entry points
-3. **Check the live board**: Visit our [GitHub Project Board](https://github.com/orgs/openbms-io/projects/1/views/1) for current status
-4. **Ask questions**: Use [GitHub Discussions](https://github.com/openbms-io/supervisor/discussions) for help
+2. **Check the live board**: Visit our [GitHub Project Board](https://github.com/orgs/openbms-io/projects/1/views/1) for current status
+3. **Get help**: Join our Discord community at https://discord.gg/SUkvbwkDGz
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for complete guidelines and development setup instructions.
 
