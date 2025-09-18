@@ -37,9 +37,15 @@ The `bms-schemas` package defines the data format used to send visual programmin
    - Quick feedback loops
 
 4. **Prop Up Issues Faster**
+
    - Make problems visible quickly
    - Don't hide or suppress errors
    - Enable rapid debugging and resolution
+
+5. **DO NOT ADD COMMENTS**
+   - Make the function name and variable names clear enough, so comments are not required
+   - Add comments ONLY in special cases to define WHY was something done.
+   - Dont add comments for WHAT was done. Use variables and functions for WHAT names.
 
 ### TDD Workflow for This Project
 

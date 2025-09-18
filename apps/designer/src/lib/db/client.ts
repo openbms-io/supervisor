@@ -41,7 +41,9 @@ export function getDatabase():
       console.log('Drizzle (libsql) initialized for Turso')
     } else {
       // Local file-based SQLite for dev
-      const dbPath = join(process.cwd(), 'designer.db')
+      const dbPath = process.env.DATABASE_PATH
+        ? join(process.cwd(), process.env.DATABASE_PATH)
+        : join(process.cwd(), 'designer.db')
       sqlite = new Database(dbPath)
 
       // Enable WAL mode for better concurrency
@@ -55,12 +57,10 @@ export function getDatabase():
 
       db = drizzleBetter(sqlite, { schema })
 
-      // Run migrations locally (not during tests)
-      if (process.env.NODE_ENV !== 'test') {
-        const migrationsFolder = join(process.cwd(), 'src/lib/db/migrations')
-        migrate(db, { migrationsFolder })
-        console.log(`Drizzle (better-sqlite3) initialized at ${dbPath}`)
-      }
+      // Run migrations locally
+      const migrationsFolder = join(process.cwd(), 'src/lib/db/migrations')
+      migrate(db, { migrationsFolder })
+      console.log(`Drizzle (better-sqlite3) initialized at ${dbPath}`)
     }
   }
 

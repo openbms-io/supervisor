@@ -430,19 +430,15 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       case 'UPDATE_SWITCH_CONFIG': {
         const dataNode = dataGraph.getNode(update.nodeId)
         if (dataNode && dataNode instanceof SwitchNode) {
-          // Use encapsulated setters instead of direct mutation
           dataNode.setCondition(update.condition)
           dataNode.setThreshold(update.threshold)
 
-          // Force React Flow to detect the change
           dataGraph.updateNodeData(update.nodeId)
 
-          // Get fresh nodes array
           set({
             nodes: dataGraph.getNodesArray(),
           })
 
-          // Execute graph after configuration change
           get().executeWithMessages()
         }
         break
@@ -497,9 +493,8 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
       }
 
       default:
-        // Exhaustive check
-        const _exhaustive: never = update
-        console.warn('Unknown update type', _exhaustive)
+        console.warn('Unknown update type', update)
+        break
     }
   },
 
