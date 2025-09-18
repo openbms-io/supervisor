@@ -35,6 +35,11 @@ designer.db
 designer.db-journal
 designer.db-shm
 designer.db-wal
+
+# Test database files
+designer-test.db
+designer-test.db-wal
+designer-test.db-shm
 ENV/
 env.bak/
 venv.bak/
