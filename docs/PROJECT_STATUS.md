@@ -65,53 +65,41 @@
 
 ### 🚧 Phase 6: Persistence & Integration (In Progress)
 
-- **Status**: 75% Complete
-- **Target**: Oct 2025
+- **Status**: 40% Complete
+- **Target**: Nov 2025
+
+> **📊 Live Status Tracking**
+>
+> For real-time project status and active tickets, visit our **[GitHub Project Board](https://github.com/orgs/openbms-io/projects/1/views/1)**
+>
+> - View current sprint progress
+> - See testing infrastructure tickets (#15-22)
+> - Track P0/P1/P2 priorities
+> - Find good first issues for contributors
+
 - **Completed Features**:
   - SQLite/Turso database integration
   - Project save/load functionality
   - Schema validation pipeline (Zod → JSON Schema → Pydantic)
   - Basic IoT Supervisor integration
+  - Timer Node for time-based operations (delays, pulse, on/off delay)
+  - Schedule Node for schedule evaluation (weekly, daily, exception schedules)
+  - Function Node with JavaScript execution environment using QuickJS
+  - QuickJS memory management and console function cleanup
 - **In Progress**:
-
-  - Turing Completeness
-
-    - Memory/Register node
-      - Purpose: Holds mutable state across steps; outputs the previous stored value; can be written by a trigger.
-      - Inputs: value (any), write trigger (bool), optional reset.
-      - Output: current/previous value.
-      - Why: Provides memory so feedback loops can carry state; prevents algebraic loops when paired with Delay.
-      - Why: Provides memory so feedback loops can carry state; prevents algebraic loops when paired with Delay.
-    - Variable Set / Variable Get
-      - Purpose: Named variable store in the runtime context for general state, not just a single register.
-      - SetVar(name, value): writes to context; optionally emits the written value.
-      - GetVar(name): reads from context, emits current value (or default).
-      - Why: Gives a simple model of mutable variables; together with Switch and While you can implement while-language constructs.
-    - While loop node (or Repeat-Until)
-      - Purpose: Re-enter a body subgraph until a condition is false.
-      - Inputs: condition (bool), body entry (control-flow), optional loop locals.
-      - Outputs: done (control-flow), optional final accumulator value.
-      - Why: Gives explicit looping without having to rely on tricky cyclic edges. It’s the simplest to reason about for users and the engine.
-    - Boolean logic nodes
-      - NOT, AND, OR
-      - Why: Switch + comparisons cover many cases, but boolean combinators make control logic straightforward and readable.
-    - Delay node (one-tick / one-iteration delay)
-      - Purpose: Breaks instantaneous cycles; emits the previous tick’s input on the next tick.
-      - Why: Enables stable feedback loops (e.g., accumulators) without zero-time infinite loops.
 
   - Edge connection refinements
   - Control flow node edge states (active/inactive visualization)
   - Project deployment to IoT Supervisor
   - Database migration improvements
-  - Add below visual programming blocks
-    - Timer Node
-      - Time-based operations (delays, pulse, on/off delay)
-    - Schedule Node
-      - Schedule evaluation (weekly, daily, exception schedules)
-      - Takes time input, schedule config
-      - Outputs active/inactive state
 
 - **Remaining**:
+  - Turing Completeness features:
+    - Memory/Register node for holding mutable state across execution steps
+    - Variable Set/Get nodes for named variable store in runtime context
+    - While loop node (or Repeat-Until) for iterative control flow
+    - Boolean logic nodes (NOT, AND, OR) for combinatorial logic operations
+    - Delay node (one-tick delay) for breaking instantaneous cycles in feedback loops
   - Robust error handling for deployment
   - Advanced project management features
 
@@ -144,7 +132,7 @@
 
 ## Current Development Focus
 
-### 🎯 Active Work (October 2025)
+### 🎯 Active Work (September 2025)
 
 1. **Edge Connection System**
 
@@ -169,6 +157,9 @@
 
 ### 🔧 Recent Achievements
 
+- ✅ Implemented Timer and Schedule nodes for time-based operations (commits 07a8462, 0636473)
+- ✅ Added JavaScript function node with QuickJS execution environment (commit e9c68af)
+- ✅ Fixed QuickJS memory management issues and console function cleanup (commits 4a2d90e, 8fccda4)
 - ✅ Implemented switch nodes with conditional logic (gt, lt, eq, gte, lte)
 - ✅ Added custom control-flow edges with active/inactive states
 - ✅ Fixed edge connection blocking issues
@@ -233,21 +224,60 @@
 - 🚧 Docker containerization (planned)
 - 🚧 CI/CD pipeline (planned)
 
+## 🧪 Testing Infrastructure (Perfect for New Contributors!)
+
+**Status**: Testing infrastructure tickets created and available on [GitHub Project Board](https://github.com/orgs/openbms-io/projects/1/views/1)
+
+We've created **8 comprehensive testing tickets** that are perfect entry points for new contributors. Each ticket has detailed specifications, exact code requirements, and clear acceptance criteria.
+
+### High Priority Testing Tickets (P0)
+
+- **[#15: Basic Testing Infrastructure Setup](https://github.com/openbms-io/supervisor/issues/15)** - Foundation setup
+- **[#16: Zustand Mock with Flow Store Test](https://github.com/openbms-io/supervisor/issues/16)** - State management testing
+- **[#17: Database Mock with Repository Test](https://github.com/openbms-io/supervisor/issues/17)** - Database operations
+- **[#18: React Flow Mock with ConstantNode Test](https://github.com/openbms-io/supervisor/issues/18)** - Component testing
+
+### Medium Priority Testing Tickets (P1)
+
+- **[#19: Next.js API Route Testing](https://github.com/openbms-io/supervisor/issues/19)** - API endpoint testing
+- **[#21: Integration Testing Setup](https://github.com/openbms-io/supervisor/issues/21)** - End-to-end workflows
+
+### Low Priority Testing Tickets (P2)
+
+- **[#20: Additional Mocks (QuickJS & Monaco)](https://github.com/openbms-io/supervisor/issues/20)** - External library mocking
+- **[#22: Testing Documentation](https://github.com/openbms-io/supervisor/issues/22)** - Guide creation
+
+### Why These Tickets Are Great for Contributors
+
+✅ **Self-contained** - Each ticket is independent and well-defined
+✅ **Learning opportunities** - Learn Jest, React Testing Library, mocking patterns
+✅ **Clear specifications** - Exact code to write with acceptance criteria
+✅ **Mentorship available** - Team ready to help first-time contributors
+✅ **TDD approach** - Follows our test-driven development philosophy
+
+### Getting Started
+
+1. Visit the [Project Board](https://github.com/orgs/openbms-io/projects/1/views/1) to see current status
+2. Pick a ticket that matches your experience level
+3. Follow our [Fork & Pull Request Guide](CONTRIBUTING.md#-contributing-via-fork--pull-request)
+4. Ask questions in [GitHub Discussions](https://github.com/openbms-io/supervisor/discussions)
+
 ## Contributing Areas
 
 ### High Priority Help Needed
 
-1. **BACnet Integration** (Phase 7)
+1. **Testing Infrastructure** ⭐ **Perfect for New Contributors**
+
+   - **8 ready-to-implement tickets** ([#15-22](https://github.com/openbms-io/supervisor/issues?q=is%3Aissue+is%3Aopen+label%3Atesting))
+   - Jest, React Testing Library, mocking patterns
+   - Clear specifications with acceptance criteria
+   - Follow our [Fork & Pull Request Guide](CONTRIBUTING.md#-contributing-via-fork--pull-request)
+
+2. **BACnet Integration** (Phase 7)
 
    - Real device discovery implementation
    - BACnet protocol expertise
    - Network scanning optimization
-
-2. **Testing & Quality Assurance**
-
-   - End-to-end testing scenarios
-   - Performance testing with large graphs
-   - Cross-browser compatibility
 
 3. **Documentation**
 
@@ -271,13 +301,20 @@
 
 ### Getting Started
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines and development setup instructions.
+New to open source or this project?
+
+1. **First-time contributors**: Start with our [Fork & Pull Request Guide](CONTRIBUTING.md#-contributing-via-fork--pull-request)
+2. **Pick a testing ticket**: Browse [tickets #15-22](https://github.com/openbms-io/supervisor/issues?q=is%3Aissue+is%3Aopen+label%3Atesting) for perfect entry points
+3. **Check the live board**: Visit our [GitHub Project Board](https://github.com/orgs/openbms-io/projects/1/views/1) for current status
+4. **Ask questions**: Use [GitHub Discussions](https://github.com/openbms-io/supervisor/discussions) for help
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for complete guidelines and development setup instructions.
 
 ## Roadmap
 
 ### Short Term (Q4 2025)
 
-- Complete Phase 6 (Persistence & Integration)
+- Complete Phase 6 (Persistence & Integration) - including Turing Completeness features
 - Complete Phase 7 (BACnet Discovery)
 - Stabilize core visual programming features
 - Improve test coverage to >80%
@@ -298,7 +335,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines and 
 
 ---
 
-**Last Updated**: October 2025
-**Next Review**: November 2025
+**Last Updated**: September 18, 2025
+**Next Review**: October 2025
 
-For questions about the project status or to contribute, see [CONTRIBUTING.md](CONTRIBUTING.md) or open an issue on GitHub.
+**Recent Updates**:
+
+- ✅ Created 8 comprehensive testing infrastructure tickets (#15-22)
+- ✅ Added [GitHub Project Board](https://github.com/orgs/openbms-io/projects/1/views/1) for live tracking
+- ✅ Enhanced [CONTRIBUTING.md](CONTRIBUTING.md) with fork & pull request workflow
+- ✅ Prioritized testing tickets for new contributor onboarding
+
+For questions about the project status or to contribute, see [CONTRIBUTING.md](CONTRIBUTING.md) or check our [Project Board](https://github.com/orgs/openbms-io/projects/1/views/1).

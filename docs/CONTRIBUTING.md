@@ -2,6 +2,15 @@
 
 Thank you for your interest in contributing to BMS Supervisor Controller! This project is a visual programming platform for building management systems with IoT device integration.
 
+> **👋 First Time Contributors**
+>
+> New to open source? No problem!
+>
+> - Start with our [Fork & Pull Request Guide](#-contributing-via-fork--pull-request)
+> - Look for issues labeled `good-first-issue`
+> - Try our [testing tickets](https://github.com/openbms-io/supervisor/issues?q=is%3Aissue+is%3Aopen+label%3Atesting) (#15-22) - perfect for learning!
+> - Ask questions in [GitHub Discussions](https://github.com/openbms-io/supervisor/discussions)
+
 ## 🎯 How You Can Help
 
 We're actively seeking contributions in several key areas:
@@ -58,6 +67,96 @@ For prerequisites and full environment setup (install, dev servers, schema gener
 
 - See README.md → Quick Start and Development sections
 - Optional: run `pnpm run setup:hooks` to enable pre-commit hooks
+
+## 🍴 Contributing via Fork & Pull Request
+
+If you don't have direct write access to the repository, follow this workflow:
+
+### Step 1: Fork the Repository
+
+1. Visit [https://github.com/openbms-io/supervisor](https://github.com/openbms-io/supervisor)
+2. Click the "Fork" button in the top-right corner
+3. This creates your copy at `https://github.com/YOUR_USERNAME/supervisor`
+
+### Step 2: Clone Your Fork
+
+```bash
+# Clone your fork (not the original)
+git clone https://github.com/YOUR_USERNAME/supervisor.git
+cd supervisor
+
+# Add the original repo as "upstream"
+git remote add upstream https://github.com/openbms-io/supervisor.git
+```
+
+### Step 3: Create a Feature Branch
+
+```bash
+# Never work directly on main
+git checkout -b feature/your-feature-name
+
+# Examples:
+# git checkout -b test/add-zustand-mock
+# git checkout -b fix/database-connection
+# git checkout -b docs/update-readme
+```
+
+### Step 4: Make Your Changes
+
+Follow the TDD workflow described below for your changes.
+
+### Step 5: Push to Your Fork
+
+```bash
+git add .
+git commit -m "type: clear description of changes
+
+- Specific change 1
+- Specific change 2
+- Reference issue if applicable
+
+Closes #issue-number"
+
+git push origin feature/your-feature-name
+```
+
+### Step 6: Create Pull Request
+
+1. Go to your fork on GitHub
+2. Click "Compare & pull request" button
+3. Ensure the base is `openbms-io/supervisor:main`
+4. Fill in the PR template with:
+   - Clear description of changes
+   - Link to related issues
+   - Screenshots for UI changes
+   - Testing checklist
+
+### Keeping Your Fork Updated
+
+```bash
+# Before starting new work, sync with upstream
+git checkout main
+git fetch upstream
+git merge upstream/main
+git push origin main
+
+# Then create your feature branch
+git checkout -b feature/new-feature
+```
+
+### Workflow Visual
+
+```
+Original Repo (openbms-io/supervisor)
+        ↓ Fork
+Your Fork (YOUR_USERNAME/supervisor)
+        ↓ Clone
+Your Local Machine
+        ↓ Branch + Changes
+Push to Your Fork
+        ↓ Pull Request
+Back to Original Repo
+```
 
 ### Development Workflow
 
@@ -179,6 +278,10 @@ pnpm run build
 
 ## 🔄 Pull Request Process
 
+> **Note**: If you don't have write access, see the [Fork & Pull Request](#-contributing-via-fork--pull-request) section above.
+
+### For Team Members with Write Access
+
 1. **Create a feature branch**
 
    ```bash
@@ -211,12 +314,17 @@ pnpm run build
    git push origin feature/your-feature-name
    ```
 
-5. **PR Requirements**
-   - Clear description of changes
-   - Link to relevant issues
-   - Screenshots for UI changes
-   - All tests passing
-   - Code review approval
+### For External Contributors
+
+Follow the complete [Fork & Pull Request workflow](#-contributing-via-fork--pull-request) described above.
+
+### PR Requirements
+
+- Clear description of changes
+- Link to relevant issues
+- Screenshots for UI changes
+- All tests passing
+- Code review approval
 
 ## 🐛 Reporting Issues
 
