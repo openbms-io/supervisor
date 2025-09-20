@@ -21,7 +21,7 @@
     "generate:json": "tsx scripts/generate-json-schema.ts",
     "generate:python": "python scripts/generate-python.py",
     "build:ts": "tsc",
-    "build": "npm run test && npm run build:ts && npm run generate",
+    "build": "npm run test && npm run build:ts",
     "clean": "rm -rf typescript/ python/ json-schema/ coverage/"
   },
   "dependencies": {
