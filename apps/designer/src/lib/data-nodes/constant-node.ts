@@ -12,7 +12,6 @@ import { v4 as uuidv4 } from 'uuid'
 
 export type ValueType = 'number' | 'boolean' | 'string'
 
-// Export the metadata interface
 export interface ConstantNodeMetadata {
   value: number | boolean | string
   valueType: ValueType
@@ -32,7 +31,6 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
     return this._metadata
   }
 
-  // Public getter for UI access - returns the constant value
   get computedValue(): ComputeValue | undefined {
     const value = this._metadata.value
     return typeof value === 'number' || typeof value === 'boolean'
@@ -43,9 +41,10 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
   constructor(
     label: string,
     value: number | boolean | string = 0,
-    valueType: ValueType = 'number'
+    valueType: ValueType = 'number',
+    id?: string
   ) {
-    this.id = generateInstanceId()
+    this.id = id ?? generateInstanceId()
     this.label = label
     this._metadata = { value, valueType }
   }
@@ -57,12 +56,7 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
       : undefined
   }
 
-  // Constants don't reset - they maintain their value
-  // No reset() method needed
-
   canConnectWith(target: DataNode): boolean {
-    // Constants can connect to anything that accepts input
-    // (anything except pure output nodes)
     return target.direction !== NodeDirection.OUTPUT
   }
 
@@ -96,7 +90,6 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
     this._metadata = { valueType, value: newValue }
   }
 
-  // Message passing API implementation
   setSendCallback(callback: SendCallback<LogicOutputHandle>): void {
     this.sendCallback = callback
   }
@@ -118,12 +111,10 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _fromNodeId: string
   ): Promise<void> {
-    // Source node - when triggered, send the constant value
     await this.trigger()
   }
 
-  // Internal API - called by DataGraph execution system
-  async trigger(): Promise<void> {
+  private async trigger(): Promise<void> {
     const value = this.getValue()
     if (value !== undefined) {
       console.log(`🔢 [${this.id}] Triggered, sending constant value:`, value)
@@ -136,6 +127,16 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
         },
         'output'
       )
+    }
+  }
+
+  toSerializable(): Record<string, unknown> {
+    return {
+      id: this.id,
+      type: this.type,
+      category: this.category,
+      label: this.label,
+      metadata: this._metadata,
     }
   }
 }

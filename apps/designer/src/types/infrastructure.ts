@@ -1,6 +1,7 @@
 import { v4 as uuidv4, v5 as uuidv5 } from 'uuid'
 import { BacnetProperties } from './bacnet-properties'
 import { MessageNode } from '@/lib/message-system/types'
+import { SerializableNode } from '@/lib/node-serializer'
 
 // BACnet namespace for deterministic UUIDs
 export const BACNET_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
@@ -49,7 +50,8 @@ export enum NodeDirection {
 export interface DataNode<
   TInputHandle extends string = string,
   TOutputHandle extends string = string,
-> extends MessageNode<TInputHandle, TOutputHandle> {
+> extends MessageNode<TInputHandle, TOutputHandle>,
+    SerializableNode {
   readonly id: string // UUID v4 - instance ID
   readonly type: NodeTypeString
   readonly category: NodeCategory

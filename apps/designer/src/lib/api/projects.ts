@@ -32,6 +32,29 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json()
 }
 
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  opts?: { attempts?: number; baseDelayMs?: number; factor?: number }
+): Promise<T> {
+  const attempts = opts?.attempts ?? 3
+  const baseDelay = opts?.baseDelayMs ?? 200
+  const factor = opts?.factor ?? 2
+  let lastErr: unknown
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastErr = err
+      if (i < attempts - 1) {
+        const delay = baseDelay * Math.pow(factor, i)
+        await new Promise((res) => setTimeout(res, delay))
+        continue
+      }
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('Request failed')
+}
+
 export const projectsApi = {
   async list(query?: ProjectQuery): Promise<ProjectListResponse> {
     const searchParams = new URLSearchParams()
@@ -46,8 +69,10 @@ export const projectsApi = {
       searchParams.toString() ? `?${searchParams}` : ''
     }`
 
-    const response = await fetch(url)
-    const result = await handleResponse(response)
+    const result = await withRetry(async () => {
+      const response = await fetch(url)
+      return handleResponse(response)
+    })
 
     const parsed = ProjectsResponseSchema.parse(result)
 
@@ -59,8 +84,10 @@ export const projectsApi = {
   },
 
   async get(id: string): Promise<Project> {
-    const response = await fetch(`/api/projects/${id}`)
-    const result = await handleResponse(response)
+    const result = await withRetry(async () => {
+      const response = await fetch(`/api/projects/${id}`)
+      return handleResponse(response)
+    })
 
     const parsed = ProjectResponseSchema.parse(result)
 
@@ -72,15 +99,14 @@ export const projectsApi = {
   },
 
   async create(data: CreateProject): Promise<Project> {
-    const response = await fetch('/api/projects', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
+    const result = await withRetry(async () => {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      return handleResponse(response)
     })
-
-    const result = await handleResponse(response)
     const parsed = ProjectResponseSchema.parse(result)
 
     if (!parsed.success || !parsed.project) {
@@ -91,15 +117,14 @@ export const projectsApi = {
   },
 
   async update(id: string, data: UpdateProject): Promise<Project> {
-    const response = await fetch(`/api/projects/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
+    const result = await withRetry(async () => {
+      const response = await fetch(`/api/projects/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      return handleResponse(response)
     })
-
-    const result = await handleResponse(response)
     const parsed = ProjectResponseSchema.parse(result)
 
     if (!parsed.success || !parsed.project) {
@@ -110,11 +135,10 @@ export const projectsApi = {
   },
 
   async delete(id: string): Promise<void> {
-    const response = await fetch(`/api/projects/${id}`, {
-      method: 'DELETE',
+    const result = await withRetry(async () => {
+      const response = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
+      return handleResponse(response)
     })
-
-    const result = await handleResponse(response)
     const parsed = ProjectResponseSchema.parse(result)
 
     if (!parsed.success) {

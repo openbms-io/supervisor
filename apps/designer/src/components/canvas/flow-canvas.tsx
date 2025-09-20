@@ -34,7 +34,9 @@ const edgeTypes = {
   [EDGE_TYPES.BIDIRECTIONAL_FLOW]: BidirectionalFlowEdge, // Register our custom edge type
 } satisfies EdgeTypes
 
-export function FlowCanvas() {
+import { SaveProjectButton } from './save-project-button'
+
+export function FlowCanvas({ projectId }: { projectId: string }) {
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null)
 
   // Get handlers
@@ -194,6 +196,8 @@ export function FlowCanvas() {
               <PlayIcon className="h-4 w-4" />
               Run
             </Button>
+
+            <SaveProjectButton projectId={projectId} />
           </div>
         </Panel>
         <Controls

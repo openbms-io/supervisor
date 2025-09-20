@@ -60,9 +60,10 @@ export class ScheduleNode
     label: string,
     startTime: string = '08:00',
     endTime: string = '17:00',
-    days: DayOfWeek[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    days: DayOfWeek[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    id?: string
   ) {
-    this.id = generateInstanceId()
+    this.id = id || generateInstanceId()
     this.label = label
 
     // Initialize single state
@@ -241,6 +242,16 @@ export class ScheduleNode
       this.start()
     } else {
       this.stop()
+    }
+  }
+
+  toSerializable(): Record<string, unknown> {
+    return {
+      id: this.id,
+      type: this.type,
+      category: this.category,
+      label: this.label,
+      metadata: this.metadata,
     }
   }
 }

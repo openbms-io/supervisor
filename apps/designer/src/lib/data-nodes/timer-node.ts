@@ -56,8 +56,8 @@ export class TimerNode
     return this._inputValue !== undefined ? this._inputValue : this._tickCount
   }
 
-  constructor(label: string, duration: number = 1000) {
-    this.id = generateInstanceId()
+  constructor(label: string, duration: number = 1000, id?: string) {
+    this.id = id || generateInstanceId()
     this.label = label
     this._duration = duration
     this.metadata = { duration }
@@ -196,6 +196,16 @@ export class TimerNode
   async trigger(): Promise<void> {
     if (this._inputValue === undefined) {
       this.start()
+    }
+  }
+
+  toSerializable(): Record<string, unknown> {
+    return {
+      id: this.id,
+      type: this.type,
+      category: this.category,
+      label: this.label,
+      metadata: this.metadata,
     }
   }
 }

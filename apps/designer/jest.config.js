@@ -18,7 +18,10 @@ const customJestConfig = {
     '^@test-utils/(.*)$': '<rootDir>/test-utils/$1',
     '^bms-schemas$': '<rootDir>/../../packages/bms-schemas/src/index.ts',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^uuid$': require.resolve('uuid'),
   },
+
+  transformIgnorePatterns: ['node_modules/(?!(uuid)/)'],
 
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

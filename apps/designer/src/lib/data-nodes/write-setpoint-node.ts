@@ -23,8 +23,8 @@ export class WriteSetpointNode implements CommandNode {
   writeMode: 'normal' | 'override' | 'release' = 'normal'
   private sendCallback?: SendCallback<CommandOutputHandle>
 
-  constructor(label: string, priority: number = 8) {
-    this.id = generateInstanceId()
+  constructor(label: string, priority: number = 8, id?: string) {
+    this.id = id || generateInstanceId()
     this.label = label
     this.priority = Math.max(1, Math.min(16, priority)) // Clamp 1-16
   }
@@ -94,5 +94,15 @@ export class WriteSetpointNode implements CommandNode {
       },
       'output'
     )
+  }
+
+  toSerializable(): Record<string, unknown> {
+    return {
+      id: this.id,
+      type: this.type,
+      category: this.category,
+      label: this.label,
+      metadata: { priority: this.priority },
+    }
   }
 }

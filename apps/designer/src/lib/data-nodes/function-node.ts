@@ -58,8 +58,12 @@ export class FunctionNode implements LogicNode {
     return this._consoleLogs
   }
 
-  constructor(label: string, metadata?: Partial<FunctionNodeMetadata>) {
-    this.id = generateInstanceId()
+  constructor(
+    label: string,
+    metadata?: Partial<FunctionNodeMetadata>,
+    id?: string
+  ) {
+    this.id = id || generateInstanceId()
     this.label = label
     this._metadata = {
       code: metadata?.code || 'function execute(input1) {\n  return input1;\n}',
@@ -303,6 +307,16 @@ export class FunctionNode implements LogicNode {
           error instanceof Error ? error.message : String(error)
         }`
       )
+    }
+  }
+
+  toSerializable(): Record<string, unknown> {
+    return {
+      id: this.id,
+      type: this.type,
+      category: this.category,
+      label: this.label,
+      metadata: this._metadata,
     }
   }
 }

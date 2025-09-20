@@ -8,7 +8,7 @@ export const ProjectSchema = z.object({
     .min(1, 'Project name is required')
     .max(255, 'Project name too long'),
   description: z.string().optional(),
-  flow_config: z.string().default('{}'), // JSON string for flow configuration
+  workflow_config: z.string().default('{}'), // JSON string for workflow configuration
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
 })
@@ -20,7 +20,7 @@ export const CreateProjectSchema = z.object({
     .min(1, 'Project name is required')
     .max(255, 'Project name too long'),
   description: z.string().optional(),
-  flow_config: z.object({}).optional().default({}), // Flow configuration object
+  workflow_config: z.unknown().optional(), // Workflow configuration object
 })
 
 // Schema for updating a project
@@ -31,7 +31,7 @@ export const UpdateProjectSchema = z.object({
     .max(255, 'Project name too long')
     .optional(),
   description: z.string().optional(),
-  flow_config: z.object({}).optional(), // Flow configuration object
+  workflow_config: z.unknown().optional(), // Workflow configuration object
 })
 
 // Schema for project queries

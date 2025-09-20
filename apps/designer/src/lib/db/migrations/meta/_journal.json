@@ -8,6 +8,20 @@
       "when": 1757030476989,
       "tag": "0000_wealthy_blink",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1758298000000,
+      "tag": "0001_seed_projects",
+      "breakpoints": false
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1758298001000,
+      "tag": "0002_rename_flow_config_to_workflow_config",
+      "breakpoints": false
     }
   ]
 }

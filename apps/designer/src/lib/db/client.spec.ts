@@ -43,7 +43,7 @@ describe('Database Client (SQLite + Drizzle)', () => {
     const id = randomUUID()
     const name = 'Test Project'
 
-    // Insert minimal row (defaults for flow_config/created_at/updated_at)
+    // Insert minimal row (defaults for workflow_config/created_at/updated_at)
     await db.insert(projects).values({ id, name }).run()
 
     const fetched = await db
@@ -58,6 +58,6 @@ describe('Database Client (SQLite + Drizzle)', () => {
     // Defaults are applied
     expect(typeof fetched?.created_at).toBe('string')
     expect(typeof fetched?.updated_at).toBe('string')
-    expect(typeof fetched?.flow_config).toBe('string')
+    expect(typeof fetched?.workflow_config).toBe('string')
   })
 })
