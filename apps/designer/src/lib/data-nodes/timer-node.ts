@@ -2,12 +2,14 @@ import {
   ControlFlowNode,
   ComputeValue,
   NodeCategory,
+  NodeType,
   NodeDirection,
   DataNode,
   generateInstanceId,
 } from '@/types/infrastructure'
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { v4 as uuidv4 } from 'uuid'
+import { makeSerializable } from '@/lib/workflow/serialization-utils'
 
 export type TimerInputHandle = 'trigger'
 export type TimerOutputHandle = 'output'
@@ -21,7 +23,7 @@ export class TimerNode
 {
   readonly id: string
   readonly category = NodeCategory.CONTROL_FLOW
-  readonly type = 'timer'
+  readonly type = NodeType.TIMER
   readonly direction = NodeDirection.BIDIRECTIONAL
   readonly metadata: TimerNodeMetadata
 
@@ -200,12 +202,17 @@ export class TimerNode
   }
 
   toSerializable(): Record<string, unknown> {
-    return {
+    const metadata: TimerNodeMetadata = this.metadata
+    return makeSerializable<
+      TimerNodeMetadata,
+      NodeType.TIMER,
+      NodeCategory.CONTROL_FLOW
+    >({
       id: this.id,
       type: this.type,
       category: this.category,
       label: this.label,
-      metadata: this.metadata,
-    }
+      metadata,
+    })
   }
 }

@@ -2,6 +2,11 @@ import '@testing-library/jest-dom'
 import fs from 'fs'
 import path from 'path'
 import { migrateTestDatabase } from './test-utils/migrate'
+// Mock ESM-only uuid globally so Jest (CJS) doesn't choke on export syntax
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)),
+  v5: jest.fn(() => 'mock-uuid-v5'),
+}))
 
 // Clean up test database before tests
 beforeAll(async () => {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { VersionedWorkflowConfigSchema } from '@/lib/workflow/config-schema'
 
 // Base project schema for database storage
 export const ProjectSchema = z.object({
@@ -20,7 +21,7 @@ export const CreateProjectSchema = z.object({
     .min(1, 'Project name is required')
     .max(255, 'Project name too long'),
   description: z.string().optional(),
-  workflow_config: z.unknown().optional(), // Workflow configuration object
+  workflow_config: VersionedWorkflowConfigSchema.optional(),
 })
 
 // Schema for updating a project
@@ -31,7 +32,7 @@ export const UpdateProjectSchema = z.object({
     .max(255, 'Project name too long')
     .optional(),
   description: z.string().optional(),
-  workflow_config: z.unknown().optional(), // Workflow configuration object
+  workflow_config: VersionedWorkflowConfigSchema.optional(),
 })
 
 // Schema for project queries

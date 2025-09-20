@@ -5,12 +5,12 @@ import {
   serializeWorkflow,
   deserializeWorkflow,
   createNodeFactory,
-} from '@/lib/workflow-serializer'
+} from '@/lib/workflow/serializer'
 import type { Project } from '@/app/api/projects/schemas'
 
 // Mock the dependencies
 jest.mock('@/lib/api/projects')
-jest.mock('@/lib/workflow-serializer')
+jest.mock('@/lib/workflow/serializer')
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)),
 }))

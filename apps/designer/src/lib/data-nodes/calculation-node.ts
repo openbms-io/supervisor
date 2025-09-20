@@ -4,12 +4,14 @@ import {
   LogicOutputHandle,
   ComputeValue,
   NodeCategory,
+  NodeType,
   NodeDirection,
   generateInstanceId,
   DataNode,
 } from '@/types/infrastructure'
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { v4 as uuidv4 } from 'uuid'
+import { makeSerializable } from '@/lib/workflow/serialization-utils'
 
 export type CalculationOperation =
   | 'add'
@@ -22,7 +24,7 @@ export class CalculationNode
   implements LogicNode<CalculationInputHandle, LogicOutputHandle>
 {
   readonly id: string
-  readonly type = 'calculation' as const
+  readonly type = NodeType.CALCULATION
   readonly category = NodeCategory.LOGIC
   readonly label: string
   readonly direction = NodeDirection.BIDIRECTIONAL
@@ -178,12 +180,17 @@ export class CalculationNode
   }
 
   toSerializable(): Record<string, unknown> {
-    return {
+    const metadata: { operation: CalculationOperation } = this.metadata
+    return makeSerializable<
+      { operation: CalculationOperation },
+      NodeType.CALCULATION,
+      NodeCategory.LOGIC
+    >({
       id: this.id,
       type: this.type,
       category: this.category,
       label: this.label,
-      metadata: this.metadata,
-    }
+      metadata,
+    })
   }
 }

@@ -2,6 +2,7 @@ import {
   DataNode,
   NodeCategory,
   NodeDirection,
+  NodeType,
   BacnetConfig,
   BacnetInputOutput,
   generateInstanceId,
@@ -15,6 +16,7 @@ import {
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { v4 as uuidv4 } from 'uuid'
 import { convertToComputeValue } from './bacnet-utils'
+import { makeSerializable } from '@/lib/workflow/serialization-utils'
 
 export class BinaryValueNode implements BacnetInputOutput {
   // From BacnetConfig
@@ -29,7 +31,7 @@ export class BinaryValueNode implements BacnetInputOutput {
 
   // From DataNode
   readonly id: string
-  readonly type = 'binary-value' as const
+  readonly type = NodeType.BINARY_VALUE
   readonly category = NodeCategory.BACNET
   readonly label: string
   readonly direction = NodeDirection.BIDIRECTIONAL
@@ -59,22 +61,27 @@ export class BinaryValueNode implements BacnetInputOutput {
   }
 
   toSerializable() {
-    return {
+    const metadata: BacnetConfig = {
+      pointId: this.pointId,
+      objectType: this.objectType,
+      objectId: this.objectId,
+      supervisorId: this.supervisorId,
+      controllerId: this.controllerId,
+      name: this.name,
+      discoveredProperties: this.discoveredProperties,
+      position: this.position,
+    }
+    return makeSerializable<
+      BacnetConfig,
+      NodeType.BINARY_VALUE,
+      NodeCategory.BACNET
+    >({
       id: this.id,
       type: this.type,
       category: this.category,
       label: this.label,
-      metadata: {
-        pointId: this.pointId,
-        objectType: this.objectType,
-        objectId: this.objectId,
-        supervisorId: this.supervisorId,
-        controllerId: this.controllerId,
-        name: this.name,
-        discoveredProperties: this.discoveredProperties,
-        position: this.position,
-      },
-    }
+      metadata,
+    })
   }
 
   getInputHandles(): readonly BacnetInputHandle[] {

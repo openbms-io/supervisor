@@ -38,7 +38,7 @@ import {
   type ReactFlowObject,
   type WorkflowMetadata,
   type VersionedWorkflowConfig,
-} from '@/lib/workflow-serializer'
+} from '@/lib/workflow/serializer'
 
 export interface DraggedPoint {
   type: 'bacnet-point'

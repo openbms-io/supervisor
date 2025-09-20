@@ -2,6 +2,7 @@ import {
   ControlFlowNode,
   ComputeValue,
   NodeCategory,
+  NodeType,
   NodeDirection,
   DataNode,
   generateInstanceId,
@@ -10,6 +11,7 @@ import {
 } from '@/types/infrastructure'
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { v4 as uuidv4 } from 'uuid'
+import { makeSerializable } from '@/lib/workflow/serialization-utils'
 
 export type DayOfWeek = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun'
 
@@ -33,7 +35,7 @@ export class ScheduleNode
 {
   readonly id: string
   readonly category = NodeCategory.CONTROL_FLOW
-  readonly type = 'schedule'
+  readonly type = NodeType.SCHEDULE
   readonly direction = NodeDirection.BIDIRECTIONAL
   readonly metadata: ScheduleNodeMetadata
 
@@ -246,12 +248,17 @@ export class ScheduleNode
   }
 
   toSerializable(): Record<string, unknown> {
-    return {
+    const metadata: ScheduleNodeMetadata = this.metadata
+    return makeSerializable<
+      ScheduleNodeMetadata,
+      NodeType.SCHEDULE,
+      NodeCategory.CONTROL_FLOW
+    >({
       id: this.id,
       type: this.type,
       category: this.category,
       label: this.label,
-      metadata: this.metadata,
-    }
+      metadata,
+    })
   }
 }
