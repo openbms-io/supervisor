@@ -1,7 +1,7 @@
-const path = require('path')
-const Database = require('better-sqlite3')
-const { drizzle } = require('drizzle-orm/better-sqlite3')
-const { migrate } = require('drizzle-orm/better-sqlite3/migrator')
+import path from 'path'
+import Database from 'better-sqlite3'
+import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 
 function configureSqlite(db) {
   try {
@@ -26,22 +26,16 @@ function getDbPath() {
   return path.join(process.cwd(), file)
 }
 
-function migrateTestDatabase() {
+export function migrateTestDatabase() {
   const dbPath = getDbPath()
   const sqlite = new Database(dbPath)
   configureSqlite(sqlite)
 
-  // Create a drizzle instance (schema typing not needed for migrations)
   const db = drizzle(sqlite)
-
-  // Run migrations synchronously
   const migrationsFolder = path.join(process.cwd(), 'src/lib/db/migrations')
   migrate(db, { migrationsFolder })
 
-  // Close sqlite handle
   try {
     sqlite.close()
   } catch {}
 }
-
-module.exports = { migrateTestDatabase }
