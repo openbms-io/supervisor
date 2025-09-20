@@ -43,7 +43,7 @@ export function ProjectCard({
     })
   }
 
-  const getFlowConfigSummary = ({ config }: { config: string }): string => {
+  const getWorkflowConfigSummary = ({ config }: { config: string }): string => {
     try {
       const parsed = JSON.parse(config)
       const nodeCount = parsed.nodes ? parsed.nodes.length : 0
@@ -100,7 +100,7 @@ export function ProjectCard({
       <CardContent className="pt-0" onClick={handleView}>
         <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
           <Badge variant="secondary" className="text-xs">
-            {getFlowConfigSummary({ config: project.flow_config })}
+            {getWorkflowConfigSummary({ config: project.workflow_config })}
           </Badge>
           <span>Updated {formatDate({ date: project.updated_at })}</span>
         </div>

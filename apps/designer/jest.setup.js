@@ -1,9 +1,10 @@
 import '@testing-library/jest-dom'
 import fs from 'fs'
 import path from 'path'
+import { migrateTestDatabase } from './test-utils/migrate'
 
 // Clean up test database before tests
-beforeAll(() => {
+beforeAll(async () => {
   if (process.env.NODE_ENV !== 'test') {
     throw new Error('NODE_ENV is not test')
   }
@@ -12,9 +13,10 @@ beforeAll(() => {
   delete process.env.TURSO_DATABASE_URL
   delete process.env.TURSO_AUTH_TOKEN
 
-  const testDbPath = path.join(process.cwd(), 'designer-test.db')
-  const testDbWalPath = path.join(process.cwd(), 'designer-test.db-wal')
-  const testDbShmPath = path.join(process.cwd(), 'designer-test.db-shm')
+  console.log('process.env.DATABASE_PATH', process.env.DATABASE_PATH)
+  const testDbPath = path.join(process.cwd(), process.env.DATABASE_PATH)
+  const testDbWalPath = `${testDbPath}-wal`
+  const testDbShmPath = `${testDbPath}-shm`
 
   // Remove existing test database files
   if (fs.existsSync(testDbPath)) {
@@ -26,6 +28,9 @@ beforeAll(() => {
   if (fs.existsSync(testDbShmPath)) {
     fs.unlinkSync(testDbShmPath)
   }
+
+  // Run DB migrations for the test database
+  migrateTestDatabase()
 })
 
 // Browser API mocks

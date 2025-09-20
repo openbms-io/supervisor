@@ -20,13 +20,13 @@ export class ProjectsRepository {
   async create(data: CreateProject): Promise<Project> {
     const id = randomUUID()
     const now = new Date().toISOString()
-    const flowConfig = JSON.stringify(data.flow_config || {})
+    const workflowConfig = JSON.stringify(data.workflow_config || {})
 
     const newProject = {
       id,
       name: data.name,
       description: data.description || null,
-      flow_config: flowConfig,
+      workflow_config: workflowConfig,
       created_at: now,
       updated_at: now,
     }
@@ -80,8 +80,8 @@ export class ProjectsRepository {
       updateData.description = data.description || null
     }
 
-    if (data.flow_config !== undefined) {
-      updateData.flow_config = JSON.stringify(data.flow_config)
+    if (data.workflow_config !== undefined) {
+      updateData.workflow_config = JSON.stringify(data.workflow_config)
     }
 
     await this.db

@@ -11,7 +11,7 @@ import {
 } from '@xyflow/react'
 
 // Internal absolute imports
-import { DataGraph, NodeDataRecord } from '@/lib/data-graph/data-graph'
+import { DataGraph, type NodeDataRecord } from '@/lib/data-graph/data-graph'
 import {
   BacnetConfig,
   DataNode,
@@ -30,6 +30,15 @@ import { TimerNode } from '@/lib/data-nodes/timer-node'
 import { ScheduleNode, DayOfWeek } from '@/lib/data-nodes/schedule-node'
 import { FunctionInput, FunctionNode } from '@/lib/data-nodes/function-node'
 import factory from '@/lib/data-nodes/factory'
+import { projectsApi } from '@/lib/api/projects'
+import {
+  serializeWorkflow,
+  deserializeWorkflow,
+  createNodeFactory,
+  type ReactFlowObject,
+  type WorkflowMetadata,
+  type VersionedWorkflowConfig,
+} from '@/lib/workflow-serializer'
 
 export interface DraggedPoint {
   type: 'bacnet-point'
@@ -117,6 +126,9 @@ export interface FlowSlice {
   // Notification state
   notification: FlowNotification | null
 
+  // Save/load state
+  saveStatus: 'saved' | 'saving' | 'error' | 'unsaved'
+
   // React Flow change handlers
   onNodesChange: (changes: NodeChange[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
@@ -168,6 +180,10 @@ export interface FlowSlice {
 
   // Execute graph
   executeWithMessages: () => Promise<void>
+
+  // Save/load projects
+  saveProject: ({ projectId }: { projectId: string }) => Promise<void>
+  loadProject: ({ projectId }: { projectId: string }) => Promise<void>
 }
 
 // This will be imported from factory once we create it
@@ -190,6 +206,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
   edges: [],
   dataGraph: new DataGraph(),
   notification: null,
+  saveStatus: 'unsaved',
 
   onNodesChange: (changes: NodeChange[]) => {
     const currentNodes = get().nodes
@@ -548,6 +565,92 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
           ? error.message
           : 'An unknown error occurred during message execution'
       )
+    }
+  },
+
+  // Save/load projects
+  saveProject: async ({ projectId }: { projectId: string }): Promise<void> => {
+    try {
+      set({ saveStatus: 'saving' })
+
+      const { nodes, edges } = get()
+
+      // Create ReactFlowObject
+      const reactFlowObject: ReactFlowObject = {
+        nodes,
+        edges,
+        viewport: { x: 0, y: 0, zoom: 1 },
+      }
+
+      // Serialize workflow
+      const metadata: WorkflowMetadata = {
+        lastModified: new Date().toISOString(),
+      }
+
+      const versionedConfig = serializeWorkflow({ reactFlowObject, metadata })
+
+      console.log('🚀 [FlowStore] Saving project:', versionedConfig)
+      // Update project via API (retry handled in API layer)
+      await projectsApi.update(projectId, { workflow_config: versionedConfig })
+
+      set({ saveStatus: 'saved' })
+      const { showSuccess } = get()
+      showSuccess('Saved', 'Workflow saved successfully')
+    } catch (error) {
+      console.error('Failed to save project:', error)
+      set({ saveStatus: 'error' })
+      const { showError } = get()
+      showError(
+        'Save Failed',
+        error instanceof Error ? error.message : 'Unable to save workflow'
+      )
+      throw error
+    }
+  },
+
+  loadProject: async ({ projectId }: { projectId: string }): Promise<void> => {
+    try {
+      const project = await projectsApi.get(projectId)
+
+      console.log('🚀 [FlowStore] Loaded project:', project)
+      if (project.workflow_config && project.workflow_config !== '{}') {
+        const versionedConfig = JSON.parse(
+          project.workflow_config
+        ) as VersionedWorkflowConfig
+        const nodeFactory = createNodeFactory()
+
+        const { nodes, edges } = deserializeWorkflow({
+          versionedConfig,
+          nodeFactory,
+        })
+
+        // Update store and DataGraph
+        const dataGraph = get().dataGraph
+        dataGraph.setNodesArray(nodes as Node<NodeDataRecord>[])
+        dataGraph.setEdgesArray(edges as Edge<EdgeData>[])
+
+        console.log('🚀 [FlowStore] Loaded project:', nodes, edges)
+        set({
+          nodes: nodes as Node<NodeData>[],
+          edges: edges as Edge<EdgeData>[],
+          saveStatus: 'saved',
+        })
+      } else {
+        // Empty workflow config - set to default state
+        const dataGraph = get().dataGraph
+        dataGraph.setNodesArray([])
+        dataGraph.setEdgesArray([])
+
+        set({
+          nodes: [],
+          edges: [],
+          saveStatus: 'saved',
+        })
+      }
+    } catch (error) {
+      console.error('Failed to load project:', error)
+      set({ saveStatus: 'error' })
+      throw error
     }
   },
 })

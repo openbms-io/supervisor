@@ -35,7 +35,7 @@ export class AnalogInputNode implements BacnetInputOutput {
   readonly direction = NodeDirection.BIDIRECTIONAL
   private sendCallback?: SendCallback<BacnetOutputHandle>
 
-  constructor(config: BacnetConfig) {
+  constructor(config: BacnetConfig, id?: string) {
     // Copy all BacnetConfig properties
     this.pointId = config.pointId
     this.objectId = config.objectId
@@ -48,7 +48,7 @@ export class AnalogInputNode implements BacnetInputOutput {
     this.position = config.position
 
     // DataNode properties
-    this.id = generateInstanceId() // Generate unique UUID for each instance
+    this.id = id || generateInstanceId() // Generate unique UUID for each instance
     this.label = config.name
   }
 
@@ -157,6 +157,25 @@ export class AnalogInputNode implements BacnetInputOutput {
           }
         }
       }
+    }
+  }
+
+  toSerializable(): Record<string, unknown> {
+    return {
+      id: this.id,
+      type: this.type,
+      category: this.category,
+      label: this.label,
+      metadata: {
+        pointId: this.pointId,
+        objectType: this.objectType,
+        objectId: this.objectId,
+        supervisorId: this.supervisorId,
+        controllerId: this.controllerId,
+        name: this.name,
+        discoveredProperties: this.discoveredProperties,
+        position: this.position,
+      },
     }
   }
 }

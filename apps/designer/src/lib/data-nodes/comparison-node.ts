@@ -43,8 +43,8 @@ export class ComparisonNode
     return this._inputValues
   }
 
-  constructor(label: string, operation: ComparisonOperation) {
-    this.id = generateInstanceId()
+  constructor(label: string, operation: ComparisonOperation, id?: string) {
+    this.id = id || generateInstanceId()
     this.label = label
     this.metadata = { operation }
   }
@@ -187,6 +187,16 @@ export class ComparisonNode
       this.messageBuffer.clear()
     } else {
       console.log(`⏳ [${this.id}] Waiting for more inputs...`)
+    }
+  }
+
+  toSerializable(): Record<string, unknown> {
+    return {
+      id: this.id,
+      type: this.type,
+      category: this.category,
+      label: this.label,
+      metadata: this.metadata,
     }
   }
 }

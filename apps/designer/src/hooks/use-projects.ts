@@ -160,8 +160,10 @@ export function useOptimisticUpdateProject(
         if (params.data.description !== undefined) {
           updatedProject.description = params.data.description
         }
-        if (params.data.flow_config !== undefined) {
-          updatedProject.flow_config = JSON.stringify(params.data.flow_config)
+        if (params.data.workflow_config !== undefined) {
+          updatedProject.workflow_config = JSON.stringify(
+            params.data.workflow_config
+          )
         }
 
         queryClient.setQueryData<Project>(

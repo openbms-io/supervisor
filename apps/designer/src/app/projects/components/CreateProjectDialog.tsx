@@ -22,7 +22,7 @@ export function CreateProjectDialog({
   const [formData, setFormData] = useState<CreateProject>({
     name: '',
     description: '',
-    flow_config: {},
+    workflow_config: {},
   })
   const [errors, setErrors] = useState<{ name?: string; description?: string }>(
     {}
@@ -57,7 +57,7 @@ export function CreateProjectDialog({
     try {
       await onSubmit({ project: formData })
       // Reset form on successful submission
-      setFormData({ name: '', description: '', flow_config: {} })
+      setFormData({ name: '', description: '', workflow_config: {} })
       setErrors({})
     } catch (error) {
       console.error('Failed to create project:', error)
@@ -79,7 +79,7 @@ export function CreateProjectDialog({
   }
 
   const handleClose = (): void => {
-    setFormData({ name: '', description: '', flow_config: {} })
+    setFormData({ name: '', description: '', workflow_config: {} })
     setErrors({})
     onClose()
   }

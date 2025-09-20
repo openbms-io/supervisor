@@ -7,7 +7,7 @@ export const projects = sqliteTable(
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     description: text('description'),
-    flow_config: text('flow_config').notNull().default('{}'),
+    workflow_config: text('workflow_config').notNull().default('{}'),
     created_at: text('created_at')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

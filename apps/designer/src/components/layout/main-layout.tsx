@@ -48,14 +48,7 @@ export function MainLayout({
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
-            Save Project
-          </button>
-          <button className="px-3 py-1.5 text-sm border border-border rounded-md hover:bg-accent transition-colors">
-            Deploy
-          </button>
-        </div>
+        <div className="flex items-center gap-2" />
       </header>
 
       {/* Main Content */}

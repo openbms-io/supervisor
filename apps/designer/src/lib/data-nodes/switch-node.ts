@@ -64,9 +64,10 @@ export class SwitchNode
     condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte' = 'gt',
     threshold: number = 0,
     activeLabel?: string,
-    inactiveLabel?: string
+    inactiveLabel?: string,
+    id?: string
   ) {
-    this.id = generateInstanceId()
+    this.id = id || generateInstanceId()
     this.label = label
     this._condition = condition
     this._threshold = threshold
@@ -210,5 +211,20 @@ export class SwitchNode
       },
       outputHandle
     )
+  }
+
+  toSerializable(): Record<string, unknown> {
+    return {
+      id: this.id,
+      type: this.type,
+      category: this.category,
+      label: this.label,
+      metadata: {
+        condition: this._condition,
+        threshold: this._threshold,
+        activeLabel: this.activeLabel,
+        inactiveLabel: this.inactiveLabel,
+      },
+    }
   }
 }

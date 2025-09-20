@@ -5,7 +5,6 @@ import {
   drizzle as drizzleBetter,
   BetterSQLite3Database,
 } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { createClient as createLibsql } from '@libsql/client'
 import {
   drizzle as drizzleLibsql,
@@ -21,50 +20,61 @@ let sqlite: Database.Database | null = null
 
 const useTurso = Boolean(process.env.TURSO_DATABASE_URL)
 
-export function getDatabase():
-  | BetterSQLite3Database<typeof schema>
-  | LibSQLDatabase<typeof schema> {
-  // Ensure we're running on the server
+function assertServer(): void {
   if (typeof window !== 'undefined') {
     throw new Error('Database operations can only be performed on the server')
   }
+}
 
-  if (!db) {
-    if (useTurso) {
-      // Remote (Turso/libSQL) client
-      const client = createLibsql({
-        url: process.env.TURSO_DATABASE_URL!,
-        authToken: process.env.TURSO_AUTH_TOKEN,
-      })
-      db = drizzleLibsql(client, { schema })
-      // Do not run migrations at runtime on Turso/serverless
-      console.log('Drizzle (libsql) initialized for Turso')
-    } else {
-      // Local file-based SQLite for dev
-      const dbPath = process.env.DATABASE_PATH
-        ? join(process.cwd(), process.env.DATABASE_PATH)
-        : join(process.cwd(), 'designer.db')
-      sqlite = new Database(dbPath)
+function getDbPath(): string {
+  return process.env.DATABASE_PATH
+    ? join(process.cwd(), process.env.DATABASE_PATH)
+    : join(process.cwd(), 'designer.db')
+}
 
-      // Enable WAL mode for better concurrency
-      sqlite.exec('PRAGMA journal_mode = WAL')
-      sqlite.exec('PRAGMA synchronous = NORMAL')
-      sqlite.exec('PRAGMA cache_size = 1000')
-      sqlite.exec('PRAGMA foreign_keys = ON')
-
-      // Basic pragmas for local dev; avoid WAL to keep it simple
-      sqlite.exec('PRAGMA foreign_keys = ON')
-
-      db = drizzleBetter(sqlite, { schema })
-
-      // Run migrations locally
-      const migrationsFolder = join(process.cwd(), 'src/lib/db/migrations')
-      migrate(db, { migrationsFolder })
-      console.log(`Drizzle (better-sqlite3) initialized at ${dbPath}`)
-    }
+function configureSqlitePragmas(db: Database.Database): void {
+  try {
+    db.exec('PRAGMA journal_mode = WAL')
+    db.exec('PRAGMA synchronous = NORMAL')
+    db.exec('PRAGMA cache_size = 1000')
+  } catch {
+    // Ignore pragma errors (some platforms may not support them)
+    console.warn('Failed to set sqlite pragmas')
   }
+  try {
+    db.exec('PRAGMA foreign_keys = ON')
+  } catch {
+    console.warn('Failed to set sqlite foreign keys')
+  }
+}
 
-  return db
+function initSqlite(): BetterSQLite3Database<typeof schema> {
+  const dbPath = getDbPath()
+  sqlite = new Database(dbPath)
+  configureSqlitePragmas(sqlite)
+  const better = drizzleBetter(sqlite, { schema })
+  console.log(`Drizzle (better-sqlite3) initialized at ${dbPath}`)
+  return better
+}
+
+function initLibsql(): LibSQLDatabase<typeof schema> {
+  const client = createLibsql({
+    url: process.env.TURSO_DATABASE_URL!,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  })
+  const libsql = drizzleLibsql(client, { schema })
+  console.log('Drizzle (libsql) initialized for Turso')
+  return libsql
+}
+
+export function getDatabase():
+  | BetterSQLite3Database<typeof schema>
+  | LibSQLDatabase<typeof schema> {
+  assertServer()
+  if (!db) {
+    db = useTurso ? initLibsql() : initSqlite()
+  }
+  return db!
 }
 
 export function closeDatabase(): void {
