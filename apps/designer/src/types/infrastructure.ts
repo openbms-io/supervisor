@@ -14,6 +14,34 @@ export enum NodeCategory {
   CONTROL_FLOW = 'control-flow',
 }
 
+// Centralized NodeType enum used by all node implementations
+export enum NodeType {
+  // BACnet nodes (9 types)
+  ANALOG_INPUT = 'analog-input',
+  ANALOG_OUTPUT = 'analog-output',
+  ANALOG_VALUE = 'analog-value',
+  BINARY_INPUT = 'binary-input',
+  BINARY_OUTPUT = 'binary-output',
+  BINARY_VALUE = 'binary-value',
+  MULTISTATE_INPUT = 'multistate-input',
+  MULTISTATE_OUTPUT = 'multistate-output',
+  MULTISTATE_VALUE = 'multistate-value',
+
+  // Logic nodes (4 types)
+  CONSTANT = 'constant',
+  CALCULATION = 'calculation',
+  COMPARISON = 'comparison',
+  FUNCTION = 'function',
+
+  // Control flow nodes (3 types)
+  SWITCH = 'switch',
+  TIMER = 'timer',
+  SCHEDULE = 'schedule',
+
+  // Command node (1 type)
+  WRITE_SETPOINT = 'write-setpoint',
+}
+
 // BACnet object types (bacpypes3/BAC0 naming)
 export type BacnetObjectType =
   | 'analog-input'
@@ -27,18 +55,7 @@ export type BacnetObjectType =
   | 'multistate-value'
 
 // All node types (BACnet + logic + control flow)
-export type NodeTypeString =
-  | BacnetObjectType
-  | 'comparison'
-  | 'calculation'
-  | 'condition'
-  | 'timer'
-  | 'schedule'
-  | 'write-setpoint'
-  | 'constant'
-  | 'switch'
-  | 'gate'
-  | 'function'
+export type NodeTypeString = (typeof NodeType)[keyof typeof NodeType]
 
 export enum NodeDirection {
   INPUT = 'input',

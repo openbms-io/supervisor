@@ -2,6 +2,7 @@ import {
   LogicNode,
   ComputeValue,
   NodeCategory,
+  NodeType,
   NodeDirection,
   generateInstanceId,
   DataNode,
@@ -9,6 +10,7 @@ import {
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { getQuickJSExecutor } from '@/lib/services/quickjs-executor'
 import { v4 as uuidv4 } from 'uuid'
+import { makeSerializable } from '@/lib/workflow/serialization-utils'
 
 export interface FunctionInput {
   id: string // 'input1', 'input2', etc.
@@ -23,7 +25,7 @@ export interface FunctionNodeMetadata {
 
 export class FunctionNode implements LogicNode {
   readonly id: string
-  readonly type = 'function' as const
+  readonly type = NodeType.FUNCTION
   readonly category = NodeCategory.LOGIC
   readonly label: string
   readonly direction = NodeDirection.BIDIRECTIONAL
@@ -311,12 +313,17 @@ export class FunctionNode implements LogicNode {
   }
 
   toSerializable(): Record<string, unknown> {
-    return {
+    const metadata: FunctionNodeMetadata = this._metadata
+    return makeSerializable<
+      FunctionNodeMetadata,
+      NodeType.FUNCTION,
+      NodeCategory.LOGIC
+    >({
       id: this.id,
       type: this.type,
       category: this.category,
       label: this.label,
-      metadata: this._metadata,
-    }
+      metadata,
+    })
   }
 }

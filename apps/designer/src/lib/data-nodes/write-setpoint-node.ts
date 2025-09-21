@@ -1,6 +1,7 @@
 import {
   CommandNode,
   NodeCategory,
+  NodeType,
   NodeDirection,
   generateInstanceId,
   ComputeValue,
@@ -10,10 +11,11 @@ import {
 } from '@/types/infrastructure'
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { v4 as uuidv4 } from 'uuid'
+import { makeSerializable } from '@/lib/workflow/serialization-utils'
 
 export class WriteSetpointNode implements CommandNode {
   readonly id: string
-  readonly type = 'write-setpoint' as const
+  readonly type = NodeType.WRITE_SETPOINT
   readonly category = NodeCategory.COMMAND
   readonly label: string
   readonly direction = NodeDirection.BIDIRECTIONAL
@@ -97,12 +99,17 @@ export class WriteSetpointNode implements CommandNode {
   }
 
   toSerializable(): Record<string, unknown> {
-    return {
+    const metadata: { priority: number } = { priority: this.priority }
+    return makeSerializable<
+      { priority: number },
+      NodeType.WRITE_SETPOINT,
+      NodeCategory.COMMAND
+    >({
       id: this.id,
       type: this.type,
       category: this.category,
       label: this.label,
-      metadata: { priority: this.priority },
-    }
+      metadata,
+    })
   }
 }

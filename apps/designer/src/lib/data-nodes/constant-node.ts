@@ -4,11 +4,13 @@ import {
   LogicOutputHandle,
   ComputeValue,
   NodeCategory,
+  NodeType,
   NodeDirection,
   generateInstanceId,
 } from '@/types/infrastructure'
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { v4 as uuidv4 } from 'uuid'
+import { makeSerializable } from '@/lib/workflow/serialization-utils'
 
 export type ValueType = 'number' | 'boolean' | 'string'
 
@@ -19,7 +21,7 @@ export interface ConstantNodeMetadata {
 
 export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
   readonly id: string
-  readonly type = 'constant' as const
+  readonly type = NodeType.CONSTANT
   readonly category = NodeCategory.LOGIC
   readonly label: string
   readonly direction = NodeDirection.OUTPUT
@@ -131,12 +133,21 @@ export class ConstantNode implements LogicNode<never, LogicOutputHandle> {
   }
 
   toSerializable(): Record<string, unknown> {
-    return {
+    const metadata: ConstantNodeMetadata = {
+      value: this._metadata.value,
+      valueType: this._metadata.valueType,
+    }
+
+    return makeSerializable<
+      ConstantNodeMetadata,
+      NodeType.CONSTANT,
+      NodeCategory.LOGIC
+    >({
       id: this.id,
       type: this.type,
       category: this.category,
       label: this.label,
-      metadata: this._metadata,
-    }
+      metadata,
+    })
   }
 }

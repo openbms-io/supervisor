@@ -4,12 +4,14 @@ import {
   LogicOutputHandle,
   ComputeValue,
   NodeCategory,
+  NodeType,
   NodeDirection,
   generateInstanceId,
   DataNode,
 } from '@/types/infrastructure'
 import { Message, SendCallback } from '@/lib/message-system/types'
 import { v4 as uuidv4 } from 'uuid'
+import { makeSerializable } from '@/lib/workflow/serialization-utils'
 
 export type ComparisonOperation =
   | 'equals'
@@ -22,7 +24,7 @@ export class ComparisonNode
   implements LogicNode<ComparisonInputHandle, LogicOutputHandle>
 {
   readonly id: string
-  readonly type = 'comparison' as const
+  readonly type = NodeType.COMPARISON
   readonly category = NodeCategory.LOGIC
   readonly label: string
   readonly direction = NodeDirection.BIDIRECTIONAL
@@ -191,12 +193,17 @@ export class ComparisonNode
   }
 
   toSerializable(): Record<string, unknown> {
-    return {
+    const metadata: { operation: ComparisonOperation } = this.metadata
+    return makeSerializable<
+      { operation: ComparisonOperation },
+      NodeType.COMPARISON,
+      NodeCategory.LOGIC
+    >({
       id: this.id,
       type: this.type,
       category: this.category,
       label: this.label,
-      metadata: this.metadata,
-    }
+      metadata,
+    })
   }
 }

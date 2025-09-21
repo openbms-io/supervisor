@@ -2,6 +2,7 @@ import {
   ControlFlowNode,
   ComputeValue,
   NodeCategory,
+  NodeType,
   NodeDirection,
   DataNode,
   SwitchInputHandle,
@@ -9,6 +10,14 @@ import {
   generateInstanceId,
 } from '@/types/infrastructure'
 import { Message, SendCallback } from '@/lib/message-system/types'
+import { makeSerializable } from '@/lib/workflow/serialization-utils'
+
+export interface SwitchNodeMetadata {
+  condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
+  threshold: number
+  activeLabel: string
+  inactiveLabel: string
+}
 import { v4 as uuidv4 } from 'uuid'
 
 export class SwitchNode
@@ -17,7 +26,7 @@ export class SwitchNode
   readonly id: string
   // REMOVED: pointId - not needed for non-BACnet nodes
   readonly category = NodeCategory.CONTROL_FLOW
-  readonly type = 'switch'
+  readonly type = NodeType.SWITCH
   readonly direction = NodeDirection.BIDIRECTIONAL
   readonly metadata = undefined
 
@@ -214,17 +223,22 @@ export class SwitchNode
   }
 
   toSerializable(): Record<string, unknown> {
-    return {
+    const metadata: SwitchNodeMetadata = {
+      condition: this._condition,
+      threshold: this._threshold,
+      activeLabel: this.activeLabel,
+      inactiveLabel: this.inactiveLabel,
+    }
+    return makeSerializable<
+      SwitchNodeMetadata,
+      NodeType.SWITCH,
+      NodeCategory.CONTROL_FLOW
+    >({
       id: this.id,
       type: this.type,
       category: this.category,
       label: this.label,
-      metadata: {
-        condition: this._condition,
-        threshold: this._threshold,
-        activeLabel: this.activeLabel,
-        inactiveLabel: this.inactiveLabel,
-      },
-    }
+      metadata,
+    })
   }
 }

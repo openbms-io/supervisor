@@ -284,14 +284,552 @@ const WorkflowConfigSchema = withVersion(
 - [ ] Accessibility improvements
 - [ ] Documentation updates
 
-### Phase 7: Schema Validation Setup
+### Phase 7: Schema Validation Setup [IN PROGRESS]
 
-- [ ] Create workflow-config-schema.ts with proper Zod schemas
-- [ ] Define schemas for workflow metadata, nodes, edges
-- [ ] Create versioned workflow config schema matching serializer structure
-- [ ] Update projects API schema to use proper validation
-- [ ] Replace z.object({}) with VersionedWorkflowConfigSchema
-- [ ] Unit tests for schema validation
+#### Overview
+
+Replace `z.unknown()` validation in the projects API with comprehensive Zod schemas that properly validate the entire workflow configuration structure. This ensures data integrity and type safety throughout the save/load process.
+
+#### Current Issues
+
+1. Projects API uses `z.unknown()` for workflow_config field - no validation
+2. Node types use string literals instead of centralized enum
+3. No validation for node metadata structures
+4. No validation for edge data structures
+5. Serialized data structure is complex (double-wrapped by toSerializable and serializeNodeData)
+
+#### Implementation Steps
+
+##### Step 1: Create NodeType Enum
+
+**File:** `/src/types/infrastructure.ts`
+
+Add a centralized NodeType enum to replace string literals across all node implementations:
+
+```typescript
+export enum NodeType {
+  // BACnet nodes (9 types)
+  ANALOG_INPUT = "analog-input",
+  ANALOG_OUTPUT = "analog-output",
+  ANALOG_VALUE = "analog-value",
+  BINARY_INPUT = "binary-input",
+  BINARY_OUTPUT = "binary-output",
+  BINARY_VALUE = "binary-value",
+  MULTISTATE_INPUT = "multistate-input",
+  MULTISTATE_OUTPUT = "multistate-output",
+  MULTISTATE_VALUE = "multistate-value",
+
+  // Logic nodes (4 types)
+  CONSTANT = "constant",
+  CALCULATION = "calculation",
+  COMPARISON = "comparison",
+  FUNCTION = "function",
+
+  // Control flow nodes (3 types)
+  SWITCH = "switch",
+  TIMER = "timer",
+  SCHEDULE = "schedule",
+
+  // Command node (1 type)
+  WRITE_SETPOINT = "write-setpoint",
+}
+```
+
+Update NodeTypeString type to use the enum values.
+
+##### Step 2: Update Node Classes to Use NodeType Enum
+
+**Files to update:** All 17 node classes in `/src/lib/data-nodes/*.ts`
+
+Replace string literals with enum values:
+
+- `readonly type = 'constant' as const` → `readonly type = NodeType.CONSTANT`
+- Import NodeType from '@/types/infrastructure'
+
+**Files to update:**
+
+- constant-node.ts
+- calculation-node.ts
+- comparison-node.ts
+- function-node.ts
+- switch-node.ts
+- timer-node.ts
+- schedule-node.ts
+- write-setpoint-node.ts
+- analog-input-node.ts
+- analog-output-node.ts
+- analog-value-node.ts
+- binary-input-node.ts
+- binary-output-node.ts
+- binary-value-node.ts
+- multistate-input-node.ts
+- multistate-output-node.ts
+- multistate-value-node.ts
+
+##### Step 3: Update Serializer and Tests
+
+**Files to update:**
+
+- `/src/lib/workflow-serializer.ts` - Update createNodeFactory switch cases to use NodeType enum
+- `/src/lib/workflow-serializer.spec.ts` - Update test expectations to use NodeType enum
+- `/src/lib/workflow-serializer-basic.spec.ts` - Update test expectations to use NodeType enum
+
+Example change in createNodeFactory:
+
+```typescript
+switch (nodeType) {
+  case 'ConstantNode':  // Current
+  // becomes
+  case 'ConstantNode':  // Keep for backward compatibility with nodeType from constructor.name
+```
+
+##### Step 4: Create Comprehensive Workflow Config Schema
+
+**New file:** `/src/lib/workflow-config-schema.ts`
+
+```typescript
+import { z } from "zod";
+import { NodeType, NodeCategory, EdgeData } from "@/types/infrastructure";
+import type { BacnetProperties, StatusFlags } from "@/types/bacnet-properties";
+import type {
+  ValueType,
+  ConstantNodeMetadata,
+  FunctionInput,
+  FunctionNodeMetadata,
+  TimerNodeMetadata,
+  ScheduleNodeMetadata,
+  DayOfWeek,
+  CalculationOperation,
+  ComparisonOperation,
+} from "@/lib/data-nodes";
+import type {
+  WorkflowMetadata,
+  SerializedNode,
+  WorkflowConfig,
+  VersionedWorkflowConfig,
+  SerializedNodeData,
+} from "./workflow-serializer";
+
+// Reuse existing enums and types as Zod schemas
+const NodeTypeSchema = z.nativeEnum(NodeType);
+const NodeCategorySchema = z.nativeEnum(NodeCategory);
+
+// Import existing type definitions and create matching Zod schemas
+// These use z.ZodType to ensure the schemas match the TypeScript interfaces
+
+// Value types for constant nodes (matching ValueType from constant-node.ts)
+const ValueTypeSchema: z.ZodType<ValueType> = z.enum([
+  "number",
+  "boolean",
+  "string",
+]);
+
+// Operations for calculation nodes (matching CalculationOperation from calculation-node.ts)
+const CalculationOperationSchema: z.ZodType<CalculationOperation> = z.enum([
+  "add",
+  "subtract",
+  "multiply",
+  "divide",
+  "average",
+]);
+
+// Operations for comparison nodes (matching ComparisonOperation from comparison-node.ts)
+const ComparisonOperationSchema: z.ZodType<ComparisonOperation> = z.enum([
+  "equals",
+  "greater",
+  "less",
+  "greater-equal",
+  "less-equal",
+]);
+
+// Control flow conditions for switch node
+const SwitchConditionSchema = z.enum(["gt", "lt", "eq", "gte", "lte"]);
+
+// Schedule days (matching DayOfWeek from schedule-node.ts)
+const DayOfWeekSchema: z.ZodType<DayOfWeek> = z.enum([
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun",
+]);
+
+// Function input schema (matching FunctionInput interface from function-node.ts)
+const FunctionInputSchema: z.ZodType<FunctionInput> = z.object({
+  id: z.string(),
+  label: z.string(),
+});
+
+// BACnet properties schemas (matching interfaces from bacnet-properties.ts)
+const StatusFlagsSchema: z.ZodType<StatusFlags> = z.object({
+  inAlarm: z.boolean(),
+  fault: z.boolean(),
+  overridden: z.boolean(),
+  outOfService: z.boolean(),
+});
+
+const BacnetPropertiesSchema: z.ZodType<BacnetProperties> = z.object({
+  presentValue: z.union([z.number(), z.boolean(), z.string()]).optional(),
+  statusFlags: StatusFlagsSchema.optional(),
+  eventState: z.string().optional(),
+  reliability: z.string().optional(),
+  outOfService: z.boolean().optional(),
+  units: z.string().optional(),
+  description: z.string().optional(),
+  minPresValue: z.number().optional(),
+  maxPresValue: z.number().optional(),
+  resolution: z.number().optional(),
+  covIncrement: z.number().optional(),
+  timeDelay: z.number().optional(),
+  highLimit: z.number().optional(),
+  lowLimit: z.number().optional(),
+  deadband: z.number().optional(),
+  priorityArray: z.array(z.number()).optional(),
+  relinquishDefault: z.union([z.number(), z.boolean(), z.string()]).optional(),
+  numberOfStates: z.number().optional(),
+  stateText: z.array(z.union([z.string(), z.null()])).optional(),
+});
+
+// Node metadata schemas for each type (matching their respective interfaces)
+const ConstantNodeMetadataSchema: z.ZodType<ConstantNodeMetadata> = z.object({
+  value: z.union([z.number(), z.boolean(), z.string()]),
+  valueType: ValueTypeSchema,
+});
+
+const CalculationNodeMetadataSchema = z.object({
+  operation: CalculationOperationSchema,
+});
+
+const ComparisonNodeMetadataSchema = z.object({
+  operation: ComparisonOperationSchema,
+});
+
+const FunctionNodeMetadataSchema: z.ZodType<FunctionNodeMetadata> = z.object({
+  code: z.string(),
+  inputs: z.array(FunctionInputSchema),
+  timeout: z.number().optional(),
+});
+
+const SwitchNodeMetadataSchema = z.object({
+  condition: SwitchConditionSchema,
+  threshold: z.number(),
+  activeLabel: z.string(),
+  inactiveLabel: z.string(),
+});
+
+const TimerNodeMetadataSchema: z.ZodType<TimerNodeMetadata> = z.object({
+  duration: z.number(),
+});
+
+const ScheduleNodeMetadataSchema: z.ZodType<ScheduleNodeMetadata> = z.object({
+  startTime: z.string(),
+  endTime: z.string(),
+  days: z.array(DayOfWeekSchema),
+});
+
+const WriteSetpointNodeMetadataSchema = z.object({
+  priority: z.number(),
+});
+
+// BACnet node metadata (used by all BACnet node types)
+const BacnetNodeMetadataSchema = z.object({
+  pointId: z.string(),
+  objectType: z.string(),
+  objectId: z.number(),
+  supervisorId: z.string(),
+  controllerId: z.string(),
+  name: z.string(),
+  discoveredProperties: BacnetPropertiesSchema,
+  position: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+    })
+    .optional(),
+});
+
+// Discriminated union for serialized node data based on node type
+const SerializedNodeDataContentSchema = z.discriminatedUnion("type", [
+  // Logic nodes
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.CONSTANT),
+    category: z.literal(NodeCategory.LOGIC),
+    label: z.string(),
+    metadata: ConstantNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.CALCULATION),
+    category: z.literal(NodeCategory.LOGIC),
+    label: z.string(),
+    metadata: CalculationNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.COMPARISON),
+    category: z.literal(NodeCategory.LOGIC),
+    label: z.string(),
+    metadata: ComparisonNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.FUNCTION),
+    category: z.literal(NodeCategory.LOGIC),
+    label: z.string(),
+    metadata: FunctionNodeMetadataSchema,
+  }),
+  // Control flow nodes
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.SWITCH),
+    category: z.literal(NodeCategory.CONTROL_FLOW),
+    label: z.string(),
+    metadata: SwitchNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.TIMER),
+    category: z.literal(NodeCategory.CONTROL_FLOW),
+    label: z.string(),
+    metadata: TimerNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.SCHEDULE),
+    category: z.literal(NodeCategory.CONTROL_FLOW),
+    label: z.string(),
+    metadata: ScheduleNodeMetadataSchema,
+  }),
+  // Command node
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.WRITE_SETPOINT),
+    category: z.literal(NodeCategory.COMMAND),
+    label: z.string(),
+    metadata: WriteSetpointNodeMetadataSchema,
+  }),
+  // BACnet nodes (all 9 types share same metadata structure)
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.ANALOG_INPUT),
+    category: z.literal(NodeCategory.BACNET),
+    label: z.string(),
+    metadata: BacnetNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.ANALOG_OUTPUT),
+    category: z.literal(NodeCategory.BACNET),
+    label: z.string(),
+    metadata: BacnetNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.ANALOG_VALUE),
+    category: z.literal(NodeCategory.BACNET),
+    label: z.string(),
+    metadata: BacnetNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.BINARY_INPUT),
+    category: z.literal(NodeCategory.BACNET),
+    label: z.string(),
+    metadata: BacnetNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.BINARY_OUTPUT),
+    category: z.literal(NodeCategory.BACNET),
+    label: z.string(),
+    metadata: BacnetNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.BINARY_VALUE),
+    category: z.literal(NodeCategory.BACNET),
+    label: z.string(),
+    metadata: BacnetNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.MULTISTATE_INPUT),
+    category: z.literal(NodeCategory.BACNET),
+    label: z.string(),
+    metadata: BacnetNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.MULTISTATE_OUTPUT),
+    category: z.literal(NodeCategory.BACNET),
+    label: z.string(),
+    metadata: BacnetNodeMetadataSchema,
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal(NodeType.MULTISTATE_VALUE),
+    category: z.literal(NodeCategory.BACNET),
+    label: z.string(),
+    metadata: BacnetNodeMetadataSchema,
+  }),
+]);
+
+// SerializedNodeData wraps the node's toSerializable output
+// Matches SerializedNodeData interface from node-serializer.ts
+const SerializedNodeDataSchema: z.ZodType<SerializedNodeData> = z.object({
+  nodeType: z.string(), // Constructor name like 'ConstantNode'
+  serializedData: SerializedNodeDataContentSchema,
+});
+
+// Edge data schema (matching EdgeData interface from infrastructure.ts)
+const EdgeDataSchema: z.ZodType<EdgeData> = z
+  .object({
+    sourceData: z.object({
+      nodeId: z.string(),
+      nodeCategory: NodeCategorySchema,
+      nodeType: z.string(), // NodeTypeString
+      handle: z.string().optional(),
+    }),
+    targetData: z.object({
+      nodeId: z.string(),
+      nodeCategory: NodeCategorySchema,
+      nodeType: z.string(), // NodeTypeString
+      handle: z.string().optional(),
+    }),
+    isActive: z.boolean().optional(),
+  })
+  .optional();
+
+// Edge schema (React Flow edge with EdgeData)
+const EdgeSchema = z.object({
+  id: z.string(),
+  source: z.string(),
+  target: z.string(),
+  sourceHandle: z.string().optional(),
+  targetHandle: z.string().optional(),
+  type: z.string().optional(), // Edge type from EDGE_TYPES
+  data: EdgeDataSchema,
+});
+
+// Workflow metadata schema (matching WorkflowMetadata interface from workflow-serializer.ts)
+export const WorkflowMetadataSchema: z.ZodType<WorkflowMetadata> = z.object({
+  lastModified: z.string().datetime(),
+  createdBy: z.string().optional(),
+  description: z.string().optional(),
+});
+
+// Serialized node schema (matching SerializedNode interface from workflow-serializer.ts)
+export const SerializedNodeSchema: z.ZodType<SerializedNode> = z.object({
+  id: z.string(),
+  type: z.string(), // Node type string
+  position: z.object({
+    x: z.number(),
+    y: z.number(),
+  }),
+  data: SerializedNodeDataSchema,
+});
+
+// Workflow config schema (matching WorkflowConfig interface from workflow-serializer.ts)
+export const WorkflowConfigSchema: z.ZodType<WorkflowConfig> = z.object({
+  metadata: WorkflowMetadataSchema,
+  nodes: z.array(SerializedNodeSchema),
+  edges: z.array(EdgeSchema),
+});
+
+// Version info schema (from bms-schemas Version type)
+const VersionSchema = z.object({
+  version: z.string(),
+  compatibility: z.string(),
+  schema_name: z.string(),
+  generated_at: z.string().optional(),
+});
+
+// Versioned workflow config schema (matching VersionedWorkflowConfig type from workflow-serializer.ts)
+export const VersionedWorkflowConfigSchema: z.ZodType<VersionedWorkflowConfig> =
+  z.object({
+    schema_info: VersionSchema,
+    data: WorkflowConfigSchema,
+  });
+
+// Export for type inference
+export type ValidatedWorkflowConfig = z.infer<
+  typeof VersionedWorkflowConfigSchema
+>;
+```
+
+##### Step 5: Update Projects API Schema
+
+**File:** `/src/app/api/projects/schemas.ts`
+
+```typescript
+import { VersionedWorkflowConfigSchema } from "@/lib/workflow-config-schema";
+
+// Update CreateProjectSchema
+export const CreateProjectSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Project name is required")
+    .max(255, "Project name too long"),
+  description: z.string().optional(),
+  workflow_config: VersionedWorkflowConfigSchema.optional(),
+});
+
+// Update UpdateProjectSchema
+export const UpdateProjectSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Project name is required")
+    .max(255, "Project name too long")
+    .optional(),
+  description: z.string().optional(),
+  workflow_config: VersionedWorkflowConfigSchema.optional(),
+});
+```
+
+##### Step 6: Update Workflow Serializer
+
+**File:** `/src/lib/workflow-serializer.ts`
+
+- Import schemas from workflow-config-schema.ts
+- Remove duplicate local schema definitions
+- Keep serialization/deserialization logic
+- Export schemas from centralized location
+
+#### Testing Requirements
+
+1. **Schema Validation Tests**
+
+   - Valid workflows with all node types pass validation
+   - Invalid node metadata is rejected with clear errors
+   - Edge data validation works correctly
+   - Empty workflows are handled properly
+
+2. **Backward Compatibility Tests**
+
+   - Existing workflows load correctly with new enum
+   - String literals in saved workflows map to enum values
+
+3. **Integration Tests**
+   - Save/load cycle works with new validation
+   - API properly validates incoming workflow configs
+   - Error messages are helpful for debugging
+
+#### Benefits
+
+1. **Type Safety**: Centralized NodeType enum ensures consistency
+2. **Validation**: Comprehensive Zod schemas catch errors early
+3. **Maintainability**: Single source of truth for node types
+4. **Developer Experience**: Better IntelliSense and error messages
+5. **Data Integrity**: Invalid workflows can't be saved to database
+
+#### Migration Considerations
+
+- Existing workflows in database use string literals
+- createNodeFactory must handle both old string literals and new enum values
+- Schema validation should accept both formats during transition period
 
 ## Testing Strategy
 
