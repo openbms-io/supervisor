@@ -1,8 +1,8 @@
 # Project Status
 
-## Current Phase: 6/8 (In Progress)
+## Current Phase: 7/11 (In Progress)
 
-[![Phase](https://img.shields.io/badge/Phase-6%2F8-yellow.svg)](docs/PROJECT_STATUS.md)
+[![Phase](https://img.shields.io/badge/Phase-7%2F11-yellow.svg)](docs/PROJECT_STATUS.md)
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](docs/PROJECT_STATUS.md)
 [![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](docs/LICENSE.md)
 
@@ -63,10 +63,10 @@
   - Control flow logic (switch nodes)
   - Real-time graph execution
 
-### 🚧 Phase 6: Persistence & Integration (In Progress)
+### ✅ Phase 6: Persistence & Integration (Complete)
 
-- **Status**: 40% Complete
-- **Target**: Nov 2025
+- **Status**: Complete
+- **Completed**: Sept 2025
 
 > **📊 Live Status Tracking**
 >
@@ -86,27 +86,11 @@
   - Schedule Node for schedule evaluation (weekly, daily, exception schedules)
   - Function Node with JavaScript execution environment using QuickJS
   - QuickJS memory management and console function cleanup
-- **In Progress**:
-
-  - Edge connection refinements
-  - Control flow node edge states (active/inactive visualization)
-  - Project deployment to IoT Supervisor
-  - Database migration improvements
-
-- **Remaining**:
-  - Turing Completeness features:
-    - Memory/Register node for holding mutable state across execution steps
-    - Variable Set/Get nodes for named variable store in runtime context
-    - While loop node (or Repeat-Until) for iterative control flow
-    - Boolean logic nodes (NOT, AND, OR) for combinatorial logic operations
-    - Delay node (one-tick delay) for breaking instantaneous cycles in feedback loops
-  - Robust error handling for deployment
-  - Advanced project management features
 
 ### 📋 Phase 7: BACnet Discovery Implementation (Planned)
 
 - **Status**: Not Started
-- **Target**: Nov 2025
+- **Target**: Sept 2025
 - **Planned Features**:
   - Real BACnet device discovery
   - Network scanning and device enumeration
@@ -114,13 +98,42 @@
   - Controller configuration management
   - Discovery error handling and retry logic
 
-### Phase 8: IOT Deployment
+### Phase 8: Integrating IOT with designer app.
+
+- **Status**: Not Started
+- **Target**: Nov 2025
+- **Planned Features**:
+  - Robust error handling for config deployment from designer app to iot.
+  - TBD.
+
+### Phase 9: Turing completeness
+
+- **Status**: Not Started
+- **Target**: Nov 2025
+- **Planned Features**:
+  - Edge connection refinements
+  - Turing Completeness features:
+    - Memory/Register node for holding mutable state across execution steps
+    - Variable Set/Get nodes for named variable store in runtime context
+    - While loop node (or Repeat-Until) for iterative control flow
+    - Boolean logic nodes (NOT, AND, OR) for combinatorial logic operations
+    - Delay node (one-tick delay) for breaking instantaneous cycles in feedback loops
+
+### Phase 10: IOT Deployment
 
 - **Status**: Not Started
 - **Target**: Dec 2025
-- ## **Planned Features**:
+- **Planned Features**:
+  - Project deployment to IoT Supervisor
 
-### 📋 Phase 9: Supervisor Management (Deferred)
+### Phase 11: Advanced Project Management
+
+- **Status**: Not Started
+- **Target**: TBD
+- **Planned Features**:
+  - Advanced project management features
+
+### 📋 Phase 12: Supervisor Management (Deferred)
 
 - **Status**: Deferred
 - **Target**: -
