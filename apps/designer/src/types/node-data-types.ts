@@ -13,6 +13,7 @@ import {
   ScheduleState,
 } from '@/lib/data-nodes/schedule-node'
 import { FunctionNodeMetadata } from '@/lib/data-nodes/function-node'
+import { NodeType } from './infrastructure'
 
 /**
   - React Flow UI node data types
@@ -64,7 +65,7 @@ export interface BacnetNodeData extends BacnetInputOutput, BaseNodeData {
 // Logic node data types
 export interface CalculationNodeData extends LogicNode, BaseNodeData {
   category: NodeCategory.LOGIC
-  type: 'calculation'
+  type: NodeType.CALCULATION
   metadata?: {
     operation?: string
   }
@@ -72,7 +73,7 @@ export interface CalculationNodeData extends LogicNode, BaseNodeData {
 
 export interface ComparisonNodeData extends LogicNode, BaseNodeData {
   category: NodeCategory.LOGIC
-  type: 'comparison'
+  type: NodeType.COMPARISON
   metadata?: {
     operation?: string
   }
@@ -80,13 +81,13 @@ export interface ComparisonNodeData extends LogicNode, BaseNodeData {
 
 export interface ConstantNodeData extends LogicNode, BaseNodeData {
   category: NodeCategory.LOGIC
-  type: 'constant'
+  type: NodeType.CONSTANT
   metadata: ConstantNodeMetadata
 }
 
 export interface FunctionNodeData extends LogicNode, BaseNodeData {
   category: NodeCategory.LOGIC
-  type: 'function'
+  type: NodeType.FUNCTION
   metadata: FunctionNodeMetadata
   lastError?: string
   consoleLogs?: string[]
@@ -100,13 +101,13 @@ export interface FunctionNodeData extends LogicNode, BaseNodeData {
 // Command node data types
 export interface WriteSetpointNodeData extends CommandNode, BaseNodeData {
   category: NodeCategory.COMMAND
-  type: 'write-setpoint'
+  type: NodeType.WRITE_SETPOINT
 }
 
 // Control flow node data types
 export interface SwitchNodeData extends ControlFlowNode, BaseNodeData {
   category: NodeCategory.CONTROL_FLOW
-  type: 'switch'
+  type: NodeType.SWITCH
   condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
   threshold: number
   activeLabel: string
@@ -115,7 +116,7 @@ export interface SwitchNodeData extends ControlFlowNode, BaseNodeData {
 
 export interface TimerNodeData extends ControlFlowNode, BaseNodeData {
   category: NodeCategory.CONTROL_FLOW
-  type: 'timer'
+  type: NodeType.TIMER
   metadata: TimerNodeMetadata
   // Updating ui state, without triggering a react flow update. Used for timer node.
   stateDidChange?: (stateData: { running: boolean; tickCount: number }) => void
@@ -123,7 +124,7 @@ export interface TimerNodeData extends ControlFlowNode, BaseNodeData {
 
 export interface ScheduleNodeData extends ControlFlowNode, BaseNodeData {
   category: NodeCategory.CONTROL_FLOW
-  type: 'schedule'
+  type: NodeType.SCHEDULE
   metadata: ScheduleNodeMetadata
   // Single state object callback
   stateDidChange?: (state: ScheduleState) => void

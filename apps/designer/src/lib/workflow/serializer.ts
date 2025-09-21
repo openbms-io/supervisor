@@ -5,6 +5,7 @@ import {
   WorkflowConfigSchema as StrictWorkflowConfigSchema,
   VersionedWorkflowConfigSchema as StrictVersionedWorkflowConfigSchema,
 } from '@/lib/workflow/config-schema'
+import type { ValidatedWorkflowConfig } from '@/lib/workflow/config-schema'
 import {
   serializeNodeData,
   deserializeNodeData,
@@ -61,10 +62,7 @@ export interface ValidationResult {
   readonly errors: string[]
 }
 
-export type VersionedWorkflowConfig = {
-  readonly schema_info: Version & { readonly schema_name: string }
-  readonly data: WorkflowConfig
-}
+export type VersionedWorkflowConfig = ValidatedWorkflowConfig
 
 // Use strict schemas for validation
 
@@ -109,7 +107,7 @@ export function serializeWorkflow({
   return {
     schema_info: versionMetadata,
     data: workflowConfig,
-  }
+  } as VersionedWorkflowConfig
 }
 
 export function deserializeWorkflow({
