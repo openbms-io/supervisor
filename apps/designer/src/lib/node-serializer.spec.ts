@@ -1,6 +1,7 @@
 import { serializeNodeData, deserializeNodeData } from './node-serializer'
 import { CalculationNode } from './data-nodes/calculation-node'
 import { createNodeFactory } from './workflow/serializer'
+import type { DataNode } from '@/types/infrastructure'
 
 // Mock UUID to avoid Jest issues
 jest.mock('uuid', () => ({
@@ -127,9 +128,9 @@ describe('NodeSerializer', () => {
       })
 
       expect(result).toBeDefined()
-      expect((result as any).id).toBe('calc-123')
-      expect((result as any).label).toBe('Test Calculation')
-      expect((result as any).type).toBe('calculation')
+      expect((result as DataNode).id).toBe('calc-123')
+      expect((result as DataNode).label).toBe('Test Calculation')
+      expect((result as DataNode).type).toBe('calculation')
     })
   })
 
@@ -175,10 +176,12 @@ describe('NodeSerializer', () => {
       })
 
       // Verify the roundtrip worked
-      expect((deserialized as any).id).toBe('roundtrip-456')
-      expect((deserialized as any).label).toBe('Roundtrip Test')
-      expect((deserialized as any).type).toBe('calculation')
-      expect((deserialized as any).metadata.operation).toBe('divide')
+      expect((deserialized as CalculationNode).id).toBe('roundtrip-456')
+      expect((deserialized as CalculationNode).label).toBe('Roundtrip Test')
+      expect((deserialized as CalculationNode).type).toBe('calculation')
+      expect((deserialized as CalculationNode).metadata.operation).toBe(
+        'divide'
+      )
     })
 
     it('should prevent the original "aH" nodeType issue', () => {
@@ -214,7 +217,7 @@ describe('NodeSerializer', () => {
       })
 
       expect(result).toBeDefined()
-      expect((result as any).type).toBe('calculation')
+      expect((result as DataNode).type).toBe('calculation')
     })
   })
 })
