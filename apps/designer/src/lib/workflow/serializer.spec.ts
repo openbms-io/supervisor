@@ -84,7 +84,7 @@ describe('WorkflowSerializer', () => {
         type: 'logic.constant',
         position: { x: 100, y: 100 },
         data: {
-          nodeType: 'ConstantNode',
+          nodeType: 'constant',
           serializedData: {
             id: 'test-constant-node-1',
             type: 'constant',

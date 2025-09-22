@@ -1,6 +1,7 @@
 import { CalculationNode, CalculationOperation } from './calculation-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 
 // Mock UUID to avoid Jest issues
 jest.mock('uuid', () => ({
@@ -20,7 +21,7 @@ describe('CalculationNode', () => {
       const node = new CalculationNode('Test Calc', 'add', 'explicit-test-id')
 
       expect(node.id).toBe('explicit-test-id')
-      expect(node.type).toBe('calculation')
+      expect(node.type).toBe(NodeType.CALCULATION)
       expect(node.label).toBe('Test Calc')
       expect(node.metadata.operation).toBe('add')
     })
@@ -30,7 +31,7 @@ describe('CalculationNode', () => {
       const node = new CalculationNode('Test Calc', 'multiply', customId)
 
       expect(node.id).toBe(customId)
-      expect(node.type).toBe('calculation')
+      expect(node.type).toBe(NodeType.CALCULATION)
       expect(node.label).toBe('Test Calc')
       expect(node.metadata.operation).toBe('multiply')
     })
@@ -48,7 +49,7 @@ describe('CalculationNode', () => {
 
       expect(serialized).toEqual({
         id: 'test-id-456',
-        type: 'calculation',
+        type: NodeType.CALCULATION,
         category: 'logic',
         label: 'My Calculator',
         metadata: { operation: 'subtract' },
@@ -61,10 +62,10 @@ describe('CalculationNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'CalculationNode',
+        nodeType: NodeType.CALCULATION,
         serializedData: {
           id: 'div-node',
-          type: 'calculation',
+          type: NodeType.CALCULATION,
           category: 'logic',
           label: 'Divider',
           metadata: { operation: 'divide' },
@@ -103,14 +104,14 @@ describe('CalculationNode', () => {
     it('should deserialize correctly via nodeFactory', () => {
       const serializedData = {
         id: 'deserialized-calc',
-        type: 'calculation',
+        type: NodeType.CALCULATION,
         category: 'logic',
         label: 'Restored Calculator',
         metadata: { operation: 'multiply' },
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'CalculationNode') {
+        if (nodeType === NodeType.CALCULATION) {
           const metadata = data.metadata as { operation: CalculationOperation }
           return factory.createCalculationNode({
             label: data.label as string,
@@ -122,7 +123,7 @@ describe('CalculationNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'CalculationNode',
+        nodeType: NodeType.CALCULATION,
         serializedData,
         nodeFactory,
       }) as CalculationNode
@@ -130,7 +131,7 @@ describe('CalculationNode', () => {
       expect(result.id).toBe('deserialized-calc')
       expect(result.label).toBe('Restored Calculator')
       expect(result.metadata.operation).toBe('multiply')
-      expect(result.type).toBe('calculation')
+      expect(result.type).toBe(NodeType.CALCULATION)
     })
   })
 
@@ -148,7 +149,7 @@ describe('CalculationNode', () => {
 
       // Create nodeFactory
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'CalculationNode') {
+        if (nodeType === NodeType.CALCULATION) {
           const metadata = data.metadata as { operation: CalculationOperation }
           return factory.createCalculationNode({
             label: data.label as string,

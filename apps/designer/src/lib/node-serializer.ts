@@ -9,9 +9,11 @@ export interface SerializedNodeData {
 
 export function serializeNodeData(node: unknown): SerializedNodeData {
   if (isSerializableNode(node)) {
+    const serialized = node.toSerializable()
+
     return {
-      nodeType: (node as SerializableNode).constructor.name,
-      serializedData: node.toSerializable(),
+      nodeType: serialized.type as string,
+      serializedData: serialized,
     }
   }
 

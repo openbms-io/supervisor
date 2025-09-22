@@ -1,6 +1,7 @@
 import { AnalogInputNode } from './analog-input-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 import { BacnetConfig } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
@@ -121,7 +122,7 @@ describe('AnalogInputNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'AnalogInputNode',
+        nodeType: NodeType.ANALOG_INPUT,
         serializedData: {
           id: 'analog-input-node',
           type: 'analog-input',
@@ -204,7 +205,7 @@ describe('AnalogInputNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'AnalogInputNode') {
+        if (nodeType === NodeType.ANALOG_INPUT) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'analog-input'
@@ -232,7 +233,7 @@ describe('AnalogInputNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'AnalogInputNode',
+        nodeType: NodeType.ANALOG_INPUT,
         serializedData,
         nodeFactory,
       }) as AnalogInputNode
@@ -253,7 +254,7 @@ describe('AnalogInputNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'AnalogInputNode') {
+        if (nodeType === NodeType.ANALOG_INPUT) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'analog-input'

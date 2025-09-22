@@ -1,6 +1,7 @@
 import { WriteSetpointNode } from './write-setpoint-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 
 // Mock UUID to avoid Jest issues
 jest.mock('uuid', () => ({
@@ -75,7 +76,7 @@ describe('WriteSetpointNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'WriteSetpointNode',
+        nodeType: NodeType.WRITE_SETPOINT,
         serializedData: {
           id: 'setpoint-node',
           type: 'write-setpoint',
@@ -124,7 +125,7 @@ describe('WriteSetpointNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'WriteSetpointNode') {
+        if (nodeType === NodeType.WRITE_SETPOINT) {
           const metadata = data.metadata as { priority: number }
           return factory.createWriteSetpointNode({
             label: data.label as string,
@@ -136,7 +137,7 @@ describe('WriteSetpointNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'WriteSetpointNode',
+        nodeType: NodeType.WRITE_SETPOINT,
         serializedData,
         nodeFactory,
       }) as WriteSetpointNode
@@ -158,7 +159,7 @@ describe('WriteSetpointNode', () => {
 
       // Create nodeFactory
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'WriteSetpointNode') {
+        if (nodeType === NodeType.WRITE_SETPOINT) {
           const metadata = data.metadata as { priority: number }
           return factory.createWriteSetpointNode({
             label: data.label as string,

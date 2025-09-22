@@ -5,6 +5,7 @@ import {
 } from './function-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)),
@@ -128,7 +129,7 @@ describe('FunctionNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'FunctionNode',
+        nodeType: NodeType.FUNCTION,
         serializedData: {
           id: 'function-node',
           type: 'function',
@@ -197,7 +198,7 @@ describe('FunctionNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'FunctionNode') {
+        if (nodeType === NodeType.FUNCTION) {
           const metadata = data.metadata as FunctionNodeMetadata
           return factory.createFunctionNode({
             label: data.label as string,
@@ -211,7 +212,7 @@ describe('FunctionNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'FunctionNode',
+        nodeType: NodeType.FUNCTION,
         serializedData,
         nodeFactory,
       }) as FunctionNode
@@ -248,7 +249,7 @@ describe('FunctionNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'FunctionNode') {
+        if (nodeType === NodeType.FUNCTION) {
           const metadata = data.metadata as FunctionNodeMetadata
           return factory.createFunctionNode({
             label: data.label as string,

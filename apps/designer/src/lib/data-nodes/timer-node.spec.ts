@@ -1,6 +1,7 @@
 import { TimerNode } from './timer-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)),
@@ -67,7 +68,7 @@ describe('TimerNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'TimerNode',
+        nodeType: NodeType.TIMER,
         serializedData: {
           id: 'timer-node',
           type: 'timer',
@@ -117,7 +118,7 @@ describe('TimerNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'TimerNode') {
+        if (nodeType === NodeType.TIMER) {
           const metadata = data.metadata as { duration: number }
           return factory.createTimerNode({
             label: data.label as string,
@@ -129,7 +130,7 @@ describe('TimerNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'TimerNode',
+        nodeType: NodeType.TIMER,
         serializedData,
         nodeFactory,
       }) as TimerNode
@@ -149,7 +150,7 @@ describe('TimerNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'TimerNode') {
+        if (nodeType === NodeType.TIMER) {
           const metadata = data.metadata as { duration: number }
           return factory.createTimerNode({
             label: data.label as string,
