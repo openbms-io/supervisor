@@ -1,6 +1,7 @@
 import { ScheduleNode, DayOfWeek, ScheduleNodeMetadata } from './schedule-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)),
@@ -114,7 +115,7 @@ describe('ScheduleNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'ScheduleNode',
+        nodeType: NodeType.SCHEDULE,
         serializedData: {
           id: 'schedule-node',
           type: 'schedule',
@@ -178,7 +179,7 @@ describe('ScheduleNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'ScheduleNode') {
+        if (nodeType === NodeType.SCHEDULE) {
           const metadata = data.metadata as ScheduleNodeMetadata
           return factory.createScheduleNode({
             label: data.label as string,
@@ -192,7 +193,7 @@ describe('ScheduleNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'ScheduleNode',
+        nodeType: NodeType.SCHEDULE,
         serializedData,
         nodeFactory,
       }) as ScheduleNode
@@ -220,7 +221,7 @@ describe('ScheduleNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'ScheduleNode') {
+        if (nodeType === NodeType.SCHEDULE) {
           const metadata = data.metadata as ScheduleNodeMetadata
           return factory.createScheduleNode({
             label: data.label as string,

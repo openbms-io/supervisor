@@ -16,7 +16,7 @@ import {
   createNodeFactory,
   type WorkflowMetadata,
   type VersionedWorkflowConfig,
-} from './workflow-serializer'
+} from './workflow/serializer'
 
 describe('WorkflowSerializer', () => {
   // Create real ConstantNode instances with specific IDs for predictable testing
@@ -84,7 +84,7 @@ describe('WorkflowSerializer', () => {
         type: 'logic.constant',
         position: { x: 100, y: 100 },
         data: {
-          nodeType: 'ConstantNode',
+          nodeType: 'constant',
           serializedData: {
             id: 'test-constant-node-1',
             type: 'constant',

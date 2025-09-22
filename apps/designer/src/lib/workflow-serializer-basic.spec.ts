@@ -44,7 +44,7 @@ describe('WorkflowSerializer Basic Functionality', () => {
 
       expect(mockSerializableNode.toSerializable).toHaveBeenCalled()
       expect(result).toEqual({
-        nodeType: 'Object', // Since we're using a plain object, constructor.name will be 'Object'
+        nodeType: 'number', // Now using serialized.type instead of constructor.name
         serializedData: { value: 42, type: 'number' },
       })
     })

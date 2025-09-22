@@ -1,6 +1,7 @@
 import { SwitchNode } from './switch-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)),
@@ -103,7 +104,7 @@ describe('SwitchNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'SwitchNode',
+        nodeType: NodeType.SWITCH,
         serializedData: {
           id: 'switch-node',
           type: 'switch',
@@ -170,7 +171,7 @@ describe('SwitchNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'SwitchNode') {
+        if (nodeType === NodeType.SWITCH) {
           const metadata = data.metadata as {
             condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
             threshold: number
@@ -190,7 +191,7 @@ describe('SwitchNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'SwitchNode',
+        nodeType: NodeType.SWITCH,
         serializedData,
         nodeFactory,
       }) as SwitchNode
@@ -219,7 +220,7 @@ describe('SwitchNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'SwitchNode') {
+        if (nodeType === NodeType.SWITCH) {
           const metadata = data.metadata as {
             condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte'
             threshold: number

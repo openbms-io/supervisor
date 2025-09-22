@@ -1,6 +1,7 @@
 import { MultistateInputNode } from './multistate-input-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 import { BacnetConfig } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
@@ -128,7 +129,7 @@ describe('MultistateInputNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'MultistateInputNode',
+        nodeType: NodeType.MULTISTATE_INPUT,
         serializedData: {
           id: 'multistate-input-node',
           type: 'multistate-input',
@@ -214,7 +215,7 @@ describe('MultistateInputNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'MultistateInputNode') {
+        if (nodeType === NodeType.MULTISTATE_INPUT) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'multistate-input'
@@ -242,7 +243,7 @@ describe('MultistateInputNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'MultistateInputNode',
+        nodeType: NodeType.MULTISTATE_INPUT,
         serializedData,
         nodeFactory,
       }) as MultistateInputNode
@@ -266,7 +267,7 @@ describe('MultistateInputNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'MultistateInputNode') {
+        if (nodeType === NodeType.MULTISTATE_INPUT) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'multistate-input'

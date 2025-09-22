@@ -1,6 +1,7 @@
 import { ConstantNode, ConstantNodeMetadata } from './constant-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)),
@@ -83,7 +84,7 @@ describe('ConstantNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'ConstantNode',
+        nodeType: NodeType.CONSTANT,
         serializedData: {
           id: 'constant-node',
           type: 'constant',
@@ -136,7 +137,7 @@ describe('ConstantNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'ConstantNode') {
+        if (nodeType === NodeType.CONSTANT) {
           const metadata = data.metadata as ConstantNodeMetadata
           return factory.createConstantNode({
             label: data.label as string,
@@ -149,7 +150,7 @@ describe('ConstantNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'ConstantNode',
+        nodeType: NodeType.CONSTANT,
         serializedData,
         nodeFactory,
       }) as ConstantNode
@@ -174,7 +175,7 @@ describe('ConstantNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'ConstantNode') {
+        if (nodeType === NodeType.CONSTANT) {
           const metadata = data.metadata as ConstantNodeMetadata
           return factory.createConstantNode({
             label: data.label as string,

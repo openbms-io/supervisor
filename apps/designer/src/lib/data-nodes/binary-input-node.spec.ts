@@ -1,6 +1,7 @@
 import { BinaryInputNode } from './binary-input-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 import { BacnetConfig } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
@@ -116,7 +117,7 @@ describe('BinaryInputNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'BinaryInputNode',
+        nodeType: NodeType.BINARY_INPUT,
         serializedData: {
           id: 'binary-input-node',
           type: 'binary-input',
@@ -198,7 +199,7 @@ describe('BinaryInputNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'BinaryInputNode') {
+        if (nodeType === NodeType.BINARY_INPUT) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'binary-input'
@@ -226,7 +227,7 @@ describe('BinaryInputNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'BinaryInputNode',
+        nodeType: NodeType.BINARY_INPUT,
         serializedData,
         nodeFactory,
       }) as BinaryInputNode
@@ -247,7 +248,7 @@ describe('BinaryInputNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'BinaryInputNode') {
+        if (nodeType === NodeType.BINARY_INPUT) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'binary-input'

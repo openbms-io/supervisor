@@ -1,6 +1,7 @@
 import { MultistateValueNode } from './multistate-value-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 import { BacnetConfig } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
@@ -128,7 +129,7 @@ describe('MultistateValueNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'MultistateValueNode',
+        nodeType: NodeType.MULTISTATE_VALUE,
         serializedData: {
           id: 'multistate-value-node',
           type: 'multistate-value',
@@ -214,7 +215,7 @@ describe('MultistateValueNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'MultistateValueNode') {
+        if (nodeType === NodeType.MULTISTATE_VALUE) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'multistate-value'
@@ -242,7 +243,7 @@ describe('MultistateValueNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'MultistateValueNode',
+        nodeType: NodeType.MULTISTATE_VALUE,
         serializedData,
         nodeFactory,
       }) as MultistateValueNode
@@ -266,7 +267,7 @@ describe('MultistateValueNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'MultistateValueNode') {
+        if (nodeType === NodeType.MULTISTATE_VALUE) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'multistate-value'

@@ -1,6 +1,7 @@
 import { MultistateOutputNode } from './multistate-output-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 import { BacnetConfig } from '@/types/infrastructure'
 
 jest.mock('uuid', () => ({
@@ -134,7 +135,7 @@ describe('MultistateOutputNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'MultistateOutputNode',
+        nodeType: NodeType.MULTISTATE_OUTPUT,
         serializedData: {
           id: 'multistate-output-node',
           type: 'multistate-output',
@@ -220,7 +221,7 @@ describe('MultistateOutputNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'MultistateOutputNode') {
+        if (nodeType === NodeType.MULTISTATE_OUTPUT) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'multistate-output'
@@ -248,7 +249,7 @@ describe('MultistateOutputNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'MultistateOutputNode',
+        nodeType: NodeType.MULTISTATE_OUTPUT,
         serializedData,
         nodeFactory,
       }) as MultistateOutputNode
@@ -272,7 +273,7 @@ describe('MultistateOutputNode', () => {
       const serialized = serializeNodeData(original)
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'MultistateOutputNode') {
+        if (nodeType === NodeType.MULTISTATE_OUTPUT) {
           const metadata = data.metadata as {
             pointId: string
             objectType: 'multistate-output'

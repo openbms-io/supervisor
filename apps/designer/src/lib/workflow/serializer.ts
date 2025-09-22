@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { Node, Edge } from '@xyflow/react'
-import { getVersionMetadata, type Version } from 'bms-schemas'
+import { getVersionMetadata } from 'bms-schemas'
 import {
   WorkflowConfigSchema as StrictWorkflowConfigSchema,
   VersionedWorkflowConfigSchema as StrictVersionedWorkflowConfigSchema,

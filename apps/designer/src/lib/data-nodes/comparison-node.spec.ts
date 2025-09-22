@@ -1,6 +1,7 @@
 import { ComparisonNode, ComparisonOperation } from './comparison-node'
 import { serializeNodeData, deserializeNodeData } from '@/lib/node-serializer'
 import factory from './factory'
+import { NodeType } from '@/types/infrastructure'
 
 // Mock UUID to avoid Jest issues
 jest.mock('uuid', () => ({
@@ -70,7 +71,7 @@ describe('ComparisonNode', () => {
       const result = serializeNodeData(node)
 
       expect(result).toEqual({
-        nodeType: 'ComparisonNode',
+        nodeType: NodeType.COMPARISON,
         serializedData: {
           id: 'gt-node',
           type: 'comparison',
@@ -119,7 +120,7 @@ describe('ComparisonNode', () => {
       }
 
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'ComparisonNode') {
+        if (nodeType === NodeType.COMPARISON) {
           const metadata = data.metadata as { operation: ComparisonOperation }
           return factory.createComparisonNode({
             label: data.label as string,
@@ -131,7 +132,7 @@ describe('ComparisonNode', () => {
       }
 
       const result = deserializeNodeData({
-        nodeType: 'ComparisonNode',
+        nodeType: NodeType.COMPARISON,
         serializedData,
         nodeFactory,
       }) as ComparisonNode
@@ -157,7 +158,7 @@ describe('ComparisonNode', () => {
 
       // Create nodeFactory
       const nodeFactory = (nodeType: string, data: Record<string, unknown>) => {
-        if (nodeType === 'ComparisonNode') {
+        if (nodeType === NodeType.COMPARISON) {
           const metadata = data.metadata as { operation: ComparisonOperation }
           return factory.createComparisonNode({
             label: data.label as string,
