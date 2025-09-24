@@ -319,3 +319,4 @@ npm run test:integration
 - **Coding Conventions** - Follow coding conventions listed in docs/coding-standards.md
 - **Bug Fix** - Always focus on finding and assessing root cause first. Present your plan, before provising a fix with options.
 - **SOLID Principle** - Follow SOLID principle and make the code DRY.
+- **YAGNI Principle** - YAGNI (You Aren't Gonna Need It) - Don't add complexity until needed
