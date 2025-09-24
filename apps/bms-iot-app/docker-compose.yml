@@ -1,0 +1,38 @@
+version: '2.4'
+
+services:
+  bms-iot-app:
+    build: .
+    container_name: bms-iot-app
+    restart: unless-stopped
+
+    # Network configuration for BACnet
+    network_mode: host
+
+    # Volumes for persistent data
+    volumes:
+      - bms_data:/data
+
+    # Environment variables (optional)
+    environment:
+      - DOCKER_CONTAINER=true
+      - PYTHONUNBUFFERED=1
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "from src.config.paths import get_config_paths; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  bms_data:
+    driver: local

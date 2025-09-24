@@ -87,18 +87,17 @@
   - Function Node with JavaScript execution environment using QuickJS
   - QuickJS memory management and console function cleanup
 
-### 📋 Phase 7: Hybrid REST+MQTT BACnet Discovery & Monitoring (Planned)
+### 📋 Phase 7: Pure MQTT BACnet Discovery & Monitoring (In Progress)
 
-- **Status**: Not Started
-- **Target**: Oct 2025
+- **Status**: Planning Complete
 - **Planned Features**:
-  - Hybrid communication: REST API for control, MQTT for streaming telemetry
-  - Configuration deployment and device discovery via REST endpoints
-  - Real-time point value streaming and progress updates via MQTT
-  - Auto-discovery workflow: IP addresses → BACnet devices → object lists → polling
-  - SQLite storage for time-series point values with batch MQTT publishing
-  - Integration of existing bms-iot-app with FastAPI REST layer addition
-  - Multiple monitoring apps support via MQTT pub/sub for scalable data consumption
+  - **Pure MQTT Architecture**: Direct browser-to-IoT communication via WebSocket
+  - **Repository Integration**: Extract bms-iot-app and bms-bacnet-simulator to public repos
+  - **Local MQTT Broker**: NanoMQ/Mosquitto with WebSocket support for browser clients
+  - **Request/Response Commands**: get_config command for BACnet discovery via MQTT
+  - **Device Identity Management**: Auto-generation of org_id/site_id/iot_device_id hierarchy
+  - **Live Value Display**: Real-time point values in Designer BACnet nodes
+  - **Progressive Cloud**: Optional MQTT bridge for future cloud monitoring
 
 ### Phase 8: Integrating IOT with designer app.
 

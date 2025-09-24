@@ -4,15 +4,15 @@
 
 Visual programming platform for building management systems with IoT device integration.
 
-**Architecture Flow**: Designer (Visual Programming) → Schema (Communication Protocol) → IoT Supervisor (Execution Engine)
+**Architecture Flow**: Designer (Visual Programming) → Schema (Communication Protocol) → BMS IoT App (Execution Engine)
 
 ## Schema Package Purpose
 
-The `bms-schemas` package defines the data format used to send visual programming configurations from the Designer app to the IoT Supervisor for execution on IoT devices.
+The `bms-schemas` package defines the data format used to send visual programming configurations from the Designer app to the BMS IoT App for execution on IoT devices.
 
 - **Designer App**: Creates visual flow configurations using drag-and-drop interface
 - **Schema Package**: Validates and transforms configurations (Zod → JSON Schema → Pydantic)
-- **IoT Supervisor**: Receives validated configurations and executes the control logic
+- **BMS IoT App**: Receives validated configurations and executes the control logic with BACnet/MQTT integration
 
 ## Development Philosophy
 
@@ -69,24 +69,24 @@ pnpm test
 pnpm run generate
 ```
 
-#### API Development (TDD)
+#### BMS IoT App Development (TDD)
 
 ```bash
-# 1. Write failing API test
-cd apps/iot-supervisor-app
+# 1. Write failing test
+cd apps/bms-iot-app
 # Edit test_*.py file
 
 # 2. Run test (should fail)
 pytest tests/
 
-# 3. Implement endpoint
-# Edit src/main.py
+# 3. Implement feature
+# Edit src/ files
 
 # 4. Verify test passes
 pytest tests/
 
 # 5. Test integration
-iot-supervisor-app start-serve
+pnpm bms-iot:run
 ```
 
 #### Component Development (TDD)
@@ -130,13 +130,13 @@ pnpm run generate               # Generate all outputs
 pnpm run test:integration       # E2E schema test
 ```
 
-### IoT Supervisor Setup
+### BMS IoT App Setup
 
 ```bash
-cd apps/iot-supervisor-app
-./install.sh                   # One-time setup
-source .venv/bin/activate      # Activate venv
-iot-supervisor-app health      # Test CLI
+# Root-level commands:
+pnpm bms-iot:help                 # Show available commands
+pnpm bms-iot:run                  # Run main application
+pnpm bms-iot:test                 # Run comprehensive tests
 ```
 
 ### Designer App
@@ -159,14 +159,14 @@ pnpm test                       # React component tests
 - **Zustand** for state management
 - **Jest + React Testing Library** for testing
 
-### Backend (IoT Supervisor)
+### Backend (BMS IoT App)
 
-- **FastAPI** with automatic OpenAPI docs
+- **BACnet libraries** (BAC0, bacpypes) for IoT device communication
+- **MQTT client** (paho-mqtt) for pub/sub messaging
 - **Typer** for CLI interface
-- **uvicorn** ASGI server with hot reload
-- **BACnet libraries** (BAC0, bacpypes) for IoT integration
-- **pytest** for testing
-- **Virtual environment** for isolation
+- **Pydantic** for data validation
+- **SQLModel** for database operations
+- **pytest** with extensive test coverage (800+ tests)
 
 ### Schema Pipeline
 
@@ -184,13 +184,14 @@ bms-supervisor-controller/
 ├── docs/coding-standards.md   # Development standards
 ├── apps/
 │   ├── designer/             # Visual programming interface
-│   └── iot-supervisor-app/   # Execution engine
+│   └── bms-iot-app/          # BACnet/MQTT execution engine
 └── packages/
-    └── bms-schemas/          # Integration schemas
-        ├── src/              # Source Zod schemas
-        ├── typescript/       # Generated TS (for Designer)
-        ├── python/          # Generated Python (for IoT Supervisor)
-        └── json-schema/     # Intermediate format
+    ├── bms-schemas/          # Integration schemas
+    │   ├── src/              # Source Zod schemas
+    │   ├── typescript/       # Generated TS (for Designer)
+    │   ├── python/          # Generated Python (for BMS IoT App)
+    │   └── json-schema/     # Intermediate format
+    └── mqtt_topics/          # MQTT topic management (Python + TypeScript)
 ```
 
 ## Common Development Tasks
@@ -209,8 +210,8 @@ cd packages/bms-schemas
 pnpm run generate
 
 # 4. Test integration in both apps
-cd ../../apps/designer && npm run dev
-cd ../iot-supervisor-app && iot-supervisor-app start-serve
+pnpm --filter designer run dev
+pnpm bms-iot:run
 ```
 
 ### Adding New UI Components (shadcn/ui)
@@ -262,23 +263,22 @@ ls packages/bms-schemas/typescript/
 pnpm run schema:generate
 ```
 
-#### IoT Supervisor Import Issues
+#### BMS IoT App Import Issues
 
 ```bash
-cd apps/iot-supervisor-app
-source .venv/bin/activate
-python -c "from python.flow_node import FlowNode; print('Import OK')"
+pnpm bms-iot:help                 # Test CLI imports
+pnpm bms-iot:test                 # Run import tests
 ```
 
 ## Integration Points
 
-### Designer → IoT Supervisor
+### Designer → BMS IoT App
 
 1. **Designer** creates FlowNode configurations
 2. **Schema** validates and serializes to JSON
-3. **API call** sends JSON to IoT Supervisor `/api/config/deploy`
-4. **IoT Supervisor** deserializes using Pydantic models
-5. **Execution engine** runs the configuration
+3. **MQTT message** sends JSON configuration to BMS IoT App
+4. **BMS IoT App** deserializes using Pydantic models
+5. **BACnet execution engine** runs the configuration on IoT devices
 
 ### Testing Integration
 
@@ -319,3 +319,4 @@ npm run test:integration
 - **Coding Conventions** - Follow coding conventions listed in docs/coding-standards.md
 - **Bug Fix** - Always focus on finding and assessing root cause first. Present your plan, before provising a fix with options.
 - **SOLID Principle** - Follow SOLID principle and make the code DRY.
+- **YAGNI Principle** - YAGNI (You Aren't Gonna Need It) - Don't add complexity until needed

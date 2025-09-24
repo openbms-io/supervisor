@@ -1,0 +1,36 @@
+{
+  "command": {
+    "get_config": {
+      "request": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/get_config/request",
+      "response": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/get_config/response"
+    },
+    "reboot": {
+      "request": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/reboot/request",
+      "response": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/reboot/response"
+    },
+    "set_value_to_point": {
+      "request": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/set_value_to_point/request",
+      "response": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/set_value_to_point/response"
+    },
+    "start_monitoring": {
+      "request": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/start_monitoring/request",
+      "response": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/start_monitoring/response"
+    },
+    "stop_monitoring": {
+      "request": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/stop_monitoring/request",
+      "response": "iot/global/{organization_id}/{site_id}/{iot_device_id}/command/stop_monitoring/response"
+    }
+  },
+  "status": {
+    "update": "iot/global/{organization_id}/{site_id}/{iot_device_id}/status/update",
+    "heartbeat": "iot/global/{organization_id}/{site_id}/{iot_device_id}/status/heartbeat"
+  },
+  "data": {
+    "point": "iot/global/{organization_id}/{site_id}/{iot_device_id}/{controller_device_id}/{iot_device_point_id}",
+    "point_bulk": "iot/global/{organization_id}/{site_id}/{iot_device_id}/bulk"
+  },
+  "alert_management": {
+    "acknowledge": "iot/global/{organization_id}/{site_id}/alert-management/acknowledge",
+    "resolve": "iot/global/{organization_id}/{site_id}/alert-management/resolve"
+  }
+}
