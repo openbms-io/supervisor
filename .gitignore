@@ -11,6 +11,8 @@ dist/
 build/
 .cache/
 .parcel-cache/
+bms_bacnet.db
+logs/*.log
 
 # Next.js specific
 .next/

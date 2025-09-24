@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/License-AGPL-blue.svg)](docs/LICENSE.md)
 [![Discord](https://img.shields.io/discord/1417899927304016146)](https://discord.gg/SUkvbwkDGz)
 
-Visual programming platform for building management systems with IoT device integration. 
+Visual programming platform for building management systems with IoT device integration.
 [Live Preview](https://supervisor-designer.vercel.app/projects)
 
 ## 📊 Project Status
@@ -33,7 +33,7 @@ See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed contribution guidelines
 This is a **PNPM monorepo** with two main applications and a shared schema package:
 
 - **🎨 Designer App** (`apps/designer/`) - Next.js 15.5 visual programming interface
-- **🔧 IoT Supervisor App** (`apps/iot-supervisor-app/`) - FastAPI runtime for IoT devices
+- **🔧 BMS IoT App** (`apps/bms-iot-app/`) - BACnet/MQTT runtime for IoT devices
 - **📋 BMS Schemas** (`packages/bms-schemas/`) - Shared schema validation (Zod → JSON Schema → Pydantic)
 
 ## 🚀 Quick Start
@@ -62,7 +62,7 @@ pnpm run dev
 
 # Or start individually:
 pnpm --filter designer run dev          # Designer on http://localhost:3000
-pnpm --filter iot-supervisor-app start-serve  # IoT Supervisor on http://localhost:8080
+pnpm bms-iot:run                        # BMS IoT App
 ```
 
 ## 📋 Schema Management
@@ -157,36 +157,22 @@ npm run test                    # Jest + React Testing Library
   - Keep API routes on the Node.js runtime (do not set `export const runtime = 'edge'`).
   - The first migration seeds two example projects; you’ll see them after running migrations.
 
-### IoT Supervisor App Commands
+### BMS IoT App Commands
 
 ```bash
-cd apps/iot-supervisor-app
+# Root-level commands (run from repository root):
+pnpm bms-iot:help                        # Show all available commands
+pnpm bms-iot:run                         # Start main application
+pnpm bms-iot:test                        # Run comprehensive test suite (800+ tests)
+pnpm bms-iot:test:verbose                # Verbose test output
+pnpm bms-iot:mqtt --help                 # MQTT commands
+pnpm bms-iot:config --help               # Configuration management
 
-# 🔧 Initial Setup (run once)
-./install.sh                       # Creates venv, installs dependencies
-source .venv/bin/activate          # For bash/zsh
-# OR for fish shell:
-source .venv/bin/activate.fish     # For fish shell
-
-# CLI Commands (after installation):
-iot-supervisor-app start-serve      # Start FastAPI server only
-iot-supervisor-app start-execution  # Start execution engine only
-iot-supervisor-app start-all        # Start both server and execution
-iot-supervisor-app health           # Health check
-iot-supervisor-app version          # Show version info
-
-# Alternative: Direct Python commands (no venv needed):
-python src/cli.py start-serve       # Start FastAPI server only
-python src/cli.py start-execution   # Start execution engine only
-python src/cli.py start-all         # Start both server and execution
-python src/cli.py health            # Health check
-python src/cli.py version           # Show version info
-
-# Development & Testing
-pytest tests/                   # Run tests
-black .                         # Format code
-ruff check .                    # Lint code
-ruff check . --fix             # Auto-fix linting issues
+# Or run directly from app directory:
+cd apps/bms-iot-app
+PYTHONPATH=../.. python -m src.cli --help           # Show all available commands
+PYTHONPATH=../.. python -m src.cli run-main         # Start main application
+PYTHONPATH=../.. python -m src.cli set-credentials  # Set authentication
 ```
 
 ### BMS Schemas Commands
@@ -260,33 +246,25 @@ npm run dev                    # http://localhost:3000
 # - Should show green "✅ Valid" status
 ```
 
-### 3. IoT Supervisor Verification
+### 3. BMS IoT App Verification
 
 ```bash
-# 1. Setup IoT Supervisor (if not already done)
-cd apps/iot-supervisor-app
-./install.sh                      # Creates venv and installs dependencies
-source .venv/bin/activate         # Or .venv/bin/activate.fish for fish shell
+# 1. Test BMS IoT App CLI
+pnpm bms-iot:help
 
-# 2. Start IoT Supervisor
-iot-supervisor-app start-serve --port 8081
+# 2. Run comprehensive tests
+pnpm bms-iot:test:verbose
 
-# 3. Test API endpoints
-curl http://localhost:8081/health
-curl http://localhost:8081/api/schema/node-types
-
-# 4. Test schema validation
-curl -X POST http://localhost:8081/api/config/deploy \
-  -H "Content-Type: application/json" \
-  -d '[{"id":"test","type":"input.sensor","position":{"x":100,"y":200},"data":{}}]'
+# 3. Test main functionality (requires MQTT configuration)
+pnpm bms-iot:run
 ```
 
 ### 4. End-to-End Integration
 
 ```bash
 # 1. Start both apps
-# Terminal 1: apps/designer - npm run dev (port 3000)
-# Terminal 2: apps/iot-supervisor-app - source .venv/bin/activate && iot-supervisor-app start-serve --port 8081
+# Terminal 1: pnpm --filter designer run dev (port 3000)
+# Terminal 2: pnpm bms-iot:run
 
 # 2. Run integration test
 cd packages/bms-schemas
@@ -302,7 +280,7 @@ bms-supervisor-controller/
 ├── .npmrc                    # PNPM configuration
 ├── apps/
 │   ├── designer/             # Next.js visual programming interface
-│   ├── iot-supervisor-app/   # FastAPI IoT runtime
+│   ├── bms-iot-app/          # BACnet/MQTT IoT runtime
 │   └── simulator/            # (Empty - reserved for future)
 └── packages/
     └── bms-schemas/          # Shared schema package
@@ -326,7 +304,7 @@ bms-supervisor-controller/
 ### Adding New Features
 
 1. **Designer changes**: Edit React components in `apps/designer/src/`
-2. **IoT Supervisor changes**: Edit FastAPI endpoints in `apps/iot-supervisor-app/`
+2. **BMS IoT App changes**: Edit Python modules in `apps/bms-iot-app/src/`
 3. **Schema changes**: Add/modify schemas in `packages/bms-schemas/src/`
 4. **Always run tests**: `pnpm run test` before committing
 
