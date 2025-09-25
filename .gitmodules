@@ -1,0 +1,3 @@
+[submodule "apps/bacnet-simulator"]
+	path = apps/bacnet-simulator
+	url = https://github.com/openbms-io/bacnet-simulator.git

@@ -47,6 +47,10 @@ This is a **PNPM monorepo** with two main applications and a shared schema packa
 ### Installation
 
 ```bash
+# Clone repository with submodules
+git clone --recurse-submodules https://github.com/openbms-io/supervisor.git
+cd bms-supervisor-controller
+
 # Install all dependencies
 pnpm install
 
@@ -281,7 +285,7 @@ bms-supervisor-controller/
 ├── apps/
 │   ├── designer/             # Next.js visual programming interface
 │   ├── bms-iot-app/          # BACnet/MQTT IoT runtime
-│   └── simulator/            # (Empty - reserved for future)
+│   └── bacnet-simulator/     # BACnet device simulator (git submodule)
 └── packages/
     └── bms-schemas/          # Shared schema package
         ├── src/              # Source Zod schemas (multi-file)
