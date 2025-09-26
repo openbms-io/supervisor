@@ -437,7 +437,7 @@ No major schema changes required. Existing tables support:
 - Working dev environment with reverse proxy and broker
 - bms-iot-app connected to local broker
 
-### Phase 7.2: MQTT Integration in bms-iot-app (May need review, since bms-iot-app has MQTT configuration setup already)
+### Phase 7.2: MQTT Integration in bms-iot-app (May need review, since bms-iot-app has MQTT configuration setup already) [Done]
 
 **Objective**: Ensure bms-iot-app works with internal MQTT broker
 
@@ -453,7 +453,7 @@ No major schema changes required. Existing tables support:
 - get_config command (MQTT) triggers discovery
 - Point data streaming to bulk topics; status/heartbeat retained
 
-### Phase 7.3: Device Identity Management
+### Phase 7.3: Device Identity Management [In progress]
 
 **Objective**: Generate and provision org_id/site_id/iot_device_id
 

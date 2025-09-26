@@ -23,7 +23,7 @@ from .network.mqtt_adapter import (
     get_current_config,
     publish_message,
 )
-from .network.mqtt_config import emqx_cloud_config_template
+from .network.mqtt_config import emqx_cloud_config_template, load_config
 
 from src.main import main as main_entrypoint
 from src.models.deployment_config import (
@@ -33,6 +33,8 @@ from src.models.deployment_config import (
     validate_deployment_config,
     has_valid_deployment_config,
 )
+from src.utils.id_generator import generate_org_id, generate_site_id, generate_device_id
+from src.utils.config_formatter import print_config_summary
 
 # Set up rich console for direct output
 console = Console()
@@ -394,24 +396,24 @@ def config_set(
 
 
 @config_app.command("show")
-def config_show():
-    """Show current deployment configuration."""
+def config_show() -> None:
+    """Show current deployment and MQTT configuration."""
 
-    async def _show_config():
+    async def _show_config() -> None:
         config = await get_current_deployment_config()
         if not config:
-            logger.warning("No deployment configuration found.")
-            logger.info("Run 'config set' to configure deployment settings.")
+            console.print()
+            console.print("[yellow]⚠ No deployment configuration found.[/yellow]")
+            console.print(
+                "Run [cyan]'config setup --interactive'[/cyan] to configure deployment settings."
+            )
+            console.print()
             return
 
-        logger.info("Current deployment configuration:")
-        logger.info(f"  Organization ID: {config.organization_id}")
-        logger.info(f"  Site ID: {config.site_id}")
-        logger.info(f"  Device ID: {config.device_id}")
-        if config.config_metadata:
-            logger.info(f"  Metadata: {config.config_metadata}")
-        logger.info(f"  Created: {config.created_at}")
-        logger.info(f"  Updated: {config.updated_at}")
+        mqtt_config_obj = load_config()
+        mqtt_config_dict = mqtt_config_obj.model_dump()
+
+        print_config_summary(console, config, mqtt_config_dict)
 
     asyncio.run(_show_config())
 
@@ -502,13 +504,37 @@ def config_setup(
         logger.info("")
 
         # Get organization ID
-        org_id = typer.prompt("Organization ID (should start with 'org_')")
+        org_id_input = typer.prompt(
+            "Organization ID (press Enter to auto-generate, or enter custom ID starting with 'org_')",
+            default="",
+        )
+        if not org_id_input.strip():
+            org_id = generate_org_id()
+            logger.info(f"Generated Organization ID: {org_id}")
+        else:
+            org_id = org_id_input.strip()
 
         # Get site ID
-        site_id = typer.prompt("Site ID (UUID format)")
+        site_id_input = typer.prompt(
+            "Site ID (press Enter to auto-generate UUID, or enter custom UUID)",
+            default="",
+        )
+        if not site_id_input.strip():
+            site_id = generate_site_id()
+            logger.info(f"Generated Site ID: {site_id}")
+        else:
+            site_id = site_id_input.strip()
 
         # Get device ID
-        device_id = typer.prompt("IoT Device ID (UUID format)")
+        device_id_input = typer.prompt(
+            "IoT Device ID (press Enter to auto-generate UUID, or enter custom UUID)",
+            default="",
+        )
+        if not device_id_input.strip():
+            device_id = generate_device_id()
+            logger.info(f"Generated Device ID: {device_id}")
+        else:
+            device_id = device_id_input.strip()
 
         # Configure MQTT
         mqtt_configured = await _configure_mqtt_interactive(org_id, site_id, device_id)
