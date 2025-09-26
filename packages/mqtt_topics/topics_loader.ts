@@ -1,40 +1,46 @@
 import mqttTopics from '../../shared/mqtt_topics/topics.json';
 
+// TopicConfig interface matching Python TopicConfig
+export interface TopicConfig {
+  topic: string;
+  qos: number;
+  retain: boolean;
+}
+
 // Type for the structure of topics.json with replaced values
 export type AllTopics = {
   command: {
     get_config: {
-      request: string;
-      response: string;
+      request: TopicConfig;
+      response: TopicConfig;
     };
     reboot: {
-      request: string;
-      response: string;
+      request: TopicConfig;
+      response: TopicConfig;
     };
     set_value_to_point: {
-      request: string;
-      response: string;
+      request: TopicConfig;
+      response: TopicConfig;
     };
     start_monitoring: {
-      request: string;
-      response: string;
+      request: TopicConfig;
+      response: TopicConfig;
     };
     stop_monitoring: {
-      request: string;
-      response: string;
+      request: TopicConfig;
+      response: TopicConfig;
     };
   };
   status: {
-    update: string;
-    heartbeat: string;
+    heartbeat: TopicConfig;
   };
   data: {
-    point: string;
-    point_bulk: string;
+    point: TopicConfig;
+    point_bulk: TopicConfig;
   };
   alert_management: {
-    acknowledge: string;
-    resolve: string;
+    acknowledge: TopicConfig;
+    resolve: TopicConfig;
   };
 };
 
@@ -78,7 +84,7 @@ export const getAllTopics = ({ params }: { params: TopicParams }) => {
     }
     return obj;
   }
-  return replaceInObject(mqttTopics) as typeof mqttTopics;
+  return replaceInObject(mqttTopics) as AllTopics;
 };
 
 function buildMQTTSubscriptionPattern(topicTemplate: string): string {
@@ -91,11 +97,11 @@ export const getGlobalTopicsToWriteToDB = (): string[] => {
   // Using $queue pattern to ensure only one instance processes each message
 
   const topics = [
-    buildMQTTSubscriptionPattern(mqttTopics.data.point_bulk),
-    buildMQTTSubscriptionPattern(mqttTopics.command.set_value_to_point.response).replace('set_value_to_point', '+'),
-    buildMQTTSubscriptionPattern(mqttTopics.status.heartbeat),
-    buildMQTTSubscriptionPattern(mqttTopics.alert_management.acknowledge),
-    buildMQTTSubscriptionPattern(mqttTopics.alert_management.resolve)
+    buildMQTTSubscriptionPattern(mqttTopics.data.point_bulk.topic),
+    buildMQTTSubscriptionPattern(mqttTopics.command.set_value_to_point.response.topic).replace('set_value_to_point', '+'),
+    buildMQTTSubscriptionPattern(mqttTopics.status.heartbeat.topic),
+    buildMQTTSubscriptionPattern(mqttTopics.alert_management.acknowledge.topic),
+    buildMQTTSubscriptionPattern(mqttTopics.alert_management.resolve.topic)
   ];
 
   // Add queue prefix for load balancing across multiple instances

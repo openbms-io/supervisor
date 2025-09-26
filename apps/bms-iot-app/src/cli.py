@@ -119,23 +119,70 @@ def _get_mqtt_credentials_interactive() -> tuple[str, str]:
     return mqtt_username, mqtt_password
 
 
-def _get_broker_choice_interactive() -> Optional[str]:
+def _get_broker_choice_interactive() -> str:
     """Get broker choice from user input.
 
     Returns:
-        str: Custom broker hostname, or None for default broker
+        str: Broker hostname choice
     """
-    default_broker = emqx_cloud_config_template.broker_host
-    use_default = typer.confirm(
-        f"Use default EMQX broker ({default_broker})?", default=True
-    )
+    logger.info("\n🔗 MQTT Broker Selection")
+    logger.info("Choose your MQTT broker type:")
+    logger.info("1. Local broker (localhost:1883, no TLS)")
+    logger.info("2. EMQX Cloud broker (TLS enabled)")
 
-    if use_default:
-        return None
-    else:
-        return typer.prompt(
-            "Enter your EMQX broker hostname (e.g., yourbroker.emqxsl.com)"
+    try:
+        choice = typer.prompt("Select broker type", type=int, default=1)
+    except (ValueError, TypeError):
+        logger.error("Invalid choice. Using localhost.")
+        return "localhost"
+
+    if choice == 1:
+        return "localhost"
+    elif choice == 2:
+        default_broker = emqx_cloud_config_template.broker_host
+        use_default = typer.confirm(
+            f"Use default EMQX broker ({default_broker})?", default=True
         )
+
+        if use_default:
+            return default_broker
+        else:
+            return typer.prompt(
+                "Enter your EMQX broker hostname (e.g., yourbroker.emqxsl.com)"
+            )
+    else:
+        logger.error("Invalid choice. Using localhost.")
+        return "localhost"
+
+
+def _configure_local_broker(client_id: str) -> bool:
+    """Configure local MQTT broker (localhost, no TLS, no credentials, persistent sessions).
+
+    Args:
+        client_id: MQTT client ID
+
+    Returns:
+        bool: True if configuration successful, False otherwise
+    """
+    try:
+        configure_mqtt(
+            broker_host="localhost",
+            broker_port=1883,
+            client_id=client_id,
+            username=None,
+            password=None,
+            use_tls=False,
+            tls_ca_cert=None,
+            topic_prefix="",
+            clean_session=False,
+        )
+        logger.info(
+            "✓ MQTT configured for local broker (localhost:1883, no TLS, persistent sessions)"
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Failed to configure local MQTT broker: {e}")
+        return False
 
 
 def _test_and_report_connection() -> bool:
@@ -194,6 +241,11 @@ def cmd_configure_mqtt(
     topic_prefix: str = typer.Option(
         "bms/monitoring", "--topic-prefix", "-t", help="MQTT topic prefix"
     ),
+    clean_session: bool = typer.Option(
+        True,
+        "--clean-session/--persistent-session",
+        help="Use clean session (default: True)",
+    ),
 ):
     """Configure MQTT client connection parameters (TLS enabled by default)."""
     try:
@@ -206,6 +258,7 @@ def cmd_configure_mqtt(
             use_tls=use_tls,
             tls_ca_cert=tls_ca_cert,
             topic_prefix=topic_prefix,
+            clean_session=clean_session,
         )
     except Exception as e:
         logger.error(f"Failed to configure MQTT: {e}")
@@ -404,29 +457,29 @@ async def _configure_mqtt_interactive(
         )
         return False
 
-    # Ask about EMQX
-    if not typer.confirm("Use EMQX Cloud broker (recommended)?", default=True):
-        logger.info("Skipping MQTT auto-configuration")
-        logger.info("Configure manually later with: python -m src.cli mqtt config")
-        return False
-
-    # Get broker choice and credentials
+    # Get broker choice
     broker_host = _get_broker_choice_interactive()
-    mqtt_username, mqtt_password = _get_mqtt_credentials_interactive()
 
     # Auto-generate client ID from device identifiers
     mqtt_client_id = f"{org_id}-{site_id}-{device_id}"
     logger.info(f"Using auto-generated client ID: {mqtt_client_id}")
 
-    # Configure MQTT with consolidated function
-    if not _configure_emqx_with_broker(
-        username=mqtt_username,
-        password=mqtt_password,
-        client_id=mqtt_client_id,
-        topic_prefix="",
-        broker_host=broker_host,
-    ):
-        return False
+    # Configure based on broker type
+    if broker_host == "localhost":
+        # Configure local broker (no credentials needed)
+        if not _configure_local_broker(client_id=mqtt_client_id):
+            return False
+    else:
+        # Configure cloud broker (EMQX)
+        mqtt_username, mqtt_password = _get_mqtt_credentials_interactive()
+        if not _configure_emqx_with_broker(
+            username=mqtt_username,
+            password=mqtt_password,
+            client_id=mqtt_client_id,
+            topic_prefix="",
+            broker_host=broker_host,
+        ):
+            return False
 
     # Test connection and report results
     return _test_and_report_connection()

@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "pnpm --parallel run dev",
     "build": "pnpm --recursive run build",
-    "test": "pnpm --recursive run test",
+    "test": "pnpm --recursive run test && pnpm bms-iot:test",
     "lint": "pnpm --recursive run lint",
     "clean": "pnpm --recursive run clean",
     "schema:generate": "pnpm --filter bms-schemas run generate",

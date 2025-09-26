@@ -24,6 +24,7 @@ class MQTTConfig(BaseModel):
     qos: int = 1  # QoS level (0, 1, or 2)
     keep_alive: int = 60  # Keep alive interval in seconds
     reconnect_delay: int = 5  # Reconnect delay in seconds
+    clean_session: bool = True  # Clean session flag for MQTT
 
 
 def save_config(config: MQTTConfig) -> bool:

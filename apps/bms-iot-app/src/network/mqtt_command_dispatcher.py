@@ -111,20 +111,19 @@ class MqttCommandDispatcher:
         self.command_section: CommandSection = self.mqtt_topics.command
         self.command_names = list(CommandNameEnum)
         self.request_topics: List[str] = [
-            self.command_section.get_config.request,
-            self.command_section.reboot.request,
-            self.command_section.set_value_to_point.request,
-            self.command_section.start_monitoring.request,
-            self.command_section.stop_monitoring.request,
+            self.command_section.get_config.request.topic,
+            self.command_section.reboot.request.topic,
+            self.command_section.set_value_to_point.request.topic,
+            self.command_section.start_monitoring.request.topic,
+            self.command_section.stop_monitoring.request.topic,
         ]
         self.response_topics: List[str] = [
-            self.command_section.get_config.response,
-            self.command_section.reboot.response,
-            self.command_section.set_value_to_point.response,
-            self.command_section.start_monitoring.response,
-            self.command_section.stop_monitoring.response,
+            self.command_section.get_config.response.topic,
+            self.command_section.reboot.response.topic,
+            self.command_section.set_value_to_point.response.topic,
+            self.command_section.start_monitoring.response.topic,
+            self.command_section.stop_monitoring.response.topic,
         ]
-        self.status_update_topic = self.mqtt_topics.status.update
         self.status_heartbeat_topic = self.mqtt_topics.status.heartbeat
         self.point_topic = self.mqtt_topics.data.point
 
@@ -143,15 +142,15 @@ class MqttCommandDispatcher:
         def _on_message(client, userdata, message: mqtt.MQTTMessage):
             logger.info(f"Received message: {message}")
             topic = message.topic
-            if topic == self.command_section.get_config.request:
+            if topic == self.command_section.get_config.request.topic:
                 handler = self.handlers.get(CommandNameEnum.get_config)
-            elif topic == self.command_section.reboot.request:
+            elif topic == self.command_section.reboot.request.topic:
                 handler = self.handlers.get(CommandNameEnum.reboot)
-            elif topic == self.command_section.set_value_to_point.request:
+            elif topic == self.command_section.set_value_to_point.request.topic:
                 handler = self.handlers.get(CommandNameEnum.set_value_to_point)
-            elif topic == self.command_section.start_monitoring.request:
+            elif topic == self.command_section.start_monitoring.request.topic:
                 handler = self.handlers.get(CommandNameEnum.start_monitoring)
-            elif topic == self.command_section.stop_monitoring.request:
+            elif topic == self.command_section.stop_monitoring.request.topic:
                 handler = self.handlers.get(CommandNameEnum.stop_monitoring)
             else:
                 handler = None
@@ -167,46 +166,75 @@ class MqttCommandDispatcher:
     # --- Publish helpers ---
     def publish_response(self, command: CommandNameEnum, payload: Dict[str, Any]):
         if command == CommandNameEnum.get_config:
-            self.mqtt_client.publish(self.command_section.get_config.response, payload)
-        elif command == CommandNameEnum.reboot:
-            self.mqtt_client.publish(self.command_section.reboot.response, payload)
-        elif command == CommandNameEnum.set_value_to_point:
+            topic_config = self.command_section.get_config.response
             self.mqtt_client.publish(
-                self.command_section.set_value_to_point.response, payload
+                topic_config.topic,
+                payload,
+                retain=topic_config.retain,
+                qos=topic_config.qos,
+            )
+        elif command == CommandNameEnum.reboot:
+            topic_config = self.command_section.reboot.response
+            self.mqtt_client.publish(
+                topic_config.topic,
+                payload,
+                retain=topic_config.retain,
+                qos=topic_config.qos,
+            )
+        elif command == CommandNameEnum.set_value_to_point:
+            topic_config = self.command_section.set_value_to_point.response
+            self.mqtt_client.publish(
+                topic_config.topic,
+                payload,
+                retain=topic_config.retain,
+                qos=topic_config.qos,
             )
         elif command == CommandNameEnum.start_monitoring:
+            topic_config = self.command_section.start_monitoring.response
             self.mqtt_client.publish(
-                self.command_section.start_monitoring.response, payload
+                topic_config.topic,
+                payload,
+                retain=topic_config.retain,
+                qos=topic_config.qos,
             )
         elif command == CommandNameEnum.stop_monitoring:
+            topic_config = self.command_section.stop_monitoring.response
             self.mqtt_client.publish(
-                self.command_section.stop_monitoring.response, payload
+                topic_config.topic,
+                payload,
+                retain=topic_config.retain,
+                qos=topic_config.qos,
             )
         else:
             raise ValueError(f"No response topic for command: {command}")
 
-    def publish_update(self, payload: Dict[str, Any]):
-        if self.status_update_topic:
-            self.mqtt_client.publish(self.status_update_topic, payload)
-
     def publish_heartbeat(self, payload: Dict[str, Any]):
         if self.status_heartbeat_topic:
-            self.mqtt_client.publish(self.status_heartbeat_topic, payload)
+            topic_config = self.status_heartbeat_topic
+            self.mqtt_client.publish(
+                topic_config.topic,
+                payload,
+                retain=topic_config.retain,
+                qos=topic_config.qos,
+            )
 
     def publish_point_bulk(self, payload: list[ControllerPointsModel]):
         logger.info(f"Publishing point bulk count: {len(payload)}")
-        point_bulk_topic = self.mqtt_topics.data.point_bulk
-        if not point_bulk_topic:
+        point_bulk_topic_config = self.mqtt_topics.data.point_bulk
+        if not point_bulk_topic_config:
             raise ValueError(
                 f"Bulk topic is not set. Please update the mqtt topics. Check mqtt_topics: {self.mqtt_topics}"
             )
 
         payload_dict = [_serialize_point(point) for point in payload]
         logger.info(
-            f"Publishing point bulk count: {len(payload_dict)} to topic: {point_bulk_topic}"
+            f"Publishing point bulk count: {len(payload_dict)} to topic: {point_bulk_topic_config.topic}"
         )
         has_published = self.mqtt_client.publish(
-            point_bulk_topic, {"points": payload_dict}
+            point_bulk_topic_config.topic,
+            {"points": payload_dict},
+            retain=point_bulk_topic_config.retain,
+            qos=point_bulk_topic_config.qos,
         )
 
         return has_published
