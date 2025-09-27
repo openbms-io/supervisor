@@ -15,7 +15,6 @@ from src.utils.logger import logger
 # from apps.bms_bacnet_simulator.bacnet_simulator_config import SIMULATOR_CONFIG
 
 # from apps.bms_bacnet_simulator.bacnet_simulator import MultiSimulationManager
-from src.network.credentials import save_credentials
 from .network.mqtt_adapter import (
     configure_mqtt,
     configure_emqx,
@@ -203,20 +202,6 @@ def _test_and_report_connection() -> bool:
             "You can reconfigure later with: python -m src.cli mqtt config-emqx"
         )
         return False
-
-
-@app.command()
-def set_credentials(
-    client_id: str = typer.Argument(..., help="Client ID for authentication"),
-    secret_key: str = typer.Argument(..., help="Secret key for authentication"),
-):
-    """Set authentication credentials."""
-    try:
-        save_credentials(client_id, secret_key)
-        logger.info(f"Credentials saved for client ID: {client_id}")
-    except Exception as e:
-        logger.error(f"Failed to save credentials: {e}")
-        raise typer.Exit(1)
 
 
 @mqtt_app.command("config")
