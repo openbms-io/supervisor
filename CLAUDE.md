@@ -23,6 +23,7 @@ The `bms-schemas` package defines the data format used to send visual programmin
    - Write tests first, then implement
    - Red-Green-Refactor cycle
    - Tests drive design decisions
+   - Focus on testing behavior and not using logger functions.
 
 2. **DO NOT OVERENGINEER**
 
