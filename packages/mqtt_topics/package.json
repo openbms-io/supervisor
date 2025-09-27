@@ -1,0 +1,21 @@
+{
+  "name": "mqtt-topics",
+  "version": "0.1.0",
+  "description": "MQTT topic management for BMS IoT applications",
+  "private": true,
+  "type": "module",
+  "main": "./topics_loader.js",
+  "types": "./topics_loader.d.ts",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.0.0",
+    "jest": "^30.1.3",
+    "ts-jest": "^29.4.1",
+    "typescript": "^5.5.0"
+  }
+}
