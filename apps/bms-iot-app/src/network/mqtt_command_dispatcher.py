@@ -3,6 +3,7 @@ from packages.mqtt_topics.topics_loader import (
     build_mqtt_topic_dict,
     Topics,
     CommandSection,
+    CommandEntry,
     CommandNameEnum,
 )
 from src.network.mqtt_client import MQTTClient
@@ -110,19 +111,20 @@ class MqttCommandDispatcher:
         )
         self.command_section: CommandSection = self.mqtt_topics.command
         self.command_names = list(CommandNameEnum)
+
+        # Map commands to their entries (DRY for publishing and dispatch)
+        self._command_map: dict[CommandNameEnum, CommandEntry] = {
+            CommandNameEnum.get_config: self.command_section.get_config,
+            CommandNameEnum.reboot: self.command_section.reboot,
+            CommandNameEnum.set_value_to_point: self.command_section.set_value_to_point,
+            CommandNameEnum.start_monitoring: self.command_section.start_monitoring,
+            CommandNameEnum.stop_monitoring: self.command_section.stop_monitoring,
+        }
         self.request_topics: List[str] = [
-            self.command_section.get_config.request.topic,
-            self.command_section.reboot.request.topic,
-            self.command_section.set_value_to_point.request.topic,
-            self.command_section.start_monitoring.request.topic,
-            self.command_section.stop_monitoring.request.topic,
+            entry.request.topic for entry in self._command_map.values()
         ]
         self.response_topics: List[str] = [
-            self.command_section.get_config.response.topic,
-            self.command_section.reboot.response.topic,
-            self.command_section.set_value_to_point.response.topic,
-            self.command_section.start_monitoring.response.topic,
-            self.command_section.stop_monitoring.response.topic,
+            entry.response.topic for entry in self._command_map.values()
         ]
         self.status_heartbeat_topic = self.mqtt_topics.status.heartbeat
         self.point_topic = self.mqtt_topics.data.point
@@ -142,18 +144,13 @@ class MqttCommandDispatcher:
         def _on_message(client, userdata, message: mqtt.MQTTMessage):
             logger.info(f"Received message: {message}")
             topic = message.topic
-            if topic == self.command_section.get_config.request.topic:
-                handler = self.handlers.get(CommandNameEnum.get_config)
-            elif topic == self.command_section.reboot.request.topic:
-                handler = self.handlers.get(CommandNameEnum.reboot)
-            elif topic == self.command_section.set_value_to_point.request.topic:
-                handler = self.handlers.get(CommandNameEnum.set_value_to_point)
-            elif topic == self.command_section.start_monitoring.request.topic:
-                handler = self.handlers.get(CommandNameEnum.start_monitoring)
-            elif topic == self.command_section.stop_monitoring.request.topic:
-                handler = self.handlers.get(CommandNameEnum.stop_monitoring)
-            else:
-                handler = None
+
+            # Build a request topic -> command mapping once per callback
+            topic_to_command: dict[str, CommandNameEnum] = {
+                entry.request.topic: cmd for cmd, entry in self._command_map.items()
+            }
+            cmd = topic_to_command.get(topic)
+            handler = self.handlers.get(cmd) if cmd else None
 
             if handler:
                 logger.info(f"Handling message: {message}, userdata: {userdata}")
@@ -165,48 +162,16 @@ class MqttCommandDispatcher:
 
     # --- Publish helpers ---
     def publish_response(self, command: CommandNameEnum, payload: Dict[str, Any]):
-        if command == CommandNameEnum.get_config:
-            topic_config = self.command_section.get_config.response
-            self.mqtt_client.publish(
-                topic_config.topic,
-                payload,
-                retain=topic_config.retain,
-                qos=topic_config.qos,
-            )
-        elif command == CommandNameEnum.reboot:
-            topic_config = self.command_section.reboot.response
-            self.mqtt_client.publish(
-                topic_config.topic,
-                payload,
-                retain=topic_config.retain,
-                qos=topic_config.qos,
-            )
-        elif command == CommandNameEnum.set_value_to_point:
-            topic_config = self.command_section.set_value_to_point.response
-            self.mqtt_client.publish(
-                topic_config.topic,
-                payload,
-                retain=topic_config.retain,
-                qos=topic_config.qos,
-            )
-        elif command == CommandNameEnum.start_monitoring:
-            topic_config = self.command_section.start_monitoring.response
-            self.mqtt_client.publish(
-                topic_config.topic,
-                payload,
-                retain=topic_config.retain,
-                qos=topic_config.qos,
-            )
-        elif command == CommandNameEnum.stop_monitoring:
-            topic_config = self.command_section.stop_monitoring.response
-            self.mqtt_client.publish(
-                topic_config.topic,
-                payload,
-                retain=topic_config.retain,
-                qos=topic_config.qos,
-            )
-        else:
+        entry = self._command_map.get(command)
+        if not entry:
             raise ValueError(f"No response topic for command: {command}")
+        topic_config = entry.response
+        self.mqtt_client.publish(
+            topic_config.topic,
+            payload,
+            retain=topic_config.retain,
+            qos=topic_config.qos,
+        )
 
     def publish_heartbeat(self, payload: Dict[str, Any]):
         if self.status_heartbeat_topic:

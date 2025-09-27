@@ -457,13 +457,10 @@ No major schema changes required. Existing tables support:
 
 **Objective**: Generate and provision org_id/site_id/iot_device_id
 
-- Designer/Supervisor generates device identity
-- Provision identity manually onto the device for bms-iot-app (e.g., config file or env vars)
-- bms-iot-app reads identity at startup and uses it for topic construction
-- UI can display identity; edits require re-provisioning to device
-- Ensure identity persists across restarts and is consistent across all topics
-
-**Deliverables**:
+- Save identity in designer app via UI. Set the org_id, site_id and iot_device_id in the sqlite database by entering it via UI.
+- Create backend endpoint to CRUD the org_id, site_id and iot_device_id in the database in a separate table.
+- org_id, site_id and iot_device_id are fetched via bms-iot-app show config manually. We dont need code change here. Just to update in readme.
+- **Deliverables**:
 
 - Identity generated in Designer/Supervisor
 - Manual provisioning procedure documented and verified on device

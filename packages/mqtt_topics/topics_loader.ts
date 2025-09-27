@@ -1,4 +1,4 @@
-import mqttTopics from '../../shared/mqtt_topics/topics.json';
+import mqttTopics from './topics.json';
 
 // TopicConfig interface matching Python TopicConfig
 export interface TopicConfig {
@@ -35,7 +35,7 @@ export type AllTopics = {
     heartbeat: TopicConfig;
   };
   data: {
-    point: TopicConfig;
+    point: TopicConfig | null;
     point_bulk: TopicConfig;
   };
   alert_management: {
@@ -49,6 +49,7 @@ export type TopicParams = {
   organization_id?: string;
   site_id?: string;
   iot_device_id?: string;
+  controller_device_id?: string;
   iot_device_point_id?: string;
   tenant_id?: string;
 };
@@ -61,31 +62,42 @@ export enum CommandNameEnum {
   STOP_MONITORING = 'stop_monitoring',
 }
 
-function buildTopic(template: string, params: Record<string, string>) {
-  return template.replace(/{(\w+)}/g, (_, key) => params[key]);
+function buildTopic(template: string, params: Readonly<Record<string, string>>): string {
+  return template.replace(/\{(\w+)\}/g, (_m, key: string) =>
+    Object.prototype.hasOwnProperty.call(params, key) && params[key] !== undefined
+      ? params[key]
+      : `{${key}}`
+  );
 }
 
-export const getAllTopics = ({ params }: { params: TopicParams }) => {
-  function replaceInObject(obj: any): any {
-    if (typeof obj === 'string') {
-      const matches = obj.match(/{(\w+)}/g);
-      if (!matches) return obj;
-      for (const match of matches) {
-        const key = match.slice(1, -1);
-        if (!(key in params) || (params as Record<string, string>)[key] === undefined) return '';
-      }
-      return buildTopic(obj, params as Record<string, string>);
-    } else if (typeof obj === 'object' && obj !== null) {
-      const result: any = Array.isArray(obj) ? [] : {};
-      for (const k in obj) {
-        result[k] = replaceInObject(obj[k]);
-      }
-      return result;
+export function getAllTopics({ params }: { params: TopicParams }): AllTopics {
+  function replaceDeep<T>(node: T): T {
+    if (typeof node === 'string') {
+      return buildTopic(node as unknown as string, params as Record<string, string>) as unknown as T;
     }
-    return obj;
+    if (node && typeof node === 'object') {
+      if (Array.isArray(node)) {
+        return (node as unknown[]).map((n) => replaceDeep(n)) as unknown as T;
+      }
+      const next: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+        next[k] = replaceDeep(v);
+      }
+      return next as T;
+    }
+    return node;
   }
-  return replaceInObject(mqttTopics) as AllTopics;
-};
+
+  const replaced = replaceDeep<typeof mqttTopics>(mqttTopics);
+  const missingPointIds = !params.controller_device_id || !params.iot_device_point_id;
+  return {
+    ...replaced,
+    data: {
+      ...replaced.data,
+      point: missingPointIds ? null : replaced.data.point,
+    },
+  } as AllTopics;
+}
 
 function buildMQTTSubscriptionPattern(topicTemplate: string): string {
   return topicTemplate.replace(/\{[^}]+\}/g, '+');
@@ -105,5 +117,5 @@ export const getGlobalTopicsToWriteToDB = (): string[] => {
   ];
 
   // Add queue prefix for load balancing across multiple instances
-  return topics.map(topic => `$queue/${topic}`);
+  return topics.map((topic) => `$queue/${topic}`);
 }

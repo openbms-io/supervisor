@@ -23,7 +23,7 @@ def test_load_mqtt_topics():
     assert hasattr(topics, "status")
     assert hasattr(topics, "data")
     assert hasattr(topics.command, "get_config")
-    assert hasattr(topics.status, "update")
+    assert hasattr(topics.status, "heartbeat")
     assert hasattr(topics.data, "point")
     assert hasattr(topics.data, "point_bulk")
 
@@ -49,14 +49,13 @@ def test_build_mqtt_topic_dict():
                 assert f"${{{placeholder}}}" not in node
     check_placeholders_replaced(result)
     # Explicitly check that the output values are as expected
-    assert result.command.get_config.request == "iot/global/test-org/test-site/test-iot-device/command/get_config/request"
-    assert result.command.get_config.response == "iot/global/test-org/test-site/test-iot-device/command/get_config/response"
-    assert result.command.reboot.request == "iot/global/test-org/test-site/test-iot-device/command/reboot/request"
-    assert result.command.reboot.response == "iot/global/test-org/test-site/test-iot-device/command/reboot/response"
-    assert result.status.update == "iot/global/test-org/test-site/test-iot-device/status/update"
-    assert result.status.heartbeat == "iot/global/test-org/test-site/test-iot-device/status/heartbeat"
-    assert result.data.point == "iot/global/test-org/test-site/test-iot-device/test-controller/test-point"
-    assert result.data.point_bulk == "iot/global/test-org/test-site/test-iot-device/bulk"
+    assert result.command.get_config.request.topic == "iot/global/test-org/test-site/test-iot-device/command/get_config/request"
+    assert result.command.get_config.response.topic == "iot/global/test-org/test-site/test-iot-device/command/get_config/response"
+    assert result.command.reboot.request.topic == "iot/global/test-org/test-site/test-iot-device/command/reboot/request"
+    assert result.command.reboot.response.topic == "iot/global/test-org/test-site/test-iot-device/command/reboot/response"
+    assert result.status.heartbeat.topic == "iot/global/test-org/test-site/test-iot-device/status/heartbeat"
+    assert result.data.point.topic == "iot/global/test-org/test-site/test-iot-device/test-controller/test-point"
+    assert result.data.point_bulk.topic == "iot/global/test-org/test-site/test-iot-device/bulk"
 
 def test_build_mqtt_topic_dict_missing_values():
     """Test that missing or empty optional placeholder values result in data.point being None."""
@@ -68,7 +67,7 @@ def test_build_mqtt_topic_dict_missing_values():
         iot_device_point_id=""  # Empty point_id
     )
     assert result.data.point is None
-    assert result.data.point_bulk == "iot/global/test-org/test-site/test-iot-device/bulk"
+    assert result.data.point_bulk.topic == "iot/global/test-org/test-site/test-iot-device/bulk"
 
 def test_build_mqtt_topic_dict_optional_data_point():
     """Test that data.point is None if controller_device_id or iot_device_point_id is missing."""
@@ -80,7 +79,7 @@ def test_build_mqtt_topic_dict_optional_data_point():
         iot_device_point_id=None
     )
     assert result.data.point is None
-    assert result.data.point_bulk == "iot/global/test-org/test-site/test-iot-device/bulk"
+    assert result.data.point_bulk.topic == "iot/global/test-org/test-site/test-iot-device/bulk"
 
 def test_build_mqtt_command_topic():
     """Test build_mqtt_command_topic returns a CommandSection with correct topics."""
@@ -90,8 +89,8 @@ def test_build_mqtt_command_topic():
         iot_device_id="test-iot-device",
     )
     assert isinstance(section, CommandSection)
-    assert section.get_config.request.startswith("iot/global/test-org/test-site/test-iot-device/command/get_config/request")
-    assert section.reboot.request.startswith("iot/global/test-org/test-site/test-iot-device/command/reboot/request")
+    assert section.get_config.request.topic.startswith("iot/global/test-org/test-site/test-iot-device/command/get_config/request")
+    assert section.reboot.request.topic.startswith("iot/global/test-org/test-site/test-iot-device/command/reboot/request")
 
 def test_build_mqtt_status_topic():
     """Test build_mqtt_status_topic returns a StatusSection with correct topics."""
@@ -101,8 +100,7 @@ def test_build_mqtt_status_topic():
         iot_device_id="test-iot-device",
     )
     assert isinstance(section, StatusSection)
-    assert section.update.startswith("iot/global/test-org/test-site/test-iot-device/status/update")
-    assert section.heartbeat.startswith("iot/global/test-org/test-site/test-iot-device/status/heartbeat")
+    assert section.heartbeat.topic.startswith("iot/global/test-org/test-site/test-iot-device/status/heartbeat")
 
 def test_build_mqtt_data_topic_full():
     """Test build_mqtt_data_topic returns a DataSection with point filled when all IDs are provided."""
@@ -114,8 +112,8 @@ def test_build_mqtt_data_topic_full():
         iot_device_point_id="test-point",
     )
     assert isinstance(section, DataSection)
-    assert section.point == "iot/global/test-org/test-site/test-iot-device/test-controller/test-point"
-    assert section.point_bulk == "iot/global/test-org/test-site/test-iot-device/bulk"
+    assert section.point.topic == "iot/global/test-org/test-site/test-iot-device/test-controller/test-point"
+    assert section.point_bulk.topic == "iot/global/test-org/test-site/test-iot-device/bulk"
 
 def test_build_mqtt_data_topic_missing():
     """Test build_mqtt_data_topic returns a DataSection with point=None if controller_device_id or iot_device_point_id is missing."""
@@ -128,7 +126,7 @@ def test_build_mqtt_data_topic_missing():
     )
     assert isinstance(section, DataSection)
     assert section.point is None
-    assert section.point_bulk == "iot/global/test-org/test-site/test-iot-device/bulk"
+    assert section.point_bulk.topic == "iot/global/test-org/test-site/test-iot-device/bulk"
 
 def test_build_mqtt_topic_dict_invalid_values():
     """Test that invalid values are handled appropriately."""
