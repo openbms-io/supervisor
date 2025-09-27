@@ -2,7 +2,7 @@ import json
 import time
 import logging
 import os
-from typing import Any, Dict, Callable
+from typing import Any, Dict, Callable, Optional
 
 import paho.mqtt.client as mqtt
 
@@ -17,8 +17,10 @@ class MQTTClient:
 
     def __init__(self, config: MQTTConfig = default_config):
         self.config = config
-        # Use standard MQTT client with default protocol version
-        self.client = mqtt.Client(client_id=config.client_id)
+        # Use standard MQTT client with persistent session support
+        self.client = mqtt.Client(
+            client_id=config.client_id, clean_session=config.clean_session
+        )
         self.connected = False
 
         # Log warning if TLS is disabled
@@ -176,7 +178,11 @@ class MQTTClient:
         self.client.on_message = callback
 
     def publish(
-        self, topic: str, payload: Dict[str, Any], retain: bool = False
+        self,
+        topic: str,
+        payload: Dict[str, Any],
+        retain: bool = False,
+        qos: Optional[int] = None,
     ) -> bool:
         """
         Publish a message to the MQTT broker.
@@ -185,6 +191,7 @@ class MQTTClient:
             topic: The topic to publish to (will be prefixed with config.topic_prefix)
             payload: The message payload (will be converted to JSON)
             retain: Whether the message should be retained by the broker
+            qos: QoS level (0, 1, or 2). If None, uses config default
 
         Returns:
             bool: True if successfully published, False otherwise
@@ -212,9 +219,12 @@ class MQTTClient:
             # Monitor payload size
             self._record_payload_metrics(payload, message)
 
+            # Use provided QoS or fall back to config default
+            used_qos = qos if qos is not None else self.config.qos
+
             logger.info(f"Publishing message to topic: {full_topic}")
             result = self.client.publish(
-                full_topic, message, qos=self.config.qos, retain=retain
+                full_topic, message, qos=used_qos, retain=retain
             )
 
             logger.info(

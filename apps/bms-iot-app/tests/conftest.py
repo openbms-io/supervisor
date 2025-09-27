@@ -2,6 +2,9 @@
 Pytest configuration and fixtures for BMS IoT Application tests.
 """
 
+import os
+import sys
+
 import pytest
 import pytest_asyncio
 import asyncio
@@ -141,8 +144,6 @@ def event_loop():
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_database():
     """Initialize database tables before running tests using SQLModel.metadata.create_all()"""
-    import os
-    import sys
 
     # Add monorepo root to Python path to access packages/ directory
     # This conftest.py is in apps/bms-iot-app/tests/conftest.py

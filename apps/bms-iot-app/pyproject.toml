@@ -12,6 +12,7 @@ dependencies = [
     "paho-mqtt>=2.1.0",
     "pydantic==2.5.3",
     "psutil>=5.9.0",
+    "python-dotenv>=1.0.0",
     "rich>=14.0.0",
     "trio==0.30.0",
     "typer>=0.9.0",

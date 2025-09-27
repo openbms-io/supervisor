@@ -423,9 +423,9 @@ No major schema changes required. Existing tables support:
 
 **Objective**: Integrate repositories and stand up a development environment with internal broker and reverse proxy (non-containerized)
 
-- Extract `bms-iot-app` from private monorepo to (public or private) repository
-- Extract `bms-bacnet-simulator` similarly if needed for tests
-- Add repositories as git submodules to bms-supervisor-controller (or consume images)
+- Extract `bms-iot-app` from private monorepo to (public or private) repository [Done]
+- Extract `bms-bacnet-simulator` similarly if needed for tests [Done]
+- Add repositories as git submodules to bms-supervisor-controller (or consume images) [Done]
 - Start a local MQTT broker (NanoMQ/Mosquitto): TCP 1883 and WS 8083
 - Start a local reverse proxy on 3000: routes `/` → Next (3001), `/mqtt` (WS) → broker 8083
 - Verify bms-iot-app connects to broker over TCP 1883 locally
@@ -437,7 +437,7 @@ No major schema changes required. Existing tables support:
 - Working dev environment with reverse proxy and broker
 - bms-iot-app connected to local broker
 
-### Phase 7.2: MQTT Integration in bms-iot-app (May need review, since bms-iot-app has MQTT configuration setup already)
+### Phase 7.2: MQTT Integration in bms-iot-app (May need review, since bms-iot-app has MQTT configuration setup already) [Done]
 
 **Objective**: Ensure bms-iot-app works with internal MQTT broker
 
@@ -453,7 +453,7 @@ No major schema changes required. Existing tables support:
 - get_config command (MQTT) triggers discovery
 - Point data streaming to bulk topics; status/heartbeat retained
 
-### Phase 7.3: Device Identity Management
+### Phase 7.3: Device Identity Management [In progress]
 
 **Objective**: Generate and provision org_id/site_id/iot_device_id
 

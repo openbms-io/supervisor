@@ -7,9 +7,14 @@ from enum import Enum
 
 # Add more as your schema grows
 
+class TopicConfig(BaseModel):
+    topic: str
+    qos: int = 1
+    retain: bool = False
+
 class CommandEntry(BaseModel):
-    request: str
-    response: str
+    request: TopicConfig
+    response: TopicConfig
 
 class CommandSection(BaseModel):
     get_config: CommandEntry
@@ -20,16 +25,15 @@ class CommandSection(BaseModel):
     # Add more commands as your schema grows
 
 class StatusSection(BaseModel):
-    update: str
-    heartbeat: str
+    heartbeat: TopicConfig
 
 class DataSection(BaseModel):
-    point: Optional[str] = None
-    point_bulk: Optional[str] = None
+    point: Optional[TopicConfig] = None
+    point_bulk: Optional[TopicConfig] = None
 
 class AlertManagementSection(BaseModel):
-    acknowledge: str
-    resolve: str
+    acknowledge: TopicConfig
+    resolve: TopicConfig
 
 class Topics(BaseModel):
     command: CommandSection  # Always present

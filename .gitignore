@@ -13,6 +13,9 @@ build/
 .parcel-cache/
 bms_bacnet.db
 logs/*.log
+.ruff_cache/
+.mcp-cache/
+.claude/
 
 # Next.js specific
 .next/

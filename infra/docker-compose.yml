@@ -1,0 +1,28 @@
+services:
+  nanomq:
+    image: emqx/nanomq:0.20.6
+    container_name: nanomq
+    restart: unless-stopped
+    ports:
+      - "${MQTT_TCP_PORT:-1883}:1883" # TCP MQTT
+      - "${MQTT_WS_PORT:-8083}:8083" # WebSocket MQTT
+    volumes:
+      - ./broker/nanomq.conf:/etc/nanomq.conf:ro
+    command: ["nanomq", "start", "--conf", "/etc/nanomq.conf"]
+
+  proxy:
+    image: nginx:alpine
+    container_name: mqtt-proxy
+    restart: unless-stopped
+    depends_on:
+      - nanomq
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${PROXY_PORT:-3000}:3000"
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+
+networks:
+  default:
+    name: bms-mqtt-net
