@@ -30,4 +30,8 @@ export const queryKeys = {
     details: () => [...queryKeys.projects.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.projects.details(), id] as const,
   },
+  deploymentConfig: {
+    all: ['deploymentConfig'] as const,
+    detail: () => [...queryKeys.deploymentConfig.all, 'detail'] as const,
+  },
 } as const

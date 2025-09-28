@@ -46,6 +46,15 @@ export function renderWithProviders(
   }
 }
 
+// Create a wrapper for renderHook tests with QueryClient
+export function createHookWrapper(queryClient = createTestQueryClient()) {
+  const HookWrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
+  HookWrapper.displayName = 'HookWrapper'
+  return HookWrapper
+}
+
 // Export the test query client creator for direct use in tests
 export { createTestQueryClient }
 

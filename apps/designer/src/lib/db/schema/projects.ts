@@ -30,6 +30,6 @@ export type Project = Omit<DrizzleProject, 'description'> & {
   description?: string | undefined
 }
 
-export type NewProject = Omit<DrizzleNewProject, 'description'> & {
+export type InsertProject = Omit<DrizzleNewProject, 'description'> & {
   description?: string | undefined
 }

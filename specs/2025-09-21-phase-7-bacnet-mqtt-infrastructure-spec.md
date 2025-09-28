@@ -458,7 +458,7 @@ No major schema changes required. Existing tables support:
 **Objective**: Generate and provision org_id/site_id/iot_device_id
 
 - Save identity in designer app via UI. Set the org_id, site_id and iot_device_id in the sqlite database by entering it via UI.
-- Create backend endpoint to CRUD the org_id, site_id and iot_device_id in the database in a separate table.
+- Create backend endpoint to CRUD the org_id, site_id and iot_device_id in the database in a separate table. Copy the same structure as bms-iot-app for saving these details
 - org_id, site_id and iot_device_id are fetched via bms-iot-app show config manually. We dont need code change here. Just to update in readme.
 - **Deliverables**:
 

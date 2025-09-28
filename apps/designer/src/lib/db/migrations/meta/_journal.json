@@ -22,6 +22,13 @@
       "when": 1758298001000,
       "tag": "0002_rename_flow_config_to_workflow_config",
       "breakpoints": false
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1759094855755,
+      "tag": "0003_classy_wildside",
+      "breakpoints": true
     }
   ]
 }
