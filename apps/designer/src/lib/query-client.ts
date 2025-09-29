@@ -32,6 +32,7 @@ export const queryKeys = {
   },
   deploymentConfig: {
     all: ['deploymentConfig'] as const,
-    detail: () => [...queryKeys.deploymentConfig.all, 'detail'] as const,
+    detail: (projectId: string) =>
+      [...queryKeys.deploymentConfig.all, 'detail', projectId] as const,
   },
 } as const

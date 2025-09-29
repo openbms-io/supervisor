@@ -27,7 +27,14 @@
       "idx": 3,
       "version": "6",
       "when": 1759094855755,
-      "tag": "0003_classy_wildside",
+      "tag": "0003_create_deployment_config_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1759163822728,
+      "tag": "0004_add_column_and_rename",
       "breakpoints": true
     }
   ]

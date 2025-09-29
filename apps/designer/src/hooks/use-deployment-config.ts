@@ -8,22 +8,28 @@ import {
 import {
   DeploymentConfig,
   UpdateDeploymentConfig,
-} from '@/app/api/deployment-config/schemas'
+} from '@/app/api/projects/[id]/deployment-config/schemas'
 
 import { deploymentConfigApi } from '../lib/api/deployment-config'
 import { queryKeys } from '../lib/query-client'
 
 export function useDeploymentConfig(
-  options?: Omit<UseQueryOptions<DeploymentConfig>, 'queryKey' | 'queryFn'>
-): ReturnType<typeof useQuery<DeploymentConfig>> {
+  projectId: string,
+  options?: Omit<
+    UseQueryOptions<DeploymentConfig | null>,
+    'queryKey' | 'queryFn'
+  >
+): ReturnType<typeof useQuery<DeploymentConfig | null>> {
   return useQuery({
-    queryKey: queryKeys.deploymentConfig.detail(),
-    queryFn: () => deploymentConfigApi.get(),
+    queryKey: queryKeys.deploymentConfig.detail(projectId),
+    queryFn: () => deploymentConfigApi.get(projectId),
+    enabled: !!projectId,
     ...options,
   })
 }
 
 export function useUpdateDeploymentConfig(
+  projectId: string,
   options?: UseMutationOptions<DeploymentConfig, Error, UpdateDeploymentConfig>
 ): ReturnType<
   typeof useMutation<DeploymentConfig, Error, UpdateDeploymentConfig>
@@ -32,10 +38,10 @@ export function useUpdateDeploymentConfig(
 
   return useMutation({
     mutationFn: (data: UpdateDeploymentConfig) =>
-      deploymentConfigApi.update(data),
+      deploymentConfigApi.update(projectId, data),
     onSuccess: (updatedConfig) => {
       queryClient.setQueryData(
-        queryKeys.deploymentConfig.detail(),
+        queryKeys.deploymentConfig.detail(projectId),
         updatedConfig
       )
     },
@@ -44,12 +50,13 @@ export function useUpdateDeploymentConfig(
 }
 
 export function useOptimisticUpdateDeploymentConfig(
+  projectId: string,
   options?: Omit<
     UseMutationOptions<
       DeploymentConfig,
       Error,
       UpdateDeploymentConfig,
-      { previousConfig: DeploymentConfig | undefined }
+      { previousConfig: DeploymentConfig | null | undefined }
     >,
     'mutationFn' | 'onMutate' | 'onError' | 'onSettled'
   >
@@ -58,7 +65,7 @@ export function useOptimisticUpdateDeploymentConfig(
     DeploymentConfig,
     Error,
     UpdateDeploymentConfig,
-    { previousConfig: DeploymentConfig | undefined }
+    { previousConfig: DeploymentConfig | null | undefined }
   >
 > {
   const queryClient = useQueryClient()
@@ -67,16 +74,16 @@ export function useOptimisticUpdateDeploymentConfig(
     DeploymentConfig,
     Error,
     UpdateDeploymentConfig,
-    { previousConfig: DeploymentConfig | undefined }
+    { previousConfig: DeploymentConfig | null | undefined }
   >({
     mutationFn: (data: UpdateDeploymentConfig) =>
-      deploymentConfigApi.update(data),
+      deploymentConfigApi.update(projectId, data),
     onMutate: async (updateData: UpdateDeploymentConfig) => {
       await queryClient.cancelQueries({
-        queryKey: queryKeys.deploymentConfig.detail(),
+        queryKey: queryKeys.deploymentConfig.detail(projectId),
       })
-      const previousConfig = queryClient.getQueryData<DeploymentConfig>(
-        queryKeys.deploymentConfig.detail()
+      const previousConfig = queryClient.getQueryData<DeploymentConfig | null>(
+        queryKeys.deploymentConfig.detail(projectId)
       )
       if (previousConfig) {
         const optimisticConfig: DeploymentConfig = {
@@ -90,12 +97,12 @@ export function useOptimisticUpdateDeploymentConfig(
         if (updateData.site_id !== undefined) {
           optimisticConfig.site_id = updateData.site_id
         }
-        if (updateData.device_id !== undefined) {
-          optimisticConfig.device_id = updateData.device_id
+        if (updateData.iot_device_id !== undefined) {
+          optimisticConfig.iot_device_id = updateData.iot_device_id
         }
 
         queryClient.setQueryData<DeploymentConfig>(
-          queryKeys.deploymentConfig.detail(),
+          queryKeys.deploymentConfig.detail(projectId),
           optimisticConfig
         )
       }
@@ -105,14 +112,31 @@ export function useOptimisticUpdateDeploymentConfig(
     onError: (err, updateData, context) => {
       if (context?.previousConfig) {
         queryClient.setQueryData(
-          queryKeys.deploymentConfig.detail(),
+          queryKeys.deploymentConfig.detail(projectId),
           context.previousConfig
         )
       }
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.deploymentConfig.detail(),
+        queryKey: queryKeys.deploymentConfig.detail(projectId),
+      })
+    },
+    ...options,
+  })
+}
+
+export function useDeleteDeploymentConfig(
+  projectId: string,
+  options?: UseMutationOptions<void, Error, void>
+): ReturnType<typeof useMutation<void, Error, void>> {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => deploymentConfigApi.delete(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.deploymentConfig.detail(projectId),
       })
     },
     ...options,

@@ -455,16 +455,75 @@ No major schema changes required. Existing tables support:
 
 ### Phase 7.3: Device Identity Management [In progress]
 
-**Objective**: Generate and provision org_id/site_id/iot_device_id
+**Objective**: Generate and provision org_id/site_id/iot_device_id with project scope
 
-- Save identity in designer app via UI. Set the org_id, site_id and iot_device_id in the sqlite database by entering it via UI.
-- Create backend endpoint to CRUD the org_id, site_id and iot_device_id in the database in a separate table. Copy the same structure as bms-iot-app for saving these details
-- org_id, site_id and iot_device_id are fetched via bms-iot-app show config manually. We dont need code change here. Just to update in readme.
-- **Deliverables**:
+**Current Implementation Status**:
 
-- Identity generated in Designer/Supervisor
-- Manual provisioning procedure documented and verified on device
+- ✅ deployment_config table exists
+- ✅ DeploymentConfigRepository with CRUD operations
+- ✅ API routes at /api/deployment-config
+- ✅ React Query hooks implemented
+- ✅ Tests for hooks and API
+
+**Required Updates**:
+
+1. **Database Schema Changes**:
+
+   - Add project_id foreign key to deployment_config table
+   - Rename device_id to iot_device_id for clarity
+   - Add unique constraint on project_id (one config per project)
+   - Create migration to update existing table
+
+2. **Backend Updates**:
+
+   - Update repository to be project-scoped:
+     - getByProjectId(projectId)
+     - createOrUpdate(projectId, data)
+     - delete(projectId)
+   - Move API routes to /api/projects/[id]/deployment-config
+   - Update validation schemas with project scope
+
+3. **Frontend Updates**:
+
+   - Update React Query hooks to include projectId parameter
+   - Update API client with new endpoint URLs
+   - Add deployment config form to SupervisorsTab:
+     - Organization ID (must start with "org\_")
+     - Site ID
+     - IoT Device ID
+   - Display current configuration if exists
+   - Remove default supervisor initialization
+
+4. **UI/UX Flow**:
+   - User opens project
+   - Navigates to Supervisors tab
+   - If no config: Shows provisioning form
+   - If config exists: Shows current values with edit button
+   - User enters/edits values and saves
+   - Values stored in database with project association
+
+**Manual Provisioning**:
+
+- org_id, site_id and iot_device_id are fetched via bms-iot-app show config manually
+- No code changes needed in bms-iot-app, just README documentation
+
+**Deliverables**:
+
+- Project-scoped deployment configuration
+- Updated UI in SupervisorsTab with config form
+- Migration script for existing deployments
+- Updated tests for project-scoped operations
+- Documentation for manual provisioning via bms-iot-app show config
 - MQTT topics use provisioned org_id/site_id/iot_device_id
+
+**Files to Update**:
+
+- /lib/db/schema/deployment-config.ts
+- /lib/db/deployment-config.ts
+- /app/api/projects/[id]/deployment-config/route.ts
+- /hooks/use-deployment-config.ts
+- /components/sidebar/supervisors-tab.tsx
+- All associated test files
 
 ### Phase 7.4: Browser MQTT Client
 

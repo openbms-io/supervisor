@@ -1,21 +1,22 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient } from '@tanstack/react-query'
 import { createTestQueryClient, createHookWrapper } from '@test-utils/render'
 import {
   useDeploymentConfig,
   useUpdateDeploymentConfig,
   useOptimisticUpdateDeploymentConfig,
 } from './use-deployment-config'
-import type { DeploymentConfig } from '@/app/api/deployment-config/schemas'
+import type { DeploymentConfig } from '@/app/api/projects/[id]/deployment-config/schemas'
 
 describe('useDeploymentConfig hooks', () => {
   const mockFetch = jest.spyOn(global, 'fetch')
+  const testProjectId = '550e8400-e29b-41d4-a716-446655440000'
 
   const mockConfig: DeploymentConfig = {
     id: '550e8400-e29b-41d4-a716-446655440000',
+    project_id: testProjectId,
     organization_id: 'org_test',
     site_id: 'test_site',
-    device_id: 'test_device',
+    iot_device_id: 'test_device',
     created_at: '2025-01-01T00:00:00.000Z',
     updated_at: '2025-01-01T00:00:00.000Z',
   }
@@ -38,7 +39,7 @@ describe('useDeploymentConfig hooks', () => {
         }),
       } as Response)
 
-      const { result } = renderHook(() => useDeploymentConfig(), {
+      const { result } = renderHook(() => useDeploymentConfig(testProjectId), {
         wrapper: createHookWrapper(),
       })
 
@@ -50,7 +51,9 @@ describe('useDeploymentConfig hooks', () => {
       )
 
       expect(result.current.data).toEqual(mockConfig)
-      expect(mockFetch).toHaveBeenCalledWith('/api/deployment-config')
+      expect(mockFetch).toHaveBeenCalledWith(
+        `/api/projects/${testProjectId}/deployment-config`
+      )
     })
 
     it('should handle loading state', () => {
@@ -58,7 +61,7 @@ describe('useDeploymentConfig hooks', () => {
         () => new Promise(() => {}) // Never resolves
       )
 
-      const { result } = renderHook(() => useDeploymentConfig(), {
+      const { result } = renderHook(() => useDeploymentConfig(testProjectId), {
         wrapper: createHookWrapper(),
       })
 
@@ -73,7 +76,7 @@ describe('useDeploymentConfig hooks', () => {
         text: async () => 'Internal Server Error',
       } as Response)
 
-      const { result } = renderHook(() => useDeploymentConfig(), {
+      const { result } = renderHook(() => useDeploymentConfig(testProjectId), {
         wrapper: createHookWrapper(),
       })
 
@@ -87,7 +90,7 @@ describe('useDeploymentConfig hooks', () => {
     it('should handle network error', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
-      const { result } = renderHook(() => useDeploymentConfig(), {
+      const { result } = renderHook(() => useDeploymentConfig(testProjectId), {
         wrapper: createHookWrapper(),
       })
 
@@ -108,7 +111,7 @@ describe('useDeploymentConfig hooks', () => {
       } as Response)
 
       const { result } = renderHook(
-        () => useDeploymentConfig({ enabled: false }),
+        () => useDeploymentConfig(testProjectId, { enabled: false }),
         {
           wrapper: createHookWrapper(),
         }
@@ -131,9 +134,12 @@ describe('useDeploymentConfig hooks', () => {
         }),
       } as Response)
 
-      const { result } = renderHook(() => useUpdateDeploymentConfig(), {
-        wrapper: createHookWrapper(),
-      })
+      const { result } = renderHook(
+        () => useUpdateDeploymentConfig(testProjectId),
+        {
+          wrapper: createHookWrapper(),
+        }
+      )
 
       const updateData = { organization_id: 'org_updated' }
       result.current.mutate(updateData)
@@ -143,11 +149,14 @@ describe('useDeploymentConfig hooks', () => {
       })
 
       expect(result.current.data).toEqual(updatedConfig)
-      expect(mockFetch).toHaveBeenCalledWith('/api/deployment-config', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
-      })
+      expect(mockFetch).toHaveBeenCalledWith(
+        `/api/projects/${testProjectId}/deployment-config`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData),
+        }
+      )
     })
 
     it('should handle update error', async () => {
@@ -157,9 +166,12 @@ describe('useDeploymentConfig hooks', () => {
         text: async () => 'Validation error',
       } as Response)
 
-      const { result } = renderHook(() => useUpdateDeploymentConfig(), {
-        wrapper: createHookWrapper(),
-      })
+      const { result } = renderHook(
+        () => useUpdateDeploymentConfig(testProjectId),
+        {
+          wrapper: createHookWrapper(),
+        }
+      )
 
       result.current.mutate({ organization_id: 'invalid' })
 
@@ -183,7 +195,7 @@ describe('useDeploymentConfig hooks', () => {
       } as Response)
 
       const { result } = renderHook(
-        () => useUpdateDeploymentConfig({ onSuccess }),
+        () => useUpdateDeploymentConfig(testProjectId, { onSuccess }),
         {
           wrapper: createHookWrapper(),
         }
@@ -205,7 +217,7 @@ describe('useDeploymentConfig hooks', () => {
 
   describe('useOptimisticUpdateDeploymentConfig', () => {
     it('should update UI optimistically', async () => {
-      const queryClient: QueryClient
+      const queryClient = createTestQueryClient()
 
       // First, populate the cache with initial data
       mockFetch.mockResolvedValueOnce({
@@ -216,10 +228,12 @@ describe('useDeploymentConfig hooks', () => {
         }),
       } as Response)
 
-      queryClient = createTestQueryClient()
-      const { result: queryResult } = renderHook(() => useDeploymentConfig(), {
-        wrapper: createHookWrapper(queryClient),
-      })
+      const { result: queryResult } = renderHook(
+        () => useDeploymentConfig(testProjectId),
+        {
+          wrapper: createHookWrapper(queryClient),
+        }
+      )
 
       await waitFor(() => {
         expect(queryResult.current.isSuccess).toBe(true)
@@ -245,7 +259,7 @@ describe('useDeploymentConfig hooks', () => {
       )
 
       const { result: mutationResult } = renderHook(
-        () => useOptimisticUpdateDeploymentConfig(),
+        () => useOptimisticUpdateDeploymentConfig(testProjectId),
         {
           wrapper: createHookWrapper(queryClient!),
         }
@@ -260,6 +274,7 @@ describe('useDeploymentConfig hooks', () => {
       const optimisticData = queryClient!.getQueryData([
         'deploymentConfig',
         'detail',
+        testProjectId,
       ]) as DeploymentConfig
 
       expect(optimisticData.organization_id).toBe('org_optimistic')
@@ -271,7 +286,7 @@ describe('useDeploymentConfig hooks', () => {
     })
 
     it('should rollback on error', async () => {
-      const queryClient: QueryClient
+      const queryClient = createTestQueryClient()
 
       // First, populate the cache with initial data
       mockFetch.mockResolvedValueOnce({
@@ -282,10 +297,12 @@ describe('useDeploymentConfig hooks', () => {
         }),
       } as Response)
 
-      queryClient = createTestQueryClient()
-      const { result: queryResult } = renderHook(() => useDeploymentConfig(), {
-        wrapper: createHookWrapper(queryClient),
-      })
+      const { result: queryResult } = renderHook(
+        () => useDeploymentConfig(testProjectId),
+        {
+          wrapper: createHookWrapper(queryClient),
+        }
+      )
 
       await waitFor(() => {
         expect(queryResult.current.isSuccess).toBe(true)
@@ -299,7 +316,7 @@ describe('useDeploymentConfig hooks', () => {
       } as Response)
 
       const { result: mutationResult } = renderHook(
-        () => useOptimisticUpdateDeploymentConfig(),
+        () => useOptimisticUpdateDeploymentConfig(testProjectId),
         {
           wrapper: createHookWrapper(queryClient!),
         }
@@ -317,13 +334,14 @@ describe('useDeploymentConfig hooks', () => {
       const rolledBackData = queryClient!.getQueryData([
         'deploymentConfig',
         'detail',
+        testProjectId,
       ]) as DeploymentConfig
 
       expect(rolledBackData).toEqual(mockConfig)
     })
 
     it('should preserve unchanged fields in optimistic update', async () => {
-      const queryClient: QueryClient
+      const queryClient = createTestQueryClient()
 
       // First, populate the cache with initial data
       mockFetch.mockResolvedValueOnce({
@@ -334,10 +352,12 @@ describe('useDeploymentConfig hooks', () => {
         }),
       } as Response)
 
-      queryClient = createTestQueryClient()
-      const { result: queryResult } = renderHook(() => useDeploymentConfig(), {
-        wrapper: createHookWrapper(queryClient),
-      })
+      const { result: queryResult } = renderHook(
+        () => useDeploymentConfig(testProjectId),
+        {
+          wrapper: createHookWrapper(queryClient),
+        }
+      )
 
       await waitFor(() => {
         expect(queryResult.current.isSuccess).toBe(true)
@@ -353,7 +373,7 @@ describe('useDeploymentConfig hooks', () => {
       } as Response)
 
       const { result: mutationResult } = renderHook(
-        () => useOptimisticUpdateDeploymentConfig(),
+        () => useOptimisticUpdateDeploymentConfig(testProjectId),
         {
           wrapper: createHookWrapper(queryClient!),
         }
@@ -369,11 +389,12 @@ describe('useDeploymentConfig hooks', () => {
       const optimisticData = queryClient!.getQueryData([
         'deploymentConfig',
         'detail',
+        testProjectId,
       ]) as DeploymentConfig
 
       expect(optimisticData.site_id).toBe('new_site')
       expect(optimisticData.organization_id).toBe(mockConfig.organization_id)
-      expect(optimisticData.device_id).toBe(mockConfig.device_id)
+      expect(optimisticData.iot_device_id).toBe(mockConfig.iot_device_id)
     })
   })
 })

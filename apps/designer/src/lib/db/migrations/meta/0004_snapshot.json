@@ -1,0 +1,178 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "9c1df18a-fa8f-4d61-bfa4-db3f8bd2dfe2",
+  "prevId": "a737d04d-5faf-4405-9f7b-086b705d3eb7",
+  "tables": {
+    "projects": {
+      "name": "projects",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "workflow_config": {
+          "name": "workflow_config",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'{}'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_projects_created_at": {
+          "name": "idx_projects_created_at",
+          "columns": ["created_at"],
+          "isUnique": false
+        },
+        "idx_projects_updated_at": {
+          "name": "idx_projects_updated_at",
+          "columns": ["updated_at"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "deployment_config": {
+      "name": "deployment_config",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "iot_device_id": {
+          "name": "iot_device_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_deployment_config_created_at": {
+          "name": "idx_deployment_config_created_at",
+          "columns": ["created_at"],
+          "isUnique": false
+        },
+        "idx_deployment_config_updated_at": {
+          "name": "idx_deployment_config_updated_at",
+          "columns": ["updated_at"],
+          "isUnique": false
+        },
+        "idx_deployment_config_project_id": {
+          "name": "idx_deployment_config_project_id",
+          "columns": ["project_id"],
+          "isUnique": false
+        },
+        "unique_deployment_config_per_project": {
+          "name": "unique_deployment_config_per_project",
+          "columns": ["project_id"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "deployment_config_project_id_projects_id_fk": {
+          "name": "deployment_config_project_id_projects_id_fk",
+          "tableFrom": "deployment_config",
+          "tableTo": "projects",
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {
+      "\"deployment_config\".\"device_id\"": "\"deployment_config\".\"iot_device_id\""
+    }
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

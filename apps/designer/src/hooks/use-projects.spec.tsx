@@ -1,5 +1,4 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient } from '@tanstack/react-query'
 import { createTestQueryClient, createHookWrapper } from '@test-utils/render'
 import {
   useProjects,
@@ -449,7 +448,7 @@ describe('useProjects hooks', () => {
 
   describe('useOptimisticUpdateProject', () => {
     it('should update UI optimistically', async () => {
-      const queryClient: QueryClient
+      const queryClient = createTestQueryClient()
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -459,7 +458,6 @@ describe('useProjects hooks', () => {
         }),
       } as Response)
 
-      queryClient = createTestQueryClient()
       const { result: queryResult } = renderHook(
         () => useProject(mockProject.id),
         {
@@ -515,7 +513,7 @@ describe('useProjects hooks', () => {
     })
 
     it('should rollback on error', async () => {
-      const queryClient: QueryClient
+      const queryClient = createTestQueryClient()
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -525,7 +523,6 @@ describe('useProjects hooks', () => {
         }),
       } as Response)
 
-      queryClient = createTestQueryClient()
       const { result: queryResult } = renderHook(
         () => useProject(mockProject.id),
         {
@@ -568,7 +565,7 @@ describe('useProjects hooks', () => {
     })
 
     it('should preserve unchanged fields in optimistic update', async () => {
-      const queryClient: QueryClient
+      const queryClient = createTestQueryClient()
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -578,7 +575,6 @@ describe('useProjects hooks', () => {
         }),
       } as Response)
 
-      queryClient = createTestQueryClient()
       const { result: queryResult } = renderHook(
         () => useProject(mockProject.id),
         {
@@ -626,7 +622,7 @@ describe('useProjects hooks', () => {
     })
 
     it('should handle workflow_config serialization', async () => {
-      const queryClient: QueryClient
+      const queryClient = createTestQueryClient()
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -636,7 +632,6 @@ describe('useProjects hooks', () => {
         }),
       } as Response)
 
-      queryClient = createTestQueryClient()
       const { result: queryResult } = renderHook(
         () => useProject(mockProject.id),
         {

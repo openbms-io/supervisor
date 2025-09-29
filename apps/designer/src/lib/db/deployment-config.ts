@@ -6,6 +6,7 @@ import {
   deploymentConfig,
   type DeploymentConfig,
   type InsertDeploymentConfig,
+  type UpdateDeploymentConfig,
 } from './schema'
 import { randomUUID } from 'crypto'
 
@@ -14,66 +15,82 @@ export class DeploymentConfigRepository {
     return getDatabase()
   }
 
-  async getOrCreate(): Promise<DeploymentConfig> {
-    const existing = await this.db.select().from(deploymentConfig).get()
-
-    if (existing) {
-      return existing
-    }
-
-    const id = randomUUID()
-    const now = new Date().toISOString()
-
-    const defaultConfig: InsertDeploymentConfig = {
-      id,
-      organization_id: 'org_default',
-      site_id: 'default_site',
-      device_id: 'default_device',
-      created_at: now,
-      updated_at: now,
-    }
-
-    await this.db.insert(deploymentConfig).values(defaultConfig).run()
-
-    const created = await this.db
+  async getByProjectId(projectId: string): Promise<DeploymentConfig | null> {
+    const config = await this.db
       .select()
       .from(deploymentConfig)
-      .where(eq(deploymentConfig.id, id))
+      .where(eq(deploymentConfig.project_id, projectId))
       .get()
 
-    return created!
+    return config || null
   }
 
-  async update(
-    data: Partial<
-      Pick<DeploymentConfig, 'organization_id' | 'site_id' | 'device_id'>
-    >
+  async createOrUpdate(
+    projectId: string,
+    data:
+      | UpdateDeploymentConfig
+      | { organization_id: string; site_id: string; iot_device_id: string }
   ): Promise<DeploymentConfig> {
-    const existing = await this.getOrCreate()
-
-    const newId = randomUUID()
+    const existing = await this.getByProjectId(projectId)
     const now = new Date().toISOString()
 
-    const updatedConfig: InsertDeploymentConfig = {
-      id: newId,
-      organization_id: data.organization_id ?? existing.organization_id,
-      site_id: data.site_id ?? existing.site_id,
-      device_id: data.device_id ?? existing.device_id,
-      created_at: now,
-      updated_at: now,
+    if (existing) {
+      const updatedConfig: Partial<DeploymentConfig> = {
+        organization_id: data.organization_id ?? existing.organization_id,
+        site_id: data.site_id ?? existing.site_id,
+        iot_device_id: data.iot_device_id ?? existing.iot_device_id,
+        updated_at: now,
+      }
+
+      await this.db
+        .update(deploymentConfig)
+        .set(updatedConfig)
+        .where(eq(deploymentConfig.project_id, projectId))
+        .run()
+
+      const result = await this.db
+        .select()
+        .from(deploymentConfig)
+        .where(eq(deploymentConfig.project_id, projectId))
+        .get()
+
+      return result!
+    } else {
+      if (!data.organization_id || !data.site_id || !data.iot_device_id) {
+        throw new Error(
+          'Required fields missing for new deployment config: organization_id, site_id, iot_device_id'
+        )
+      }
+
+      const id = randomUUID()
+
+      const newConfig: InsertDeploymentConfig = {
+        id,
+        project_id: projectId,
+        organization_id: data.organization_id,
+        site_id: data.site_id,
+        iot_device_id: data.iot_device_id,
+        created_at: now,
+        updated_at: now,
+      }
+
+      await this.db.insert(deploymentConfig).values(newConfig).run()
+
+      const result = await this.db
+        .select()
+        .from(deploymentConfig)
+        .where(eq(deploymentConfig.id, id))
+        .get()
+
+      return result!
     }
+  }
 
-    await this.db.delete(deploymentConfig).run()
-
-    await this.db.insert(deploymentConfig).values(updatedConfig).run()
-
-    const result = await this.db
-      .select()
-      .from(deploymentConfig)
-      .where(eq(deploymentConfig.id, newId))
-      .get()
-
-    return result!
+  async delete(projectId: string): Promise<void> {
+    await this.db
+      .delete(deploymentConfig)
+      .where(eq(deploymentConfig.project_id, projectId))
+      .run()
   }
 }
 
