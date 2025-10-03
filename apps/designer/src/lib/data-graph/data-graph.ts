@@ -60,47 +60,30 @@ export class DataGraph {
   }
 
   addNode(node: DataNode, position: { x: number; y: number }): void {
-    // Inject routing callback if node supports messages
-    if (
-      'setSendCallback' in node &&
-      typeof node.setSendCallback === 'function'
-    ) {
-      const callback = async (
-        message: Message,
-        nodeId: string,
-        handle: string
-      ) => {
-        // Activate only the edges from this specific handle
-        this.edgeManager.activateSpecificOutputEdges(nodeId, handle)
+    // Inject routing callback for message system
+    const callback = async (
+      message: Message,
+      nodeId: string,
+      handle: string
+    ) => {
+      // Activate only the edges from this specific handle
+      this.edgeManager.activateSpecificOutputEdges(nodeId, handle)
 
-        // Get fresh arrays each time for pure router
-        const nodes = this.getNodesArray()
-        const edges = this.getEdgesArray()
+      // Get fresh arrays each time for pure router
+      const nodes = this.getNodesArray()
+      const edges = this.getEdgesArray()
 
-        // Use pure router function
-        await this.messageRouter.routeMessage(
-          message,
-          nodeId,
-          handle,
-          nodes,
-          edges
-        )
-      }
-
-      ;(
-        node as DataNode & {
-          setSendCallback: (
-            cb: (
-              message: Message,
-              nodeId: string,
-              handle: string
-            ) => Promise<void>
-          ) => void
-        }
-      ).setSendCallback(callback)
-    } else {
-      console.log('Node does not support messages. setSendCallback')
+      // Use pure router function
+      await this.messageRouter.routeMessage(
+        message,
+        nodeId,
+        handle,
+        nodes,
+        edges
+      )
     }
+
+    node.setSendCallback(callback)
 
     // For nodes without category, use type as-is. For custom nodes, prepend category
     const nodeType = !node.category
@@ -121,7 +104,11 @@ export class DataGraph {
     const node = this.nodesMap.get(nodeId)
     if (node) {
       const dataNode = node.data as DataNode
-      // Call reset if available to cleanup timers/intervals
+      // CRITICAL: Call destroy() FIRST to cleanup MQTT subscriptions
+      if ('destroy' in dataNode && typeof dataNode.destroy === 'function') {
+        dataNode.destroy()
+      }
+      // Then call reset() to cleanup timers/intervals
       if ('reset' in dataNode && typeof dataNode.reset === 'function') {
         dataNode.reset()
       }

@@ -1,12 +1,26 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, AlertCircle, Edit, Save, X } from 'lucide-react'
+import {
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Edit,
+  Save,
+  X,
+  Activity,
+  Wifi,
+  WifiOff,
+  Clock,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   useDeploymentConfig,
   useUpdateDeploymentConfig,
 } from '@/hooks/use-deployment-config'
+import { useFlowStore } from '@/store/use-flow-store'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 interface SupervisorsTabProps {
   projectId: string
@@ -15,6 +29,10 @@ interface SupervisorsTabProps {
 export function SupervisorsTab({ projectId }: SupervisorsTabProps) {
   const { data: deploymentConfig, isLoading } = useDeploymentConfig(projectId)
   const updateConfigMutation = useUpdateDeploymentConfig(projectId)
+
+  const connectionStatus = useFlowStore((s) => s.connectionStatus)
+  const brokerHealth = useFlowStore((s) => s.brokerHealth)
+  const lastError = useFlowStore((s) => s.lastError)
 
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
@@ -95,6 +113,43 @@ export function SupervisorsTab({ projectId }: SupervisorsTabProps) {
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200'
     }
+  }
+
+  const getConnectionStatusColor = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return 'bg-green-500'
+      case 'connecting':
+        return 'bg-yellow-500'
+      case 'error':
+        return 'bg-red-500'
+      default:
+        return 'bg-gray-400'
+    }
+  }
+
+  const getBrokerHealthIcon = () => {
+    if (brokerHealth.status === 'healthy') {
+      return <Activity className="w-4 h-4 text-green-500" />
+    }
+    return <Activity className="w-4 h-4 text-red-500" />
+  }
+
+  const formatUptime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+
+    if (days > 0) return `${days}d ${hours % 24}h`
+    if (hours > 0) return `${hours}h ${minutes % 60}m`
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`
+    return `${seconds}s`
+  }
+
+  const formatTimestamp = (ts: number) => {
+    const date = new Date(ts * 1000)
+    return date.toLocaleTimeString()
   }
 
   const status = getStatus()
@@ -296,6 +351,138 @@ export function SupervisorsTab({ projectId }: SupervisorsTabProps) {
                 </span>
               </div>
             </div>
+
+            {/* MQTT Connection Status */}
+            {hasConfig && (
+              <Card className="mt-3">
+                <CardHeader className="p-3 pb-2">
+                  <div className="flex items-center gap-2">
+                    {connectionStatus === 'connected' ? (
+                      <Wifi className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <WifiOff className="w-4 h-4 text-gray-400" />
+                    )}
+                    <CardTitle className="text-sm">MQTT Connection</CardTitle>
+                    <div
+                      className={cn(
+                        'w-2 h-2 rounded-full ml-auto',
+                        getConnectionStatusColor()
+                      )}
+                    />
+                  </div>
+                </CardHeader>
+
+                <CardContent className="p-3 pt-0 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      Status:
+                    </span>
+                    <Badge variant="outline" className="capitalize text-xs">
+                      {connectionStatus}
+                    </Badge>
+                  </div>
+
+                  {connectionStatus === 'connected' && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          Broker Health:
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {getBrokerHealthIcon()}
+                          <Badge
+                            variant={
+                              brokerHealth.status === 'healthy'
+                                ? 'default'
+                                : 'destructive'
+                            }
+                            className="capitalize text-xs"
+                          >
+                            {brokerHealth.status}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {brokerHealth.lastHeartbeat ? (
+                        <>
+                          {brokerHealth.lastHeartbeat.uptime_seconds !==
+                            null && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                Uptime:
+                              </span>
+                              <span className="text-xs">
+                                {formatUptime(
+                                  brokerHealth.lastHeartbeat.uptime_seconds *
+                                    1000
+                                )}
+                              </span>
+                            </div>
+                          )}
+
+                          {brokerHealth.lastHeartbeat.monitoring_status && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                Status:
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className="text-xs capitalize"
+                              >
+                                {brokerHealth.lastHeartbeat.monitoring_status}
+                              </Badge>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              Last Heartbeat:
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span className="text-xs">
+                                {formatTimestamp(
+                                  brokerHealth.lastHeartbeat.timestamp
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="pt-2 pb-2 text-center">
+                          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                            <Clock className="w-4 h-4 animate-pulse" />
+                            <span className="text-xs">
+                              Waiting for heartbeat from supervisor...
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Check that BMS IoT App is running with matching
+                            configuration
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {lastError && (
+                    <div className="pt-2 border-t">
+                      <div className="flex items-start gap-1">
+                        <AlertCircle className="w-3 h-3 text-red-500 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="text-xs font-medium text-red-600">
+                            Error
+                          </div>
+                          <div className="text-xs text-muted-foreground break-words">
+                            {lastError}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </div>

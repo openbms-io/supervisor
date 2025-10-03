@@ -4,12 +4,13 @@
   "description": "MQTT topic management for BMS IoT applications",
   "private": true,
   "type": "module",
-  "main": "./topics_loader.js",
-  "types": "./topics_loader.d.ts",
+  "main": "./dist/topics_loader.js",
+  "types": "./dist/topics_loader.d.ts",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build": "tsc"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

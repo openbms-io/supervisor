@@ -453,7 +453,7 @@ No major schema changes required. Existing tables support:
 - get_config command (MQTT) triggers discovery
 - Point data streaming to bulk topics; status/heartbeat retained
 
-### Phase 7.3: Device Identity Management [In progress]
+### Phase 7.3: Device Identity Management [Done]
 
 **Objective**: Generate and provision org_id/site_id/iot_device_id with project scope
 
@@ -525,7 +525,7 @@ No major schema changes required. Existing tables support:
 - /components/sidebar/supervisors-tab.tsx
 - All associated test files
 
-### Phase 7.4: Browser MQTT Client
+### Phase 7.4: Browser MQTT Client [In Progress]
 
 **Objective**: Connect Designer app to MQTT broker via reverse proxy WebSocket
 
@@ -534,6 +534,8 @@ No major schema changes required. Existing tables support:
 - Create MQTT client service with request/response correlation (IDs, timeouts)
 - Implement connection management, reconnection backoff, and error handling
 - Add UI indicators for MQTT connection and broker health (from retained status)
+
+Detailed Spec: ./2025-09-29-designer-mqtt-integration.md
 
 **Deliverables**:
 
