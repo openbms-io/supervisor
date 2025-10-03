@@ -26,6 +26,7 @@ class SystemMetricsActor:
         self.site_id = site_id
         self.iot_device_id = iot_device_id
         self.collection_interval = 30  # Collect metrics every 30 seconds
+        self.app_start_time = time.time()  # Track when app started
 
     async def start(self):
         await self._run_metrics_loop()
@@ -88,9 +89,8 @@ class SystemMetricsActor:
             disk = psutil.disk_usage("/")
             metrics["disk_usage_percent"] = (disk.used / disk.total) * 100
 
-            # System uptime
-            boot_time = psutil.boot_time()
-            metrics["uptime_seconds"] = int(time.time() - boot_time)
+            # App uptime
+            metrics["uptime_seconds"] = int(time.time() - self.app_start_time)
 
             # Load average (Unix-like systems)
             try:

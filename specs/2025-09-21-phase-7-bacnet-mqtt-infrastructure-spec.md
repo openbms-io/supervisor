@@ -423,9 +423,9 @@ No major schema changes required. Existing tables support:
 
 **Objective**: Integrate repositories and stand up a development environment with internal broker and reverse proxy (non-containerized)
 
-- Extract `bms-iot-app` from private monorepo to (public or private) repository
-- Extract `bms-bacnet-simulator` similarly if needed for tests
-- Add repositories as git submodules to bms-supervisor-controller (or consume images)
+- Extract `bms-iot-app` from private monorepo to (public or private) repository [Done]
+- Extract `bms-bacnet-simulator` similarly if needed for tests [Done]
+- Add repositories as git submodules to bms-supervisor-controller (or consume images) [Done]
 - Start a local MQTT broker (NanoMQ/Mosquitto): TCP 1883 and WS 8083
 - Start a local reverse proxy on 3000: routes `/` → Next (3001), `/mqtt` (WS) → broker 8083
 - Verify bms-iot-app connects to broker over TCP 1883 locally
@@ -437,7 +437,7 @@ No major schema changes required. Existing tables support:
 - Working dev environment with reverse proxy and broker
 - bms-iot-app connected to local broker
 
-### Phase 7.2: MQTT Integration in bms-iot-app (May need review, since bms-iot-app has MQTT configuration setup already)
+### Phase 7.2: MQTT Integration in bms-iot-app (May need review, since bms-iot-app has MQTT configuration setup already) [Done]
 
 **Objective**: Ensure bms-iot-app works with internal MQTT broker
 
@@ -453,23 +453,79 @@ No major schema changes required. Existing tables support:
 - get_config command (MQTT) triggers discovery
 - Point data streaming to bulk topics; status/heartbeat retained
 
-### Phase 7.3: Device Identity Management
+### Phase 7.3: Device Identity Management [Done]
 
-**Objective**: Generate and provision org_id/site_id/iot_device_id
+**Objective**: Generate and provision org_id/site_id/iot_device_id with project scope
 
-- Designer/Supervisor generates device identity
-- Provision identity manually onto the device for bms-iot-app (e.g., config file or env vars)
-- bms-iot-app reads identity at startup and uses it for topic construction
-- UI can display identity; edits require re-provisioning to device
-- Ensure identity persists across restarts and is consistent across all topics
+**Current Implementation Status**:
+
+- ✅ deployment_config table exists
+- ✅ DeploymentConfigRepository with CRUD operations
+- ✅ API routes at /api/deployment-config
+- ✅ React Query hooks implemented
+- ✅ Tests for hooks and API
+
+**Required Updates**:
+
+1. **Database Schema Changes**:
+
+   - Add project_id foreign key to deployment_config table
+   - Rename device_id to iot_device_id for clarity
+   - Add unique constraint on project_id (one config per project)
+   - Create migration to update existing table
+
+2. **Backend Updates**:
+
+   - Update repository to be project-scoped:
+     - getByProjectId(projectId)
+     - createOrUpdate(projectId, data)
+     - delete(projectId)
+   - Move API routes to /api/projects/[id]/deployment-config
+   - Update validation schemas with project scope
+
+3. **Frontend Updates**:
+
+   - Update React Query hooks to include projectId parameter
+   - Update API client with new endpoint URLs
+   - Add deployment config form to SupervisorsTab:
+     - Organization ID (must start with "org\_")
+     - Site ID
+     - IoT Device ID
+   - Display current configuration if exists
+   - Remove default supervisor initialization
+
+4. **UI/UX Flow**:
+   - User opens project
+   - Navigates to Supervisors tab
+   - If no config: Shows provisioning form
+   - If config exists: Shows current values with edit button
+   - User enters/edits values and saves
+   - Values stored in database with project association
+
+**Manual Provisioning**:
+
+- org_id, site_id and iot_device_id are fetched via bms-iot-app show config manually
+- No code changes needed in bms-iot-app, just README documentation
 
 **Deliverables**:
 
-- Identity generated in Designer/Supervisor
-- Manual provisioning procedure documented and verified on device
+- Project-scoped deployment configuration
+- Updated UI in SupervisorsTab with config form
+- Migration script for existing deployments
+- Updated tests for project-scoped operations
+- Documentation for manual provisioning via bms-iot-app show config
 - MQTT topics use provisioned org_id/site_id/iot_device_id
 
-### Phase 7.4: Browser MQTT Client
+**Files to Update**:
+
+- /lib/db/schema/deployment-config.ts
+- /lib/db/deployment-config.ts
+- /app/api/projects/[id]/deployment-config/route.ts
+- /hooks/use-deployment-config.ts
+- /components/sidebar/supervisors-tab.tsx
+- All associated test files
+
+### Phase 7.4: Browser MQTT Client [In Progress]
 
 **Objective**: Connect Designer app to MQTT broker via reverse proxy WebSocket
 
@@ -478,6 +534,8 @@ No major schema changes required. Existing tables support:
 - Create MQTT client service with request/response correlation (IDs, timeouts)
 - Implement connection management, reconnection backoff, and error handling
 - Add UI indicators for MQTT connection and broker health (from retained status)
+
+Detailed Spec: ./2025-09-29-designer-mqtt-integration.md
 
 **Deliverables**:
 

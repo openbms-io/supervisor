@@ -157,6 +157,7 @@ export interface FlowSlice {
     metadata?: Record<string, unknown>
   ) => void
   removeNode: (nodeId: string) => void
+  clearAllNodes: () => void
   connectNodes: (
     sourceId: string,
     targetId: string,
@@ -350,6 +351,22 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
     set({
       nodes: get().dataGraph.getNodesArray(),
       edges: get().dataGraph.getEdgesArray(),
+    })
+  },
+
+  clearAllNodes: () => {
+    const { dataGraph } = get()
+    const allNodes = dataGraph.getNodesArray()
+
+    // Call removeNode for each node to ensure destroy() is called
+    allNodes.forEach((node) => {
+      dataGraph.removeNode(node.id)
+    })
+
+    // Update React Flow state
+    set({
+      nodes: [],
+      edges: [],
     })
   },
 

@@ -15,7 +15,6 @@ from src.utils.logger import logger
 # from apps.bms_bacnet_simulator.bacnet_simulator_config import SIMULATOR_CONFIG
 
 # from apps.bms_bacnet_simulator.bacnet_simulator import MultiSimulationManager
-from src.network.credentials import save_credentials
 from .network.mqtt_adapter import (
     configure_mqtt,
     configure_emqx,
@@ -23,7 +22,7 @@ from .network.mqtt_adapter import (
     get_current_config,
     publish_message,
 )
-from .network.mqtt_config import emqx_cloud_config_template
+from .network.mqtt_config import emqx_cloud_config_template, load_config
 
 from src.main import main as main_entrypoint
 from src.models.deployment_config import (
@@ -33,6 +32,8 @@ from src.models.deployment_config import (
     validate_deployment_config,
     has_valid_deployment_config,
 )
+from src.utils.id_generator import generate_org_id, generate_site_id, generate_device_id
+from src.utils.config_formatter import print_config_summary
 
 # Set up rich console for direct output
 console = Console()
@@ -119,23 +120,70 @@ def _get_mqtt_credentials_interactive() -> tuple[str, str]:
     return mqtt_username, mqtt_password
 
 
-def _get_broker_choice_interactive() -> Optional[str]:
+def _get_broker_choice_interactive() -> str:
     """Get broker choice from user input.
 
     Returns:
-        str: Custom broker hostname, or None for default broker
+        str: Broker hostname choice
     """
-    default_broker = emqx_cloud_config_template.broker_host
-    use_default = typer.confirm(
-        f"Use default EMQX broker ({default_broker})?", default=True
-    )
+    logger.info("\n🔗 MQTT Broker Selection")
+    logger.info("Choose your MQTT broker type:")
+    logger.info("1. Local broker (localhost:1883, no TLS)")
+    logger.info("2. EMQX Cloud broker (TLS enabled)")
 
-    if use_default:
-        return None
-    else:
-        return typer.prompt(
-            "Enter your EMQX broker hostname (e.g., yourbroker.emqxsl.com)"
+    try:
+        choice = typer.prompt("Select broker type", type=int, default=1)
+    except (ValueError, TypeError):
+        logger.error("Invalid choice. Using localhost.")
+        return "localhost"
+
+    if choice == 1:
+        return "localhost"
+    elif choice == 2:
+        default_broker = emqx_cloud_config_template.broker_host
+        use_default = typer.confirm(
+            f"Use default EMQX broker ({default_broker})?", default=True
         )
+
+        if use_default:
+            return default_broker
+        else:
+            return typer.prompt(
+                "Enter your EMQX broker hostname (e.g., yourbroker.emqxsl.com)"
+            )
+    else:
+        logger.error("Invalid choice. Using localhost.")
+        return "localhost"
+
+
+def _configure_local_broker(client_id: str) -> bool:
+    """Configure local MQTT broker (localhost, no TLS, no credentials, persistent sessions).
+
+    Args:
+        client_id: MQTT client ID
+
+    Returns:
+        bool: True if configuration successful, False otherwise
+    """
+    try:
+        configure_mqtt(
+            broker_host="localhost",
+            broker_port=1883,
+            client_id=client_id,
+            username=None,
+            password=None,
+            use_tls=False,
+            tls_ca_cert=None,
+            topic_prefix="",
+            clean_session=False,
+        )
+        logger.info(
+            "✓ MQTT configured for local broker (localhost:1883, no TLS, persistent sessions)"
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Failed to configure local MQTT broker: {e}")
+        return False
 
 
 def _test_and_report_connection() -> bool:
@@ -154,20 +202,6 @@ def _test_and_report_connection() -> bool:
             "You can reconfigure later with: python -m src.cli mqtt config-emqx"
         )
         return False
-
-
-@app.command()
-def set_credentials(
-    client_id: str = typer.Argument(..., help="Client ID for authentication"),
-    secret_key: str = typer.Argument(..., help="Secret key for authentication"),
-):
-    """Set authentication credentials."""
-    try:
-        save_credentials(client_id, secret_key)
-        logger.info(f"Credentials saved for client ID: {client_id}")
-    except Exception as e:
-        logger.error(f"Failed to save credentials: {e}")
-        raise typer.Exit(1)
 
 
 @mqtt_app.command("config")
@@ -194,6 +228,11 @@ def cmd_configure_mqtt(
     topic_prefix: str = typer.Option(
         "bms/monitoring", "--topic-prefix", "-t", help="MQTT topic prefix"
     ),
+    clean_session: bool = typer.Option(
+        True,
+        "--clean-session/--persistent-session",
+        help="Use clean session (default: True)",
+    ),
 ):
     """Configure MQTT client connection parameters (TLS enabled by default)."""
     try:
@@ -206,6 +245,7 @@ def cmd_configure_mqtt(
             use_tls=use_tls,
             tls_ca_cert=tls_ca_cert,
             topic_prefix=topic_prefix,
+            clean_session=clean_session,
         )
     except Exception as e:
         logger.error(f"Failed to configure MQTT: {e}")
@@ -341,24 +381,24 @@ def config_set(
 
 
 @config_app.command("show")
-def config_show():
-    """Show current deployment configuration."""
+def config_show() -> None:
+    """Show current deployment and MQTT configuration."""
 
-    async def _show_config():
+    async def _show_config() -> None:
         config = await get_current_deployment_config()
         if not config:
-            logger.warning("No deployment configuration found.")
-            logger.info("Run 'config set' to configure deployment settings.")
+            console.print()
+            console.print("[yellow]⚠ No deployment configuration found.[/yellow]")
+            console.print(
+                "Run [cyan]'config setup --interactive'[/cyan] to configure deployment settings."
+            )
+            console.print()
             return
 
-        logger.info("Current deployment configuration:")
-        logger.info(f"  Organization ID: {config.organization_id}")
-        logger.info(f"  Site ID: {config.site_id}")
-        logger.info(f"  Device ID: {config.device_id}")
-        if config.config_metadata:
-            logger.info(f"  Metadata: {config.config_metadata}")
-        logger.info(f"  Created: {config.created_at}")
-        logger.info(f"  Updated: {config.updated_at}")
+        mqtt_config_obj = load_config()
+        mqtt_config_dict = mqtt_config_obj.model_dump()
+
+        print_config_summary(console, config, mqtt_config_dict)
 
     asyncio.run(_show_config())
 
@@ -404,29 +444,29 @@ async def _configure_mqtt_interactive(
         )
         return False
 
-    # Ask about EMQX
-    if not typer.confirm("Use EMQX Cloud broker (recommended)?", default=True):
-        logger.info("Skipping MQTT auto-configuration")
-        logger.info("Configure manually later with: python -m src.cli mqtt config")
-        return False
-
-    # Get broker choice and credentials
+    # Get broker choice
     broker_host = _get_broker_choice_interactive()
-    mqtt_username, mqtt_password = _get_mqtt_credentials_interactive()
 
     # Auto-generate client ID from device identifiers
     mqtt_client_id = f"{org_id}-{site_id}-{device_id}"
     logger.info(f"Using auto-generated client ID: {mqtt_client_id}")
 
-    # Configure MQTT with consolidated function
-    if not _configure_emqx_with_broker(
-        username=mqtt_username,
-        password=mqtt_password,
-        client_id=mqtt_client_id,
-        topic_prefix="",
-        broker_host=broker_host,
-    ):
-        return False
+    # Configure based on broker type
+    if broker_host == "localhost":
+        # Configure local broker (no credentials needed)
+        if not _configure_local_broker(client_id=mqtt_client_id):
+            return False
+    else:
+        # Configure cloud broker (EMQX)
+        mqtt_username, mqtt_password = _get_mqtt_credentials_interactive()
+        if not _configure_emqx_with_broker(
+            username=mqtt_username,
+            password=mqtt_password,
+            client_id=mqtt_client_id,
+            topic_prefix="",
+            broker_host=broker_host,
+        ):
+            return False
 
     # Test connection and report results
     return _test_and_report_connection()
@@ -449,13 +489,37 @@ def config_setup(
         logger.info("")
 
         # Get organization ID
-        org_id = typer.prompt("Organization ID (should start with 'org_')")
+        org_id_input = typer.prompt(
+            "Organization ID (press Enter to auto-generate, or enter custom ID starting with 'org_')",
+            default="",
+        )
+        if not org_id_input.strip():
+            org_id = generate_org_id()
+            logger.info(f"Generated Organization ID: {org_id}")
+        else:
+            org_id = org_id_input.strip()
 
         # Get site ID
-        site_id = typer.prompt("Site ID (UUID format)")
+        site_id_input = typer.prompt(
+            "Site ID (press Enter to auto-generate UUID, or enter custom UUID)",
+            default="",
+        )
+        if not site_id_input.strip():
+            site_id = generate_site_id()
+            logger.info(f"Generated Site ID: {site_id}")
+        else:
+            site_id = site_id_input.strip()
 
         # Get device ID
-        device_id = typer.prompt("IoT Device ID (UUID format)")
+        device_id_input = typer.prompt(
+            "IoT Device ID (press Enter to auto-generate UUID, or enter custom UUID)",
+            default="",
+        )
+        if not device_id_input.strip():
+            device_id = generate_device_id()
+            logger.info(f"Generated Device ID: {device_id}")
+        else:
+            device_id = device_id_input.strip()
 
         # Configure MQTT
         mqtt_configured = await _configure_mqtt_interactive(org_id, site_id, device_id)

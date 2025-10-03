@@ -41,15 +41,14 @@ class TestMQTTIntegration:
             patch("typer.confirm") as mock_confirm,
             patch("typer.prompt") as mock_prompt,
         ):
-            # User confirms MQTT config, EMQX, and default broker
+            # User confirms MQTT config, chooses EMQX (2), uses default broker
             mock_confirm.side_effect = [
-                True,
-                True,
-                True,
-            ]  # Configure MQTT? Yes, Use EMQX? Yes, Use default broker? Yes
+                True,  # Configure MQTT? Yes
+                True,  # Use default EMQX broker? Yes
+            ]
 
-            # User provides credentials
-            mock_prompt.side_effect = ["mqtt_user", "mqtt_pass"]
+            # User chooses EMQX broker (2), then provides credentials
+            mock_prompt.side_effect = [2, "mqtt_user", "mqtt_pass"]
 
             # Test the function
             result = await _configure_mqtt_interactive(
@@ -87,21 +86,40 @@ class TestMQTTIntegration:
 
     @pytest.mark.asyncio
     async def test_configure_mqtt_interactive_no_emqx(self):
-        """Test declining EMQX during MQTT configuration."""
-        with patch("typer.confirm") as mock_confirm:
-            # User wants MQTT but not EMQX
+        """Test choosing local broker instead of EMQX."""
+        with (
+            patch("typer.confirm") as mock_confirm,
+            patch("typer.prompt") as mock_prompt,
+            patch("src.cli.configure_mqtt") as mock_configure_mqtt,
+            patch("src.cli.test_connection") as mock_test_connection,
+        ):
+            # User wants MQTT and chooses local broker (option 1)
             mock_confirm.side_effect = [
-                True,
-                False,
-            ]  # Configure MQTT? Yes, Use EMQX? No
+                True,  # Configure MQTT? Yes
+            ]
+            mock_prompt.side_effect = [1]  # Select broker type: 1 (local)
+            mock_test_connection.return_value = True
 
             # Test the function
             result = await _configure_mqtt_interactive(
                 "org_123", "site_456", "device_789"
             )
 
-            # Verify skip
-            assert result is False
+            # Verify success with local broker
+            assert result is True
+
+            # Verify configure_mqtt was called for local broker
+            mock_configure_mqtt.assert_called_once_with(
+                broker_host="localhost",
+                broker_port=1883,
+                client_id="org_123-site_456-device_789",
+                username=None,
+                password=None,
+                use_tls=False,
+                tls_ca_cert=None,
+                topic_prefix="",
+                clean_session=False,
+            )
 
     @pytest.mark.asyncio
     async def test_configure_mqtt_interactive_connection_failure(
@@ -115,23 +133,30 @@ class TestMQTTIntegration:
             patch("typer.confirm") as mock_confirm,
             patch("typer.prompt") as mock_prompt,
         ):
-            # User confirms MQTT config, EMQX, and default broker
+            # User confirms MQTT config, chooses EMQX (2), uses default broker
             mock_confirm.side_effect = [
-                True,
-                True,
-                True,
-            ]  # Configure MQTT? Yes, Use EMQX? Yes, Use default broker? Yes
+                True,  # Configure MQTT? Yes
+                True,  # Use default EMQX broker? Yes
+            ]
 
-            # User provides credentials
-            mock_prompt.side_effect = ["mqtt_user", "mqtt_pass"]
+            # User chooses EMQX broker (2), then provides credentials
+            mock_prompt.side_effect = [2, "mqtt_user", "mqtt_pass"]
 
             # Test the function
             result = await _configure_mqtt_interactive(
                 "org_123", "site_456", "device_789"
             )
 
-            # Verify failure
+            # Verify failure due to connection test
             assert result is False
+
+            # Verify configure_emqx was called (config succeeds but connection fails)
+            mock_configure_emqx.assert_called_once_with(
+                username="mqtt_user",
+                password="mqtt_pass",
+                client_id="org_123-site_456-device_789",
+                topic_prefix="",
+            )
 
             # Verify configure_emqx was still called
             mock_configure_emqx.assert_called_once()
@@ -143,23 +168,26 @@ class TestMQTTIntegration:
     async def test_configure_mqtt_interactive_exception_handling(
         self, mock_configure_emqx
     ):
-        """Test MQTT configuration with exception during setup."""
+        """Test MQTT configuration with exception during EMQX setup."""
         # Mock exception in configure_emqx
         mock_configure_emqx.side_effect = Exception("MQTT configuration error")
 
         with (
             patch("typer.confirm") as mock_confirm,
             patch("typer.prompt") as mock_prompt,
+            patch("src.cli._configure_emqx_with_broker") as mock_configure_emqx_broker,
         ):
-            # User confirms MQTT config, EMQX, and default broker
-            mock_confirm.side_effect = [
-                True,
-                True,
-                True,
-            ]  # Configure MQTT? Yes, Use EMQX? Yes, Use default broker? Yes
+            # Mock _configure_emqx_with_broker to return False (indicating failure)
+            mock_configure_emqx_broker.return_value = False
 
-            # User provides credentials
-            mock_prompt.side_effect = ["mqtt_user", "mqtt_pass"]
+            # User confirms MQTT config, chooses EMQX (2), uses default broker
+            mock_confirm.side_effect = [
+                True,  # Configure MQTT? Yes
+                True,  # Use default EMQX broker? Yes
+            ]
+
+            # User chooses EMQX broker (2), then provides credentials
+            mock_prompt.side_effect = [2, "mqtt_user", "mqtt_pass"]
 
             # Test the function
             result = await _configure_mqtt_interactive(
@@ -169,8 +197,14 @@ class TestMQTTIntegration:
             # Verify failure
             assert result is False
 
-            # Verify configure_emqx was called
-            mock_configure_emqx.assert_called_once()
+            # Verify _configure_emqx_with_broker was called
+            mock_configure_emqx_broker.assert_called_once_with(
+                username="mqtt_user",
+                password="mqtt_pass",
+                client_id="org_123-site_456-device_789",
+                topic_prefix="",
+                broker_host="t78ae18a.ala.us-east-1.emqxsl.com",
+            )
 
     @pytest.mark.asyncio
     async def test_client_id_generation(
@@ -191,11 +225,14 @@ class TestMQTTIntegration:
                 patch("typer.prompt") as mock_prompt,
             ):
                 mock_confirm.side_effect = [
-                    True,
-                    True,
-                    True,
-                ]  # Configure MQTT? Yes, Use EMQX? Yes, Use default broker? Yes
-                mock_prompt.side_effect = ["user", "pass"]
+                    True,  # Configure MQTT? Yes
+                    True,  # Use default EMQX broker? Yes
+                ]
+                mock_prompt.side_effect = [
+                    2,
+                    "user",
+                    "pass",
+                ]  # Choose EMQX (2), then credentials
 
                 await _configure_mqtt_interactive(org_id, site_id, device_id)
 
@@ -326,10 +363,9 @@ class TestMQTTIntegration:
             patch("typer.prompt") as mock_prompt,
         ):
             mock_confirm.side_effect = [
-                True,
-                True,
-                True,
-            ]  # Configure MQTT? Yes, Use EMQX? Yes, Use default broker? Yes
+                True,  # Configure MQTT? Yes
+                True,  # Use default EMQX broker? Yes
+            ]
 
             # Track prompt calls
             prompt_calls = []
@@ -338,7 +374,10 @@ class TestMQTTIntegration:
                 prompt_calls.append(kwargs)
                 if "hide_input" in kwargs and kwargs["hide_input"]:
                     return "hidden_password"
-                return "visible_input"
+                elif "type" in kwargs and kwargs["type"] == int:
+                    return 2  # Choose EMQX broker (option 2)
+                else:
+                    return "visible_input"
 
             mock_prompt.side_effect = track_prompt
 
@@ -350,11 +389,11 @@ class TestMQTTIntegration:
             # Verify password was hidden
             assert len(password_prompts) == 1
 
-            # Verify username was not hidden
-            username_prompts = [
+            # Verify there are visible prompts (broker selection + username)
+            visible_prompts = [
                 call for call in prompt_calls if not call.get("hide_input")
             ]
-            assert len(username_prompts) == 1
+            assert len(visible_prompts) == 2  # broker selection + username
 
 
 class TestMQTTConfigurationDefaults:

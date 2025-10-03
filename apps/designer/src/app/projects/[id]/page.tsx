@@ -13,7 +13,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   return (
     <MainLayout
       projectName={`Project ${id}`}
-      sidebar={<InfrastructureSidebar />}
+      sidebar={<InfrastructureSidebar projectId={id} />}
     >
       <WorkflowLoader projectId={id} />
       <FlowCanvas projectId={id} />

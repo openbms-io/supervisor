@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "pnpm --parallel run dev",
     "build": "pnpm --recursive run build",
-    "test": "pnpm --recursive run test",
+    "test": "jest && pnpm --filter designer test && pnpm bms-iot:test",
+    "test:js": "jest && pnpm --filter designer test",
+    "test:python": "pnpm bms-iot:test && pnpm mqtt-topics:test",
     "lint": "pnpm --recursive run lint",
     "clean": "pnpm --recursive run clean",
     "schema:generate": "pnpm --filter bms-schemas run generate",
@@ -20,6 +22,7 @@
     "bms-iot:test:verbose": "PYTHONPATH=.:apps/bms-iot-app python -m pytest apps/bms-iot-app/tests/ -v",
     "bms-iot:mqtt": "PYTHONPATH=.:apps/bms-iot-app python -m src.cli mqtt",
     "bms-iot:config": "PYTHONPATH=.:apps/bms-iot-app python -m src.cli config",
+    "mqtt-topics:test": "cd packages/mqtt_topics && python -m pytest tests/ -v",
     "setup:hooks": "python -m pip install pre-commit && pre-commit install",
     "hooks:update": "pre-commit autoupdate",
     "hooks:run": "pre-commit run --all-files"
@@ -30,6 +33,7 @@
   ],
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "jest": "^30.1.3",
     "typescript": "^5.5.0"
   },
   "packageManager": "pnpm@9.0.0",

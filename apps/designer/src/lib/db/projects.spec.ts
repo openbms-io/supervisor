@@ -6,12 +6,10 @@ import { projects as projectsTable } from './schema'
 
 describe('ProjectsRepository (SQLite + Drizzle)', () => {
   beforeEach(async () => {
-    // Clean projects table before each test
     const db = getDatabase()
     await db.delete(projectsTable).run()
   })
   afterAll(() => {
-    // Close DB handle to avoid file locks between test runs
     closeDatabase()
   })
 

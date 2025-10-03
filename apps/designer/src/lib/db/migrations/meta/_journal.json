@@ -22,6 +22,20 @@
       "when": 1758298001000,
       "tag": "0002_rename_flow_config_to_workflow_config",
       "breakpoints": false
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1759094855755,
+      "tag": "0003_create_deployment_config_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1759163822728,
+      "tag": "0004_add_column_and_rename",
+      "breakpoints": true
     }
   ]
 }

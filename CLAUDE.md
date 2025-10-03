@@ -23,6 +23,7 @@ The `bms-schemas` package defines the data format used to send visual programmin
    - Write tests first, then implement
    - Red-Green-Refactor cycle
    - Tests drive design decisions
+   - Focus on testing behavior and not using logger functions.
 
 2. **DO NOT OVERENGINEER**
 
@@ -320,3 +321,6 @@ npm run test:integration
 - **Bug Fix** - Always focus on finding and assessing root cause first. Present your plan, before provising a fix with options.
 - **SOLID Principle** - Follow SOLID principle and make the code DRY.
 - **YAGNI Principle** - YAGNI (You Aren't Gonna Need It) - Don't add complexity until needed
+- Why are we setting to null? Keep it undefined. I think we should consistently just use undefined, unless there is a special condition to use null.
+- Mock external libraries for integration and E2E tests. Unit test, you can mock designer modules. BUT DO NOT MOCK SYSTEM UNDER TEST.
+- Dont add unnecessary comments. Make method names clear enough

@@ -1,6 +1,6 @@
 import logging
 import json
-import asyncio
+import time
 from typing import Optional, Any
 import paho.mqtt.client as mqtt
 
@@ -146,7 +146,7 @@ class MQTTHandler:
             # Add metadata
             payload_dict.update(
                 {
-                    "timestamp": asyncio.get_event_loop().time(),
+                    "timestamp": time.time(),
                     "organization_id": self.organization_id,
                     "site_id": self.site_id,
                     "iot_device_id": self.iot_device_id,
